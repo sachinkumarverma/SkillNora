@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --primary-50: #eef2ff;
+    --primary-100: #e0e7ff;
+    --primary-300: #a78bfa;
+    --primary-500: #7c3aed;
+    --primary-600: #6d28d9;
+    --muted: #64748b;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+}
+
+.glass {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2));
+    backdrop-filter: blur(6px) saturate(1.1);
+}
+
+/* Reusable button utilities */
+.btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium;
+}
+
+.btn-primary {
+    background: var(--primary-500);
+    color: white;
+}
+
+.btn-outline {
+    border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.card-hover:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 8px 30px rgba(2, 6, 23, 0.08);
+}
+
+.muted {
+    color: var(--muted);
+}
