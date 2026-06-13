@@ -8,15 +8,20 @@ type Props = {
 
 export default function CourseCard({ title, author }: Props) {
     return (
-        <article className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-800 shadow-sm card-hover">
-            <div className="h-40 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-slate-800 dark:to-slate-900 rounded-md mb-3 flex items-end p-3">
-                <div className="bg-white/60 dark:bg-slate-700/40 px-2 py-1 rounded text-xs font-medium">Preview</div>
+        <article className='card-hover overflow-hidden rounded-[1.5rem] surface'>
+            <div className='h-44 bg-gradient-to-br from-blue-600 via-cyan-500 to-violet-600 p-5 text-white'>
+                <div className='inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]'>Trending</div>
+                <div className='mt-12 text-xl font-bold'>{title}</div>
+                <div className='mt-2 text-sm opacity-80'>{author}</div>
             </div>
-            <h3 className="font-semibold text-lg">{title}</h3>
-            <p className="text-sm muted mt-1">{author}</p>
-            <div className="mt-3 flex items-center justify-between">
-                <div className="text-sm muted">4.8 ★ (1.2k)</div>
-                <div className="text-sm font-semibold">$49</div>
+            <div className='space-y-4 p-5'>
+                <div className='flex items-center justify-between text-sm'>
+                    <span className='muted'>4.9 rating</span>
+                    <span className='font-semibold text-slate-950 dark:text-white'>$49</span>
+                </div>
+                <div className='h-2 rounded-full bg-slate-200 dark:bg-slate-700'>
+                    <div className='h-2 w-[78%] rounded-full bg-gradient-to-r from-blue-500 to-cyan-400' />
+                </div>
             </div>
         </article>
     )
