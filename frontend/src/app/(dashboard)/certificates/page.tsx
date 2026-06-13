@@ -1,10 +1,9 @@
 "use client"
 import React from 'react'
-import DashboardLayout from '../../components/layouts/DashboardLayout'
 
 export default function CertificatesPage() {
     return (
-        <DashboardLayout title="Certificates" breadcrumbs={[{ label: 'Certificates' }]}>
+        <>
             <div className="p-6 md:p-8">
                 <section>
                     <div className="mb-6 flex items-center justify-between">
@@ -19,6 +18,6 @@ export default function CertificatesPage() {
                     </div>
                 </section>
             </div>
-        </DashboardLayout>
+        </>
     )
 }

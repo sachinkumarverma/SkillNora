@@ -1,17 +1,10 @@
 "use client"
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import DashboardLayout from './../layouts/DashboardLayout'
 
 export default function InstructorCourseBuilder() {
     return (
-        <DashboardLayout 
-            title="Course Builder" 
-            breadcrumbs={[
-                { label: 'Instructor', href: '/instructor' },
-                { label: 'Course Builder' }
-            ]}
-        >
+        <>
             <div className="p-6 md:p-8">
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl space-y-6">
                     
@@ -54,6 +47,6 @@ export default function InstructorCourseBuilder() {
                     </div>
                 </motion.div>
             </div>
-        </DashboardLayout>
+        </>
     )
 }

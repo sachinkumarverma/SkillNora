@@ -1,7 +1,6 @@
 "use client"
 import React from 'react'
 import Link from 'next/link'
-import DashboardLayout from '../../components/layouts/DashboardLayout'
 
 const stats = [
     { label: 'Published courses', value: '8' },
@@ -12,7 +11,7 @@ const stats = [
 
 export default function InstructorPage() {
     return (
-        <DashboardLayout title="Instructor Studio" breadcrumbs={[{ label: 'Instructor Studio' }]}>
+        <>
             <div className='p-6 md:p-8 space-y-6'>
                 <section className='rounded-[2rem] border border-slate-200 bg-white p-6 md:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
                     <div className='flex flex-col gap-4 md:flex-row md:items-end md:justify-between'>
@@ -63,6 +62,6 @@ export default function InstructorPage() {
                     </div>
                 </section>
             </div>
-        </DashboardLayout>
+        </>
     )
 }

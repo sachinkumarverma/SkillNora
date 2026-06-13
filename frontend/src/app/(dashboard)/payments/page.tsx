@@ -1,7 +1,6 @@
 "use client"
 import React, { useState } from 'react'
-import api from '../../lib/api'
-import DashboardLayout from '../../components/layouts/DashboardLayout'
+import api from '../../../lib/api'
 
 export default function PaymentsPage() {
     const [amount, setAmount] = useState('49')
@@ -33,7 +32,7 @@ export default function PaymentsPage() {
     }
 
     return (
-        <DashboardLayout title="Payments" breadcrumbs={[{ label: 'Payments' }]}>
+        <>
             <div className="p-6 md:p-8 max-w-3xl mx-auto">
                 <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Payments (Dev Mode)</h2>
@@ -54,6 +53,6 @@ export default function PaymentsPage() {
                     )}
                 </div>
             </div>
-        </DashboardLayout>
+        </>
     )
 }

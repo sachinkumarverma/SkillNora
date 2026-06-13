@@ -1,7 +1,6 @@
 "use client"
 import React from 'react'
 import { motion } from 'framer-motion'
-import DashboardLayout from './../layouts/DashboardLayout'
 
 export default function AdminApprovalsDashboard() {
     const pendingApprovals = [
@@ -13,13 +12,7 @@ export default function AdminApprovalsDashboard() {
     ]
 
     return (
-        <DashboardLayout 
-            title="Approvals" 
-            breadcrumbs={[
-                { label: 'Admin', href: '/admin' },
-                { label: 'Approvals' }
-            ]}
-        >
+        <>
             <div className="p-6 md:p-8">
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                     
@@ -90,6 +83,6 @@ export default function AdminApprovalsDashboard() {
                     </div>
                 </motion.div>
             </div>
-        </DashboardLayout>
+        </>
     )
 }
