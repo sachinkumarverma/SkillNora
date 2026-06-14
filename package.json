@@ -1,32 +1,14 @@
 {
   "name": "skillnora",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "engines": {
-    "node": ">=24"
-  },
   "scripts": {
     "frontend": "npm run dev --prefix frontend",
     "backend": "npm run dev --prefix backend",
-    "dev": "next dev",
-    "dev:api": "npm run dev --prefix services/api",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend"
   },
-  "dependencies": {
-    "next": "15.0.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "typescript": "5.2.2",
-    "tailwindcss": "4.4.0",
-    "postcss": "8.4.23",
-    "autoprefixer": "10.4.13",
-    "@supabase/supabase-js": "2.12.0",
-    "framer-motion": "10.12.16",
-    "clsx": "1.2.1",
-    "razorpay": "2.3.0",
-    "concurrently": "8.2.0"
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

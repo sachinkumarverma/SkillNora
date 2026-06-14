@@ -6,10 +6,26 @@ import { createClient } from '@supabase/supabase-js'
 import Razorpay from 'razorpay'
 import crypto from 'crypto'
 
-dotenv.config({ path: '../../.env' })
+dotenv.config({ path: '../.env' })
 
 const app = express()
-app.use(cors())
+
+const allowedOrigins = [
+    'http://localhost:7000',
+    process.env.FRONTEND_URL,
+    'https://skillnora.vercel.app'
+].filter(Boolean);
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}))
 app.use(express.json({ limit: '5mb' }))
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
