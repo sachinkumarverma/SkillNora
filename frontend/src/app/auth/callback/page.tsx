@@ -8,7 +8,7 @@ export default function AuthCallback() {
     useEffect(() => {
         let mounted = true
         
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: authListener } = supabase.auth.onAuthStateChange((event: any, session: any) => {
             if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && mounted) {
                 router.replace('/dashboard')
             }
