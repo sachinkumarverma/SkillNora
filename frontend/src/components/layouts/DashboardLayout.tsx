@@ -52,8 +52,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }, [])
 
     useEffect(() => {
-        if (!loading && !user) router.replace('/auth')
-    }, [loading, user, router])
+        if (!loading && !user) {
+            const protectedPaths = ['/wishlist', '/certificates', '/settings', '/admin', '/instructor']
+            const isProtected = protectedPaths.some(p => pathname.startsWith(p))
+            const isPublicCertificate = pathname.match(/^\/certificates\/[^/]+$/)
+            
+            if (isProtected && !isPublicCertificate) {
+                router.replace('/auth')
+            }
+        }
+    }, [loading, user, pathname, router])
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -65,7 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
-    if (loading || !user) return (
+    if (loading) return (
         <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
         </div>
@@ -73,7 +81,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     async function signOut() {
         await supabase.auth.signOut()
-        router.push('/')
+        const protectedPaths = ['/wishlist', '/certificates', '/settings', '/admin', '/instructor']
+        if (protectedPaths.some(p => pathname.startsWith(p))) {
+            router.push('/dashboard')
+        }
     }
 
     function toggleTheme() {
@@ -83,12 +94,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         localStorage.setItem('theme', next ? 'dark' : 'light')
     }
 
-    const initials = (user.email || 'SN').slice(0, 2).toUpperCase()
+    const initials = user ? (user.email || 'SN').slice(0, 2).toUpperCase() : 'SN'
 
     const sidebarItemsByRole = {
         student: [
             ['/dashboard', 'Dashboard', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'], 
             ['/courses', 'My Courses', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'], 
+            ['/statistics', 'Statistics', 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z'],
             ['/wishlist', 'Wishlist', 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'], 
             ['/certificates', 'Certificates', 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'], 
             ['/settings', 'Account Details', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
@@ -107,7 +119,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ],
     } as const
 
-    const sidebarItems = sidebarItemsByRole[role as keyof typeof sidebarItemsByRole] || sidebarItemsByRole.student
+    let sidebarItems = sidebarItemsByRole[role as keyof typeof sidebarItemsByRole] || sidebarItemsByRole.student
+    if (!user) {
+        sidebarItems = sidebarItems.filter(item => !['/wishlist', '/certificates', '/settings'].includes(item[0])) as any
+    }
 
     return (
         <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans fixed inset-0 z-50">
@@ -132,20 +147,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-slate-100 dark:border-slate-800/50 relative overflow-hidden">
-                    <div className="flex items-center gap-3 relative z-10">
-                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 ring-2 ring-white dark:bg-slate-700 dark:ring-slate-900 overflow-hidden shadow-sm">
-                            {avatarUrl ? <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" /> : <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{initials}</span>}
-                            <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 dark:border-slate-900"></div>
-                        </div>
-                        {sidebarOpen && (
-                            <div className="min-w-0 overflow-hidden">
-                                <div className="truncate text-sm font-bold text-slate-900 dark:text-white capitalize">{user.user_metadata?.full_name || user.email?.split('@')[0]}</div>
-                                <div className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-400">{role}</div>
+                {user && (
+                    <div className="p-4 border-t border-slate-100 dark:border-slate-800/50 relative overflow-hidden">
+                        <div className="flex items-center gap-3 relative z-10">
+                            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 ring-2 ring-white dark:bg-slate-700 dark:ring-slate-900 overflow-hidden shadow-sm">
+                                {avatarUrl ? <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" /> : <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{initials}</span>}
+                                <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 dark:border-slate-900"></div>
                             </div>
-                        )}
+                            {sidebarOpen && (
+                                <div className="min-w-0 overflow-hidden">
+                                    <div className="truncate text-sm font-bold text-slate-900 dark:text-white capitalize">{user.user_metadata?.full_name || user.email?.split('@')[0]}</div>
+                                    <div className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-400">{role}</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </aside>
 
             {/* Main Area */}
@@ -186,32 +203,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             )}
                         </button>
 
-                        <div className="relative" ref={dropdownRef}>
-                            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3 transition hover:bg-slate-100 sm:flex dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700">
-                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-sm overflow-hidden">
-                                    {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : initials}
-                                </div>
-                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 capitalize">{user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0]}</span>
-                                <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </button>
-
-                            {dropdownOpen && (
-                                <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800 z-50">
-                                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 mb-2">
-                                        <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user.email}</p>
-                                        <p className="text-xs font-medium text-slate-500 capitalize mt-1">Role: {role}</p>
+                        {user ? (
+                            <div className="relative" ref={dropdownRef}>
+                                <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3 transition hover:bg-slate-100 sm:flex dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-sm overflow-hidden">
+                                        {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : initials}
                                     </div>
-                                    <Link href="/settings" onClick={() => setDropdownOpen(false)} className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700/50">
-                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                        Profile Settings
-                                    </Link>
-                                    <button onClick={signOut} className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
-                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                                        Sign Out
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 capitalize">{user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0]}</span>
+                                    <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+
+                                {dropdownOpen && (
+                                    <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800 z-50">
+                                        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 mb-2">
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user.email}</p>
+                                            <p className="text-xs font-medium text-slate-500 capitalize mt-1">Role: {role}</p>
+                                        </div>
+                                        <Link href="/settings" onClick={() => setDropdownOpen(false)} className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700/50">
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                            Profile Settings
+                                        </Link>
+                                        <button onClick={signOut} className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link href="/auth" className="flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
+                                Sign In
+                            </Link>
+                        )}
                     </div>
                 </header>
 

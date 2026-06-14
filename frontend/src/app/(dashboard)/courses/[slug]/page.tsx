@@ -2,11 +2,27 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../../../lib/api'
 import { trendingCourses } from '../../../../lib/dummyData'
+import useUser from '../../../../lib/useUser'
+import { useRouter } from 'next/navigation'
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
     const [course, setCourse] = useState<any | null>(null)
     const [loading, setLoading] = useState(true)
+    const { user } = useUser()
+    const router = useRouter()
+
+    const handleEnroll = () => {
+        if (!user) {
+            router.push('/auth')
+            return
+        }
+        router.push(`/courses/${slug}/checkout`)
+    }
+
+    const handlePreview = () => {
+        router.push(`/courses/${slug}/preview`)
+    }
 
     useEffect(() => {
         if (!slug) return
@@ -83,8 +99,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <button className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm">Enroll Now</button>
-                                <button className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">Preview Course</button>
+                                <button onClick={handleEnroll} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm transform transition active:scale-95">Enroll Now</button>
+                                <button onClick={handlePreview} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm transform transition active:scale-95">Preview Course</button>
                             </div>
                         </div>
                     </div>
@@ -130,7 +146,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             <div className="text-3xl font-black text-slate-900 dark:text-white mb-6">
                                 {course.price || 'Free'}
                             </div>
-                            <button className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm mb-3">
+                            <button onClick={handleEnroll} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm mb-3">
                                 Buy Now
                             </button>
                             <p className="text-center text-xs text-slate-500 mb-6">30-Day Money-Back Guarantee</p>

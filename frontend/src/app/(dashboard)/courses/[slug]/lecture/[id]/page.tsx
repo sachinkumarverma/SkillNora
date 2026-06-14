@@ -3,11 +3,17 @@ import React, { useEffect, useState } from 'react'
 import api from '../../../../../../lib/api'
 import VideoPlayer from '../../../../../../components/VideoPlayer'
 import { trendingCourses } from '../../../../../../lib/dummyData'
+import useUser from '../../../../../../lib/useUser'
 
 export default function LecturePage({ params }: { params: Promise<{ slug: string, id: string }> }) {
     const { slug, id } = React.use(params)
+    const { user } = useUser()
     const [lecture, setLecture] = useState<any | null>(null)
     const [loading, setLoading] = useState(true)
+    const [certUnlocked, setCertUnlocked] = useState(false)
+    const [timeElapsed, setTimeElapsed] = useState(false)
+    const [videoCompleted, setVideoCompleted] = useState(false)
+    const [courseInfo, setCourseInfo] = useState<{title: string, slug: string} | null>(null)
 
     useEffect(() => {
         if (!id || !slug) return
@@ -17,6 +23,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             const l = (course.lectures || []).find((x: any) => String(x.id) === String(id))
             if (mounted) {
                 setLecture(l ?? null)
+                setCourseInfo({ title: course.title, slug })
                 setLoading(false)
             }
         }).catch(() => {
@@ -24,6 +31,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                 // Fallback to dummy data
                 const course = trendingCourses.find(c => c.slug === slug)
                 if (course) {
+                    setCourseInfo({ title: course.title, slug })
                     const l = course.lectures?.find(x => String(x.id) === String(id))
                     if (l) {
                         setLecture(l)
@@ -34,6 +42,41 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         })
         return () => { mounted = false }
     }, [slug, id])
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setTimeElapsed(true)
+        }, 120000)
+        return () => clearTimeout(timer)
+    }, [])
+
+    useEffect(() => {
+        if (!courseInfo || !lecture) return
+        
+        // Check if already certified
+        const certs = JSON.parse(localStorage.getItem('skillnora_certificates') || '[]')
+        if (certs.find((c: any) => c.courseSlug === courseInfo.slug)) {
+            setCertUnlocked(true)
+            return
+        }
+
+        // Grant certificate after 2 minutes AND video completion
+        if (timeElapsed && videoCompleted) {
+            setCertUnlocked(true)
+            const currentCerts = JSON.parse(localStorage.getItem('skillnora_certificates') || '[]')
+            if (!currentCerts.find((c: any) => c.courseSlug === courseInfo.slug)) {
+                const newCert = { 
+                    id: crypto.randomUUID(),
+                    courseSlug: courseInfo.slug, 
+                    courseTitle: courseInfo.title, 
+                    studentName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Skillnora Student',
+                    date: new Date().toISOString() 
+                }
+                currentCerts.push(newCert)
+                localStorage.setItem('skillnora_certificates', JSON.stringify(currentCerts))
+            }
+        }
+    }, [courseInfo, lecture, timeElapsed, videoCompleted])
 
     if (loading) return (
         <div className="flex h-[60vh] w-full items-center justify-center">
@@ -56,10 +99,18 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             <div className='grid grid-cols-1 gap-8 lg:grid-cols-3'>
                 <main className='lg:col-span-2'>
                     <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
-                        <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
-                            <span className="font-bold text-blue-600">Lecture {id}</span>
-                            <span>•</span>
-                            <span>{lecture.duration || 'Video'}</span>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                                <span className="font-bold text-blue-600">Lecture {id}</span>
+                                <span>•</span>
+                                <span>{lecture.duration || 'Video'}</span>
+                            </div>
+                            {certUnlocked && (
+                                <a href="/certificates" className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-bold animate-pulse hover:bg-green-200 transition">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    Certificate Unlocked!
+                                </a>
+                            )}
                         </div>
                         <h1 className='text-3xl font-serif font-bold text-slate-900 dark:text-white mb-6'>{lecture.title}</h1>
                         
@@ -80,14 +131,30 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     </div>
 
                     <div className='rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">About this lecture</h2>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">About this lecture</h2>
+                            {!certUnlocked && (
+                                <button 
+                                    onClick={() => setVideoCompleted(true)} 
+                                    disabled={videoCompleted}
+                                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${videoCompleted ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'}`}
+                                >
+                                    {videoCompleted ? '✓ Marked as Complete' : 'Mark as Complete'}
+                                </button>
+                            )}
+                        </div>
                         <div className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                             {lecture.description || 'Watch this comprehensive lecture to master the concepts presented. Follow along with the code and practice to solidify your understanding.'}
                         </div>
+                        {!certUnlocked && videoCompleted && !timeElapsed && (
+                            <div className="mt-4 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                Note: You must watch the video for at least 2 minutes to unlock the certificate.
+                            </div>
+                        )}
                     </div>
                 </main>
                 <aside>
-                    <div className='p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 sticky top-24'>
+                    <div className='p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800'>
                         <h3 className='font-bold text-lg text-slate-900 dark:text-white mb-4'>Resources</h3>
                         <ul className='space-y-3 text-sm'>
                             <li>

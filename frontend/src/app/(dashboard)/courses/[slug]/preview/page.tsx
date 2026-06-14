@@ -1,0 +1,120 @@
+"use client"
+import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import api from '../../../../../lib/api'
+import { trendingCourses } from '../../../../../lib/dummyData'
+
+export default function PreviewPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = React.use(params)
+    const router = useRouter()
+    const [course, setCourse] = useState<any | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        let mounted = true
+        api.api(`/api/courses/${slug}`)
+            .then((d: any) => { 
+                if (mounted) {
+                    setCourse(d.data ?? d)
+                    setLoading(false)
+                }
+            })
+            .catch(() => { 
+                if (mounted) {
+                    const found = trendingCourses.find(c => c.slug === slug)
+                    if (found) setCourse(found)
+                    setLoading(false)
+                }
+            })
+            
+        return () => { mounted = false }
+    }, [slug])
+
+    if (loading) return (
+        <div className="flex h-[60vh] w-full items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+        </div>
+    )
+
+    if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
+
+    return (
+        <div className="max-w-5xl mx-auto px-6 py-12">
+            <button onClick={() => router.back()} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                Back to Course
+            </button>
+
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
+                {course.image && (
+                    <div className="aspect-[21/9] w-full relative">
+                        <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
+                            <h1 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">{course.title}</h1>
+                            <p className="text-lg text-slate-200 max-w-3xl">{course.description || 'Master the concepts and skills you need to advance your career in this comprehensive guide.'}</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="md:col-span-2 space-y-8">
+                    <section className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Why Choose This Course?</h2>
+                        <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300">
+                            <p>This course is meticulously designed for learners who want actionable, practical, and in-depth knowledge. Whether you are looking to upskill for a promotion, transition into a new career, or simply expand your horizons, this program provides the foundation and advanced techniques you need.</p>
+                            <p className="mt-4">You will get hands-on experience, guided projects, and insights from industry experts. Every module is structured to build upon the last, ensuring a smooth and comprehensive learning curve.</p>
+                        </div>
+                    </section>
+
+                    <section className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">What You Will Learn</h2>
+                        <ul className="grid sm:grid-cols-2 gap-4">
+                            {[
+                                "Master the core fundamentals and advanced concepts",
+                                "Build real-world projects to add to your portfolio",
+                                "Learn best practices and industry standards",
+                                "Gain problem-solving skills for complex scenarios",
+                                "Understand the architecture and underlying principles",
+                                "Access exclusive resources and reference materials"
+                            ].map((feature, i) => (
+                                <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300">
+                                    <svg className="w-5 h-5 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                    <span>{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                </div>
+
+                <div className="md:col-span-1 space-y-6">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 className="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-widest text-xs">Course Features</h3>
+                        <div className="space-y-4 text-sm">
+                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span>{course.lectures?.length * 2 || 10} hours of on-demand video</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                <span>14 downloadable resources</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+                                <span>Full lifetime access</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                <span>Access on mobile and TV</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                                <span>Certificate of completion</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

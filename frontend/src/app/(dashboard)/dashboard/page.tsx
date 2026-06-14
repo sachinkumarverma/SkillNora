@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '../../../lib/api'
+import useUser from '../../../lib/useUser'
 
 import { trendingCourses } from '../../../lib/dummyData'
 import CourseCarousel from '../../../components/CourseCarousel'
@@ -9,6 +10,7 @@ import HeroCarousel from '../../../components/HeroCarousel'
 
 export default function DashboardPage() {
     const router = useRouter()
+    const { user } = useUser()
     const [courses, setCourses] = useState<any[]>([])
     const [loadingCourses, setLoadingCourses] = useState(true)
 
@@ -54,6 +56,63 @@ export default function DashboardPage() {
                         <div className="text-xl font-black font-sans flex items-center gap-2">DeepLearning.AI</div>
                     </div>
                 </section>
+
+                {/* Logged-in User Specific Sections */}
+                {user && (
+                    <div className="space-y-12 mb-12">
+                        {/* Statistics Section */}
+                        <section>
+                            <div className="flex justify-between items-end mb-6">
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-serif">Your Learning Statistics</h2>
+                                <a href="/statistics" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
+                                    See full statistics <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                </a>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+                                    <div className="text-3xl font-black text-blue-600 dark:text-blue-400 mb-1">24.5</div>
+                                    <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">Hours Learned</div>
+                                </div>
+                                <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-2xl border border-purple-100 dark:border-purple-800/30">
+                                    <div className="text-3xl font-black text-purple-600 dark:text-purple-400 mb-1">3</div>
+                                    <div className="text-sm font-semibold text-purple-800 dark:text-purple-300">Courses in Progress</div>
+                                </div>
+                                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
+                                    <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mb-1">2</div>
+                                    <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Certificates Earned</div>
+                                </div>
+                                <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-2xl border border-amber-100 dark:border-amber-800/30">
+                                    <div className="text-3xl font-black text-amber-600 dark:text-amber-400 mb-1">12</div>
+                                    <div className="text-sm font-semibold text-amber-800 dark:text-amber-300">Day Streak!</div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Continue Watching */}
+                        <section>
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Continue Watching</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {displayCourses.slice(0, 3).map((course, idx) => (
+                                    <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
+                                        <div className="w-24 h-24 shrink-0 rounded-xl bg-slate-100 overflow-hidden relative">
+                                            <img src={course.image_url || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                <svg className="w-8 h-8 text-white opacity-80" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 flex flex-col justify-center">
+                                            <h3 className="font-bold text-slate-900 dark:text-white line-clamp-2 mb-2 text-sm">{course.title}</h3>
+                                            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mb-1 overflow-hidden">
+                                                <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${(idx + 1) * 25}%` }}></div>
+                                            </div>
+                                            <div className="text-xs text-slate-500 font-semibold">{((idx + 1) * 25)}% complete</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    </div>
+                )}
 
                 {/* Carousels Section */}
                 <div className="space-y-4">

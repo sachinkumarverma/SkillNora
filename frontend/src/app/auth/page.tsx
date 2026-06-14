@@ -1,7 +1,7 @@
 "use client"
 import React, { useState } from 'react'
 import supabase from '../../lib/supabaseClient'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 type Mode = 'signin' | 'signup' | 'magic' | 'reset'
 
@@ -22,6 +22,7 @@ export default function AuthPage() {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
     const [mode, setMode] = useState<Mode>('signin')
+    const router = useRouter()
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -37,7 +38,11 @@ export default function AuthPage() {
                 setMessage(error ? error.message : 'Signed in successfully. Redirecting to your dashboard...')
             } else if (mode === 'magic') {
                 const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } })
-                setMessage(error ? error.message : 'Magic link sent. Check your email and open the link to sign in.')
+                if (error?.message?.toLowerCase().includes("rate limit")) {
+                    setMessage("You can only request one magic link per minute. Please check your inbox or wait a bit.")
+                } else {
+                    setMessage(error ? error.message : 'Magic link sent. Check your email and open the link to sign in.')
+                }
             } else {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/update-password` })
                 setMessage(error ? error.message : 'Password reset email sent. Open the link to set a new password.')
@@ -76,13 +81,28 @@ export default function AuthPage() {
             <div className="fixed inset-0 pointer-events-none grid-pattern opacity-[0.35]" />
             <div className="relative z-10 w-full grid gap-6 lg:grid-cols-[1fr_0.95fr]">
                 <section className='surface rounded-[2rem] p-6 md:p-8'>
-                    <div className='inline-flex rounded-full bg-blue-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-blue-700 dark:text-blue-200'>Authentication</div>
+                    <div className="flex items-center gap-3 mb-6">
+                        <img src="/logo.png" alt="Skillnora" className="h-10 w-10 object-contain" />
+                        <div className='inline-flex rounded-full bg-blue-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-blue-700 dark:text-blue-200'>Authentication</div>
+                    </div>
                     <h1 className='mt-5 text-4xl font-black tracking-tight text-slate-950 dark:text-white'>{heading}</h1>
                     <p className='mt-4 max-w-2xl text-base leading-7 muted'>{description}</p>
-                    <div className='mt-8 rounded-[1.5rem] bg-gradient-to-br from-blue-600 via-cyan-500 to-violet-600 p-6 text-white'>
-                        <div className='text-sm font-semibold uppercase tracking-[0.25em] opacity-80'>Premium access</div>
-                        <div className='mt-2 text-2xl font-bold'>Beautiful login, clean account recovery, and secure role-based access.</div>
-                        <p className='mt-3 max-w-xl text-sm leading-6 opacity-90'>Magic link and password reset are both handled through Supabase email auth, while Google OAuth stays available as the faster sign-in path.</p>
+                    <div className='mt-8 rounded-[1.5rem] bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-600 p-8 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden'>
+                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                        <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                        <div className='text-xs font-bold uppercase tracking-[0.25em] opacity-80 mb-3 relative z-10'>Premium access</div>
+                        <div className='text-3xl font-black leading-tight relative z-10'>Unlock your learning potential.</div>
+                        <p className='mt-4 max-w-xl text-sm leading-relaxed opacity-90 relative z-10'>Sign in to access your wishlist, track certificates, and enroll in our world-class courses.</p>
+                        <div className="mt-8 flex items-center gap-3 relative z-10">
+                            <div className="flex -space-x-2">
+                                {[1,2,3,4].map(i => (
+                                    <div key={i} className="w-8 h-8 rounded-full border-2 border-indigo-500 bg-slate-200 overflow-hidden">
+                                        <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="user" className="w-full h-full object-cover" />
+                                    </div>
+                                ))}
+                            </div>
+                            <span className="text-xs font-semibold opacity-90">Join 10,000+ learners</span>
+                        </div>
                     </div>
                 </section>
 
@@ -94,7 +114,7 @@ export default function AuthPage() {
                             ['magic', 'Magic link'],
                             ['reset', 'Forgot password'],
                         ].map(([value, label]) => (
-                            <button key={value} type='button' onClick={() => setMode(value as Mode)} className={`btn px-4 py-2 ${mode === value ? 'btn-primary' : 'btn-outline'}`}>
+                            <button key={value} type='button' onClick={() => setMode(value as Mode)} className={`btn px-4 py-2 transform transition hover:scale-[1.02] active:scale-95 ${mode === value ? 'btn-primary' : 'btn-outline'}`}>
                                 {label}
                             </button>
                         ))}
@@ -113,17 +133,17 @@ export default function AuthPage() {
                             </div>
                         )}
 
-                        <button disabled={loading} className='btn btn-primary w-full py-3'>
+                        <button disabled={loading} className='btn btn-primary w-full py-3 transform transition hover:scale-[1.02] active:scale-95'>
                             {mode === 'signup' ? 'Create account' : mode === 'magic' ? 'Send magic link' : mode === 'reset' ? 'Send reset email' : 'Sign in'}
                         </button>
                     </form>
 
                     <div className='mt-4 grid gap-3 sm:grid-cols-2'>
-                        <button type='button' onClick={signInWithGoogle} className='btn btn-outline py-3'>
+                        <button type='button' onClick={signInWithGoogle} className='btn btn-outline py-3 transform transition hover:scale-[1.02] active:scale-95'>
                             <GoogleIcon />
                             Continue with Google
                         </button>
-                        <button type='button' onClick={() => setMode('magic')} className='btn btn-outline py-3'>Use magic link</button>
+                        <button type='button' onClick={() => setMode('magic')} className='btn btn-outline py-3 transform transition hover:scale-[1.02] active:scale-95'>Use magic link</button>
                     </div>
 
                     <div className='mt-6 flex flex-wrap items-center justify-between gap-3 text-sm'>
@@ -133,11 +153,14 @@ export default function AuthPage() {
                         <button type='button' onClick={() => setMode('reset')} className='font-medium text-blue-600 dark:text-blue-300'>Forgot password?</button>
                     </div>
 
-                    <div className='mt-4 flex justify-end'>
-                        <Link href='/' className='text-sm muted'>Back home</Link>
+                    <div className='mt-8 flex justify-center'>
+                        <button type='button' onClick={() => router.push('/dashboard')} className='text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2 dark:text-slate-400 dark:hover:text-white'>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                            Go to Dashboard
+                        </button>
                     </div>
 
-                    {message && <div className='mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'>{message}</div>}
+                    {message && <div className='mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 shadow-sm'>{message}</div>}
                 </section>
             </div>
         </main>
