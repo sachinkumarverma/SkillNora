@@ -14,6 +14,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [timeElapsed, setTimeElapsed] = useState(false)
     const [videoCompleted, setVideoCompleted] = useState(false)
     const [courseInfo, setCourseInfo] = useState<{title: string, slug: string} | null>(null)
+    const [noteText, setNoteText] = useState("")
+    const [noteSaved, setNoteSaved] = useState(false)
 
     useEffect(() => {
         if (!id || !slug) return
@@ -42,6 +44,41 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         })
         return () => { mounted = false }
     }, [slug, id])
+
+    useEffect(() => {
+        if (!slug || !id) return
+        const notes = JSON.parse(localStorage.getItem('skillnora_notes') || '[]')
+        const existingNote = notes.find((n: any) => n.courseSlug === slug && String(n.lectureId) === String(id))
+        if (existingNote) {
+            setNoteText(existingNote.text)
+        }
+    }, [slug, id])
+
+    const saveNote = () => {
+        if (!courseInfo || !lecture) return
+        const notes = JSON.parse(localStorage.getItem('skillnora_notes') || '[]')
+        const noteIndex = notes.findIndex((n: any) => n.courseSlug === slug && String(n.lectureId) === String(id))
+        
+        const noteData = {
+            id: crypto.randomUUID(),
+            courseSlug: slug,
+            lectureId: id,
+            courseTitle: courseInfo.title,
+            lectureTitle: lecture.title,
+            text: noteText,
+            updatedAt: new Date().toISOString()
+        }
+
+        if (noteIndex >= 0) {
+            notes[noteIndex] = noteData
+        } else {
+            notes.push(noteData)
+        }
+        
+        localStorage.setItem('skillnora_notes', JSON.stringify(notes))
+        setNoteSaved(true)
+        setTimeout(() => setNoteSaved(false), 3000)
+    }
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -130,27 +167,32 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                         </div>
                     </div>
 
-                    <div className='rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">About this lecture</h2>
-                            {!certUnlocked && (
-                                <button 
-                                    onClick={() => setVideoCompleted(true)} 
-                                    disabled={videoCompleted}
-                                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${videoCompleted ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'}`}
-                                >
-                                    {videoCompleted ? '✓ Marked as Complete' : 'Mark as Complete'}
-                                </button>
-                            )}
+
+                    
+                    {/* Notes Section */}
+                    <div className='mt-6 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
+                                My Notes
+                            </h2>
+                            {noteSaved && <span className="text-xs font-bold text-green-600 dark:text-green-400 animate-pulse">✓ Saved successfully</span>}
                         </div>
-                        <div className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                            {lecture.description || 'Watch this comprehensive lecture to master the concepts presented. Follow along with the code and practice to solidify your understanding.'}
+                        <textarea
+                            value={noteText}
+                            onChange={(e) => setNoteText(e.target.value)}
+                            placeholder="Type your notes for this lecture here. They will be saved automatically..."
+                            className="w-full h-40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-colors custom-scrollbar resize-y text-slate-700 dark:text-slate-300"
+                        ></textarea>
+                        <div className="mt-4 flex justify-end">
+                            <button 
+                                onClick={saveNote}
+                                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                                Save Notes
+                            </button>
                         </div>
-                        {!certUnlocked && videoCompleted && !timeElapsed && (
-                            <div className="mt-4 text-xs text-amber-600 dark:text-amber-400 font-medium">
-                                Note: You must watch the video for at least 2 minutes to unlock the certificate.
-                            </div>
-                        )}
                     </div>
                 </main>
                 <aside>
@@ -182,6 +224,29 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                 </a>
                             </li>
                         </ul>
+                    </div>
+                    
+                    <div className='mt-6 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
+                        <div className="flex flex-col mb-4 gap-4">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">About this lecture</h2>
+                            {!certUnlocked && (
+                                <button 
+                                    onClick={() => setVideoCompleted(true)} 
+                                    disabled={videoCompleted}
+                                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors w-full ${videoCompleted ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'}`}
+                                >
+                                    {videoCompleted ? '✓ Marked as Complete' : 'Mark as Complete'}
+                                </button>
+                            )}
+                        </div>
+                        <div className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed font-medium">
+                            {lecture.description || 'Watch this comprehensive lecture to master the concepts presented. Follow along with the code and practice to solidify your understanding.'}
+                        </div>
+                        {!certUnlocked && videoCompleted && !timeElapsed && (
+                            <div className="mt-4 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                Note: You must watch the video for at least 2 minutes to unlock the certificate.
+                            </div>
+                        )}
                     </div>
                 </aside>
             </div>

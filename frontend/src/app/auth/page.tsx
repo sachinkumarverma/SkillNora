@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import supabase from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import toast, { Toaster } from 'react-hot-toast'
 
 type Mode = 'signin' | 'signup' | 'magic' | 'reset'
 
@@ -20,35 +21,55 @@ export default function AuthPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
     const [mode, setMode] = useState<Mode>('signin')
     const router = useRouter()
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         setLoading(true)
-        setMessage(null)
 
         try {
             if (mode === 'signup') {
-                const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/dashboard` } })
-                setMessage(error ? error.message : 'Account created. Check your email to confirm your account.')
+                const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/dashboard` } })
+                if (error) {
+                    if (error.message.toLowerCase().includes("already registered")) {
+                        toast.error('An account with this email already exists. Please sign in instead.')
+                    } else {
+                        toast.error(error.message)
+                    }
+                } else if (data?.user?.identities && data.user.identities.length === 0) {
+                    toast.error('An account with this email already exists. Please sign in instead.')
+                } else {
+                    toast.success('Account created. Check your email to confirm your account.')
+                }
             } else if (mode === 'signin') {
                 const { error } = await supabase.auth.signInWithPassword({ email, password })
-                setMessage(error ? error.message : 'Signed in successfully. Redirecting to your dashboard...')
+                if (error) {
+                    if (error.message.toLowerCase().includes("invalid login credentials")) {
+                        toast.error("Invalid email or password. Please try again.")
+                    } else {
+                        toast.error(error.message)
+                    }
+                } else {
+                    toast.success('Signed in successfully. Redirecting to your dashboard...')
+                    router.push('/dashboard')
+                }
             } else if (mode === 'magic') {
                 const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } })
                 if (error?.message?.toLowerCase().includes("rate limit")) {
-                    setMessage("You can only request one magic link per minute. Please check your inbox or wait a bit.")
+                    toast.error("You can only request one magic link per minute. Please check your inbox or wait a bit.")
+                } else if (error) {
+                    toast.error(error.message)
                 } else {
-                    setMessage(error ? error.message : 'Magic link sent. Check your email and open the link to sign in.')
+                    toast.success('Magic link sent. Check your email and open the link to sign in.')
                 }
             } else {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/update-password` })
-                setMessage(error ? error.message : 'Password reset email sent. Open the link to set a new password.')
+                if (error) toast.error(error.message)
+                else toast.success('Password reset email sent. Open the link to set a new password.')
             }
         } catch (err: any) {
-            setMessage(err.message)
+            toast.error(err.message || "An unexpected error occurred.")
         } finally {
             setLoading(false)
         }
@@ -56,12 +77,11 @@ export default function AuthPage() {
 
     async function signInWithGoogle() {
         setLoading(true)
-        setMessage(null)
         try {
             const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/dashboard` } })
-            if (error) setMessage(error.message)
+            if (error) toast.error(error.message)
         } catch (err: any) {
-            setMessage(err.message)
+            toast.error(err.message || "An unexpected error occurred.")
         } finally {
             setLoading(false)
         }
@@ -78,6 +98,7 @@ export default function AuthPage() {
 
     return (
         <main className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+            <Toaster position="top-center" reverseOrder={false} />
             <div className="fixed inset-0 pointer-events-none grid-pattern opacity-[0.35]" />
             <div className="relative z-10 w-full grid gap-6 lg:grid-cols-[1fr_0.95fr]">
                 <section className='surface rounded-[2rem] p-6 md:p-8'>
@@ -86,7 +107,7 @@ export default function AuthPage() {
                         <div className='inline-flex rounded-full bg-blue-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-blue-700 dark:text-blue-200'>Authentication</div>
                     </div>
                     <h1 className='mt-5 text-4xl font-black tracking-tight text-slate-950 dark:text-white'>{heading}</h1>
-                    <p className='mt-4 max-w-2xl text-base leading-7 muted'>{description}</p>
+                    <p className='mt-4 max-w-2xl text-base leading-7 muted min-h-[56px]'>{description}</p>
                     <div className='mt-8 rounded-[1.5rem] bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-600 p-8 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden'>
                         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                         <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
@@ -120,18 +141,20 @@ export default function AuthPage() {
                         ))}
                     </div>
 
-                    <form className='mt-6 space-y-4' onSubmit={handleSubmit}>
-                        <div>
-                            <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Email</label>
-                            <input value={email} onChange={(e) => setEmail(e.target.value)} className='w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='you@domain.com' />
-                        </div>
-
-                        {(mode === 'signin' || mode === 'signup') && (
+                    <form className='mt-6 flex flex-col gap-4' onSubmit={handleSubmit}>
+                        <div className="min-h-[160px] space-y-4">
                             <div>
-                                <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Password</label>
-                                <input value={password} onChange={(e) => setPassword(e.target.value)} type='password' className='w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='Enter your password' />
+                                <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Email</label>
+                                <input value={email} onChange={(e) => setEmail(e.target.value)} className='w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='you@domain.com' />
                             </div>
-                        )}
+
+                            {(mode === 'signin' || mode === 'signup') && (
+                                <div>
+                                    <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Password</label>
+                                    <input value={password} onChange={(e) => setPassword(e.target.value)} type='password' className='w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='Enter your password' />
+                                </div>
+                            )}
+                        </div>
 
                         <button disabled={loading} className='btn btn-primary w-full py-3 transform transition hover:scale-[1.02] active:scale-95'>
                             {mode === 'signup' ? 'Create account' : mode === 'magic' ? 'Send magic link' : mode === 'reset' ? 'Send reset email' : 'Sign in'}
@@ -159,8 +182,6 @@ export default function AuthPage() {
                             Go to Dashboard
                         </button>
                     </div>
-
-                    {message && <div className='mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 shadow-sm'>{message}</div>}
                 </section>
             </div>
         </main>

@@ -1,32 +1,73 @@
 "use client"
-import React, { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import api from '../../../lib/api'
 
 import { trendingCourses } from '../../../lib/dummyData'
 import { useWishlist } from '../../../hooks/useWishlist'
+import useUser from '../../../lib/useUser'
 
-export default function CoursesPage() {
+function CoursesContent() {
     const router = useRouter()
+    const { user } = useUser()
     const { isInWishlist, toggleWishlist } = useWishlist()
-    const [courses, setCourses] = useState<any[]>(trendingCourses) // Use dummy data for now
+    const searchParams = useSearchParams()
+    
+    const [allCourses, setAllCourses] = useState<any[]>([])
+    const [courses, setCourses] = useState<any[]>([])
     const [loadingCourses, setLoadingCourses] = useState(true)
 
+    // Load initial data
     useEffect(() => {
         let mounted = true
         api.api('/api/courses').then((d: any) => { 
             if (mounted) {
                 const apiCourses = Array.isArray(d) ? d : d.data ?? []
-                // Combine api courses and trending courses for robust display
-                if (apiCourses.length > 0) {
-                    setCourses([...apiCourses, ...trendingCourses])
-                }
+                const combined = [...apiCourses, ...trendingCourses]
+                setAllCourses(combined)
             }
-        }).catch(() => { }).finally(() => {
+        }).catch(() => { 
+            if (mounted) setAllCourses(trendingCourses)
+        }).finally(() => {
             if (mounted) setLoadingCourses(false)
         })
         return () => { mounted = false }
     }, [])
+
+    // Apply smart filters
+    useEffect(() => {
+        if (loadingCourses && allCourses.length === 0) return;
+        
+        let filtered = [...allCourses]
+        const search = searchParams.get('search')?.toLowerCase()
+        const category = searchParams.get('category')?.toLowerCase()
+        const role = searchParams.get('role')?.toLowerCase()
+        const skill = searchParams.get('skill')?.toLowerCase()
+
+        if (search) {
+            filtered = filtered.filter(c => 
+                c.title?.toLowerCase().includes(search) ||
+                (c.instructor || c.instructor_name || '').toLowerCase().includes(search) ||
+                (c.category || '').toLowerCase().includes(search) ||
+                (c.role || '').toLowerCase().includes(search) ||
+                (c.skill || '').toLowerCase().includes(search)
+            )
+        }
+        
+        if (category) {
+            filtered = filtered.filter(c => (c.category || '').toLowerCase().includes(category))
+        }
+
+        if (role) {
+            filtered = filtered.filter(c => (c.role || '').toLowerCase().includes(role))
+        }
+
+        if (skill) {
+            filtered = filtered.filter(c => (c.skill || '').toLowerCase().includes(skill))
+        }
+
+        setCourses(filtered)
+    }, [allCourses, loadingCourses, searchParams])
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
@@ -69,18 +110,20 @@ export default function CoursesPage() {
                                         <span className="text-slate-400 dark:text-slate-500 font-medium">({course.reviews || '1,234'})</span>
                                     </div>
                                     
-                                    <div className="font-black text-slate-900 dark:text-white text-lg">
+                                     <div className="font-black text-slate-900 dark:text-white text-lg">
                                         {course.price || '₹1,999.00'}
                                     </div>
                                 </div>
-                                <button 
-                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(course.id); }}
-                                    className={`p-2 rounded-full transition-colors z-10 ${isInWishlist(course.id) ? 'bg-red-50 text-red-500 dark:bg-red-900/20' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-red-400 dark:bg-slate-800 dark:text-slate-500 dark:hover:bg-slate-700'}`}
-                                >
-                                    <svg className="w-5 h-5" fill={isInWishlist(course.id) ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                    </svg>
-                                </button>
+                                {user && (
+                                    <button 
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(course.id); }}
+                                        className={`p-2 rounded-full transition-colors z-10 ${isInWishlist(course.id) ? 'bg-red-50 text-red-500 dark:bg-red-900/20' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-red-400 dark:bg-slate-800 dark:text-slate-500 dark:hover:bg-slate-700'}`}
+                                    >
+                                        <svg className="w-5 h-5" fill={isInWishlist(course.id) ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                    </button>
+                                )}
                             </div>
                             
                             {(course.bestseller || course.price) && (
@@ -99,5 +142,13 @@ export default function CoursesPage() {
                 </div>
             </section>
         </div>
+    )
+}
+
+export default function CoursesPage() {
+    return (
+        <Suspense fallback={<div className="flex h-[60vh] w-full items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div></div>}>
+            <CoursesContent />
+        </Suspense>
     )
 }

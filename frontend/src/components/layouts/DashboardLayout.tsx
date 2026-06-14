@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import useUser from '../../lib/useUser'
 import supabase from '../../lib/supabaseClient'
+import { trendingCourses } from '../../lib/dummyData'
 
 function getRole(user: any) {
     return user?.user_metadata?.role || user?.app_metadata?.role || 'student'
@@ -23,6 +24,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const title = useMemo(() => {
         if (pathname.startsWith('/courses')) return 'Courses'
         if (pathname.startsWith('/enrolled')) return 'Enrolled Courses'
+        if (pathname.startsWith('/coding')) return 'Code Playground'
+        if (pathname.startsWith('/notes')) return 'My Notes'
         if (pathname.startsWith('/wishlist')) return 'Wishlist'
         if (pathname.startsWith('/certificates')) return 'Certificates'
         if (pathname.startsWith('/admin')) return 'Admin Approvals'
@@ -44,6 +47,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const [dark, setDark] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
+    const searchRef = useRef<HTMLDivElement>(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [showSuggestions, setShowSuggestions] = useState(false)
+
+    const suggestions = useMemo(() => {
+        if (!searchQuery.trim()) return []
+        const q = searchQuery.toLowerCase()
+        return trendingCourses.filter(c => 
+            c.title.toLowerCase().includes(q) ||
+            (c.instructor || (c as any).instructor_name || '').toLowerCase().includes(q) ||
+            ((c as any).category || '').toLowerCase().includes(q) ||
+            ((c as any).role || '').toLowerCase().includes(q) ||
+            ((c as any).skill || '').toLowerCase().includes(q)
+        ).slice(0, 5)
+    }, [searchQuery])
+
+    const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && searchQuery.trim()) {
+            setShowSuggestions(false)
+            router.push(`/courses?search=${encodeURIComponent(searchQuery.trim())}`)
+        }
+    }
+
+    useEffect(() => {
+        setSearchQuery('')
+        setShowSuggestions(false)
+    }, [pathname])
 
     useEffect(() => {
         const stored = localStorage.getItem('theme')
@@ -54,7 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     useEffect(() => {
         if (!loading && !user) {
-            const protectedPaths = ['/wishlist', '/certificates', '/settings', '/admin', '/instructor']
+            const protectedPaths = ['/wishlist', '/certificates', '/settings', '/admin', '/instructor', '/enrolled', '/notes', '/statistics', '/coding']
             const isProtected = protectedPaths.some(p => pathname.startsWith(p))
             const isPublicCertificate = pathname.match(/^\/certificates\/[^/]+$/)
             
@@ -69,6 +99,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setDropdownOpen(false)
             }
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false)
+            }
         }
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -82,7 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     async function signOut() {
         await supabase.auth.signOut()
-        const protectedPaths = ['/wishlist', '/certificates', '/settings', '/admin', '/instructor']
+        const protectedPaths = ['/wishlist', '/certificates', '/settings', '/admin', '/instructor', '/enrolled', '/notes', '/statistics', '/coding']
         if (protectedPaths.some(p => pathname.startsWith(p))) {
             router.push('/dashboard')
         }
@@ -102,6 +135,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             ['/dashboard', 'Dashboard', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'], 
             ['/courses', 'Courses', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'], 
             ['/enrolled', 'Enrolled', 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+            ['/coding', 'Coding', 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'],
+            ['/notes', 'Notes', 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
             ['/statistics', 'Statistics', 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z'],
             ['/wishlist', 'Wishlist', 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'], 
             ['/certificates', 'Certificates', 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'], 
@@ -123,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     let sidebarItems = sidebarItemsByRole[role as keyof typeof sidebarItemsByRole] || sidebarItemsByRole.student
     if (!user) {
-        sidebarItems = sidebarItems.filter(item => !['/wishlist', '/certificates', '/settings'].includes(item[0])) as any
+        sidebarItems = sidebarItems.filter(item => !['/wishlist', '/certificates', '/settings', '/enrolled', '/notes', '/statistics', '/coding'].includes(item[0])) as any
     }
 
     return (
@@ -243,9 +278,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="relative hidden md:block">
+                        <div className="relative hidden md:block" ref={searchRef}>
                             <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            <input type="text" placeholder="Global Search..." className="w-64 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-9 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:border-blue-500" />
+                            <input 
+                                type="text" 
+                                value={searchQuery}
+                                onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                                onFocus={() => setShowSuggestions(true)}
+                                onKeyDown={handleSearch}
+                                placeholder="Search courses, categories, roles..." 
+                                className="w-64 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-9 pr-8 text-sm outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:border-blue-500" 
+                            />
+                            {searchQuery && (
+                                <button 
+                                    onClick={() => { setSearchQuery(''); setShowSuggestions(false); }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                >
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            )}
+                            {showSuggestions && searchQuery.trim() && (
+                                <div className="absolute top-full right-0 md:left-0 md:right-auto mt-2 w-[350px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50">
+                                    {suggestions.length > 0 ? (
+                                        <ul>
+                                            {suggestions.map(c => (
+                                                <li key={c.id}>
+                                                    <Link href={`/courses/${c.slug}`} onClick={() => setShowSuggestions(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                                        <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0">
+                                                            <img src={c.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop'} alt="" className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{c.title}</span>
+                                                            <span className="text-xs text-slate-500">{c.instructor || (c as any).instructor_name || 'Expert Instructor'}</span>
+                                                        </div>
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                            <li>
+                                                <button onClick={() => { setShowSuggestions(false); router.push(`/courses?search=${encodeURIComponent(searchQuery.trim())}`); }} className="w-full text-center py-3 text-xs font-bold text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                                                    See all results for "{searchQuery}"
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    ) : (
+                                        <div className="px-4 py-6 text-center text-sm text-slate-500">
+                                            No matching courses found.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                         
                         <button onClick={toggleTheme} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
