@@ -56,7 +56,7 @@ export default function CoursesPage() {
                             </h3>
                             
                             <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium line-clamp-1">
-                                {course.instructor || course.instructor_name || 'Expert Instructor'}
+                                {course.instructor || (course as any).instructor_name || 'Expert Instructor'}
                             </p>
                             
                             <div className="mt-auto flex items-end justify-between">
