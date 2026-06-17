@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import supabase from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { Toaster, toast } from 'sonner'
 
 export default function UpdatePasswordPage() {
     const [password, setPassword] = useState('')
@@ -13,26 +14,33 @@ export default function UpdatePasswordPage() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         if (password !== confirmPassword) {
-            setMessage('Passwords do not match.')
+            toast.error('Passwords do not match.')
             return
         }
 
         setLoading(true)
-        setMessage(null)
         const { error } = await supabase.auth.updateUser({ password })
-        setLoading(false)
 
         if (error) {
-            setMessage(error.message)
+            toast.error(error.message)
+            setLoading(false)
             return
         }
 
-        setMessage('Password updated successfully. Redirecting...')
-        setTimeout(() => router.push('/dashboard'), 1200)
+        await supabase.auth.signOut()
+        toast.success('Password updated successfully. Please sign in with your new password.')
+        setTimeout(() => router.push('/auth'), 1500)
     }
 
     return (
-        <div className='mx-auto max-w-xl surface rounded-[2rem] p-6 md:p-8'>
+        <div className='mx-auto max-w-xl surface rounded-[2rem] p-6 md:p-8 mt-24 relative'>
+            <Toaster position="top-center" richColors />
+            {loading && (
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm rounded-[2rem] transition-all duration-300">
+                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mb-4 shadow-lg"></div>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 animate-pulse">Updating...</p>
+                </div>
+            )}
             <h1 className='text-3xl font-black text-slate-950 dark:text-white'>Set a new password</h1>
             <p className='mt-2 text-sm muted'>Use the link from your reset email to come here, then create a new password.</p>
             <form className='mt-6 space-y-4' onSubmit={handleSubmit}>
@@ -46,7 +54,6 @@ export default function UpdatePasswordPage() {
                 </div>
                 <button disabled={loading} className='btn btn-primary w-full py-3'>Update password</button>
             </form>
-            {message && <div className='mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'>{message}</div>}
         </div>
     )
 }

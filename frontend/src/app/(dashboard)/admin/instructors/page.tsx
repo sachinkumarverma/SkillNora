@@ -1,0 +1,114 @@
+"use client"
+import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+
+const initialInstructors = [
+    { id: '1', name: 'Dr. Sarah Chen', email: 'sarah.c@example.com', courses: 4, students: 1245, revenue: '₹4,50,000', status: 'Approved', joined: 'Jan 10, 2025' },
+    { id: '2', name: 'Michael Ross', email: 'michael.r@example.com', courses: 2, students: 890, revenue: '₹2,10,000', status: 'Approved', joined: 'Feb 15, 2025' },
+    { id: '3', name: 'Elena Rodriguez', email: 'elena.r@example.com', courses: 1, students: 0, revenue: '₹0', status: 'Pending', joined: 'Mar 01, 2026' },
+]
+
+export default function AdminInstructorManagement() {
+    const [instructors, setInstructors] = useState(initialInstructors)
+    const [search, setSearch] = useState('')
+
+    const filtered = instructors.filter(i => i.name.toLowerCase().includes(search.toLowerCase()) || i.email.toLowerCase().includes(search.toLowerCase()))
+
+    return (
+        <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <motion.h1 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight"
+                    >
+                        Instructor Management
+                    </motion.h1>
+                    <motion.p 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-slate-500 dark:text-slate-400 font-medium mt-2"
+                    >
+                        Approve applications and view instructor performance.
+                    </motion.p>
+                </div>
+            </header>
+
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
+            >
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40">
+                    <div className="relative w-full max-w-md">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <input 
+                            type="text" 
+                            placeholder="Search instructors by name or email..." 
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-full py-2 pl-10 pr-4 text-sm font-medium outline-none transition-all"
+                        />
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto min-h-[300px]">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th className="px-6 py-4">Instructor</th>
+                                <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4">Courses</th>
+                                <th className="px-6 py-4">Total Students</th>
+                                <th className="px-6 py-4">Revenue</th>
+                                <th className="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                            {filtered.map(instructor => (
+                                <tr key={instructor.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+                                                {instructor.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-slate-900 dark:text-white">{instructor.name}</div>
+                                                <div className="text-xs text-slate-500">{instructor.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-max gap-1.5 ${
+                                            instructor.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 
+                                            'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
+                                        }`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${instructor.status === 'Approved' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                                            {instructor.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{instructor.courses}</td>
+                                    <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{instructor.students}</td>
+                                    <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{instructor.revenue}</td>
+                                    <td className="px-6 py-4 text-right">
+                                        {instructor.status === 'Pending' ? (
+                                            <div className="flex justify-end gap-2">
+                                                <button className="px-3 py-1 bg-emerald-50 text-emerald-600 font-bold rounded-full hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 transition-colors">Approve</button>
+                                                <button className="px-3 py-1 bg-red-50 text-red-600 font-bold rounded-full hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors">Reject</button>
+                                            </div>
+                                        ) : (
+                                            <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">View Details</button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </motion.div>
+        </div>
+    )
+}

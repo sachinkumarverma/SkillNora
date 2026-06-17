@@ -1,0 +1,111 @@
+"use client"
+import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+
+const initialPayments = [
+    { id: '1', txnId: 'TXN-94821', user: 'Alex Morgan', course: 'AI Engineer Agentic Track', amount: '₹14,999', method: 'Razorpay', status: 'Success', date: 'Jun 17, 2026' },
+    { id: '2', txnId: 'TXN-94822', user: 'Jordan Lee', course: 'Full-Stack Web Bootcamp', amount: '₹9,999', method: 'Razorpay', status: 'Refunded', date: 'Jun 16, 2026' },
+    { id: '3', txnId: 'TXN-94823', user: 'Taylor Smith', course: 'Mastering Figma UI/UX', amount: '₹5,499', method: 'Stripe', status: 'Success', date: 'Jun 16, 2026' },
+    { id: '4', txnId: 'TXN-94824', user: 'Casey Jenkins', course: 'Data Science with Python', amount: '₹11,999', method: 'Razorpay', status: 'Failed', date: 'Jun 15, 2026' },
+]
+
+export default function AdminPaymentsPage() {
+    const [payments, setPayments] = useState(initialPayments)
+    const [search, setSearch] = useState('')
+
+    const filtered = payments.filter(p => p.txnId.toLowerCase().includes(search.toLowerCase()) || p.user.toLowerCase().includes(search.toLowerCase()))
+
+    return (
+        <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <motion.h1 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight"
+                    >
+                        Payments Ledger
+                    </motion.h1>
+                    <motion.p 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-slate-500 dark:text-slate-400 font-medium mt-2"
+                    >
+                        Track revenue, manage refunds, and view Razorpay logs.
+                    </motion.p>
+                </div>
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex gap-3"
+                >
+                    <button className="px-5 py-2.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow-sm text-sm hover:opacity-90 transition-opacity">
+                        Export CSV
+                    </button>
+                </motion.div>
+            </header>
+
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
+            >
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40">
+                    <div className="relative w-full max-w-md">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <input 
+                            type="text" 
+                            placeholder="Search by Transaction ID or User..." 
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-full py-2 pl-10 pr-4 text-sm font-medium outline-none transition-all"
+                        />
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto min-h-[300px]">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th className="px-6 py-4">Transaction ID</th>
+                                <th className="px-6 py-4">User</th>
+                                <th className="px-6 py-4">Course</th>
+                                <th className="px-6 py-4">Amount</th>
+                                <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4">Date</th>
+                                <th className="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                            {filtered.map(p => (
+                                <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                    <td className="px-6 py-4 font-mono font-medium text-slate-600 dark:text-slate-400">{p.txnId}</td>
+                                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{p.user}</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{p.course}</td>
+                                    <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{p.amount}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-max gap-1.5 ${
+                                            p.status === 'Success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 
+                                            p.status === 'Failed' ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20' : 
+                                            'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
+                                        }`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${p.status === 'Success' ? 'bg-emerald-500' : p.status === 'Failed' ? 'bg-red-500' : 'bg-amber-500'}`}></span>
+                                            {p.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-500">{p.date}</td>
+                                    <td className="px-6 py-4 text-right">
+                                        <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">Receipt</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </motion.div>
+        </div>
+    )
+}

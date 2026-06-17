@@ -1,14 +1,15 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import api from '../../../../lib/api'
 import { trendingCourses } from '../../../../lib/dummyData'
 import useUser from '../../../../lib/useUser'
 import { useRouter } from 'next/navigation'
+import supabase from '../../../../lib/supabaseClient'
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
     const [course, setCourse] = useState<any | null>(null)
     const [loading, setLoading] = useState(true)
+    const [imageError, setImageError] = useState(false)
     const { user } = useUser()
     const router = useRouter()
 
@@ -27,17 +28,18 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     useEffect(() => {
         if (!slug) return
         let mounted = true
-        
-        api.api(`/api/courses/${slug}`)
-            .then((d: any) => { 
-                if (mounted) {
-                    setCourse(d.data ?? d)
-                    setLoading(false)
-                }
-            })
-            .catch(() => { 
-                // Fallback to dummy data if API returns 404 (because these are frontend dummy courses)
-                if (mounted) {
+        const fetchCourse = async () => {
+            const { data } = await supabase.from('courses').select('*, instructor:users(full_name), lectures(*)').eq('slug', slug).single()
+            if (mounted) {
+                if (data) {
+                    setCourse({
+                        ...data,
+                        instructor_name: data.instructor?.full_name || 'Instructor',
+                        image: data.thumbnail_url,
+                        price: `₹${data.price}`
+                    })
+                } else {
+                    // Fallback to dummy
                     const found = trendingCourses.find(c => c.slug === slug)
                     if (found) {
                         setCourse({
@@ -45,9 +47,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             instructor_name: found.instructor
                         })
                     }
-                    setLoading(false)
                 }
-            })
+                setLoading(false)
+            }
+        }
+        fetchCourse()
             
         return () => { mounted = false }
     }, [slug])
@@ -72,7 +76,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                 <div className="lg:col-span-2 space-y-8">
                     {/* Course Header */}
                     <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-                        {course.image && (
+                        {course.image && !imageError && (
                             <div className="absolute inset-0 opacity-10 blur-xl pointer-events-none">
                                 <img src={course.image} alt="bg" className="w-full h-full object-cover" />
                             </div>
@@ -80,7 +84,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                         <div className="relative z-10">
                             <div className="text-blue-600 font-bold tracking-wide uppercase text-xs mb-3">{course.category || 'Course'}</div>
                             <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white leading-tight mb-4">{course.title}</h1>
-                            <p className="text-lg text-slate-600 dark:text-slate-300 mb-6 font-medium">{course.description || 'Comprehensive learning material to advance your career and skills.'}</p>
+                            <p className="text-lg text-slate-600 dark:text-slate-300 mb-6 font-medium whitespace-pre-wrap">{course.detailed_overview || course.description || 'Comprehensive learning material to advance your career and skills.'}</p>
                             
                             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-8">
                                 <div className="flex items-center gap-1.5 font-bold">
@@ -137,11 +141,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                 {/* Sidebar */}
                 <div className="lg:col-span-1">
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden sticky top-24">
-                        {course.image && (
-                            <div className="aspect-video w-full">
-                                <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
-                            </div>
-                        )}
+                        <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center">
+                            {course.image && !imageError ? (
+                                <img src={course.image} alt={course.title} onError={() => setImageError(true)} className="w-full h-full object-cover" />
+                            ) : (
+                                <svg className="w-16 h-16 text-slate-300 dark:text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            )}
+                        </div>
                         <div className="p-6">
                             <div className="text-3xl font-black text-slate-900 dark:text-white mb-6">
                                 {course.price || 'Free'}

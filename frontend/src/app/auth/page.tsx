@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import supabase from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import toast, { Toaster } from 'react-hot-toast'
+import { Toaster, toast } from 'sonner'
 
 type Mode = 'signin' | 'signup' | 'magic' | 'reset'
 
@@ -22,6 +22,7 @@ export default function AuthPage() {
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [mode, setMode] = useState<Mode>('signin')
+    const [isInstructor, setIsInstructor] = useState(false)
     const router = useRouter()
 
     async function handleSubmit(e: React.FormEvent) {
@@ -30,7 +31,14 @@ export default function AuthPage() {
 
         try {
             if (mode === 'signup') {
-                const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/dashboard` } })
+                const { data, error } = await supabase.auth.signUp({ 
+                    email, 
+                    password, 
+                    options: { 
+                        emailRedirectTo: `${window.location.origin}/dashboard`,
+                        data: { role: isInstructor ? 'instructor' : 'student' } 
+                    } 
+                })
                 if (error) {
                     if (error.message.toLowerCase().includes("already registered")) {
                         toast.error('An account with this email already exists. Please sign in instead.')
@@ -40,6 +48,10 @@ export default function AuthPage() {
                 } else if (data?.user?.identities && data.user.identities.length === 0) {
                     toast.error('An account with this email already exists. Please sign in instead.')
                 } else {
+                    if (data?.user) {
+                        // Attempt to insert into users table directly (may fail if email confirmation required, but good fallback)
+                        await supabase.from('users').upsert({ id: data.user.id, email: data.user.email, role: isInstructor ? 'instructor' : 'student' })
+                    }
                     toast.success('Account created. Check your email to confirm your account.')
                 }
             } else if (mode === 'signin') {
@@ -98,7 +110,13 @@ export default function AuthPage() {
 
     return (
         <main className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-            <Toaster position="top-center" reverseOrder={false} />
+            <Toaster position="top-center" richColors />
+            {loading && (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm transition-all duration-300">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mb-4 shadow-lg"></div>
+                    <p className="text-lg font-bold text-slate-800 dark:text-slate-200 animate-pulse">Authenticating...</p>
+                </div>
+            )}
             <div className="fixed inset-0 pointer-events-none grid-pattern opacity-[0.35]" />
             <div className="relative z-10 w-full grid gap-6 lg:grid-cols-[1fr_0.95fr]">
                 <section className='surface rounded-[2rem] p-6 md:p-8'>
@@ -153,6 +171,15 @@ export default function AuthPage() {
                                     <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Password</label>
                                     <input value={password} onChange={(e) => setPassword(e.target.value)} type='password' className='w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='Enter your password' />
                                 </div>
+                            )}
+
+                            {mode === 'signup' && (
+                                <label className="flex items-center gap-3 cursor-pointer group pt-2" onClick={() => setIsInstructor(!isInstructor)}>
+                                    <div className={`relative flex items-center justify-center w-5 h-5 rounded border-2 transition-colors ${isInstructor ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 dark:border-slate-600 bg-transparent'}`}>
+                                        {isInstructor && <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                    </div>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Sign up as an Instructor</span>
+                                </label>
                             )}
                         </div>
 
