@@ -5,6 +5,8 @@ import useUser from '../../../../../lib/useUser'
 import api from '../../../../../lib/api'
 import { trendingCourses } from '../../../../../lib/dummyData'
 
+import supabase from '../../../../../lib/supabaseClient'
+
 export default function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
     const { user, loading: userLoading } = useUser()
@@ -21,31 +23,55 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
         }
         
         let mounted = true
-        api.api(`/api/courses/${slug}`)
-            .then((d: any) => { 
-                if (mounted) {
-                    setCourse(d.data ?? d)
-                    setLoading(false)
-                }
-            })
-            .catch(() => { 
-                if (mounted) {
+        const fetchCourse = async () => {
+            const { data } = await supabase.from('courses').select('*, instructor:users(full_name)').eq('slug', slug).single()
+            if (mounted) {
+                if (data) {
+                    setCourse({
+                        ...data,
+                        instructor_name: data.instructor?.full_name || 'Instructor',
+                        image: data.thumbnail_url,
+                        price: `₹${data.price}`
+                    })
+                } else {
                     const found = trendingCourses.find(c => c.slug === slug)
                     if (found) setCourse(found)
-                    setLoading(false)
                 }
-            })
+                setLoading(false)
+            }
+        }
+        fetchCourse()
             
         return () => { mounted = false }
     }, [slug, user, userLoading, router])
 
     const handlePayment = async () => {
         setProcessing(true)
-        setTimeout(() => {
-            setProcessing(false)
-            alert("Payment successful! Welcome to the course!");
-            router.push(`/courses/${slug}`);
-        }, 2000)
+        try {
+            // Simulate payment delay
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            
+            // Insert enrollment
+            if (user && course && course.id) {
+                const expiryDate = new Date()
+                expiryDate.setFullYear(expiryDate.getFullYear() + 1)
+                
+                const { error } = await supabase.from('enrollments').insert({
+                    user_id: user.id,
+                    course_id: course.id,
+                    expires_at: expiryDate.toISOString()
+                })
+                if (error) {
+                    console.error("Enrollment error:", error)
+                }
+            }
+        } catch (e) {
+            console.error(e)
+        }
+        
+        setProcessing(false)
+        alert("Payment successful! Welcome to the course!");
+        router.push(`/courses/${slug}`);
     };
 
     if (loading || userLoading) return (
@@ -62,7 +88,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Go Back
             </button>
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col md:flex-row">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col md:flex-row">
                 {course.image && (
                     <div className="md:w-5/12 bg-slate-100 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-800">
                         <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
@@ -105,7 +131,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
             </div>
             {processing && (
                 <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center backdrop-blur-sm">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-200 dark:border-slate-800">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-8 max-w-sm w-full text-center shadow-2xl border border-slate-200 dark:border-slate-800">
                         <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
                             <img src="/logo.png" className="w-8 h-8 animate-pulse" alt="logo" />
                         </div>

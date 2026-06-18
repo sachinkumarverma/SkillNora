@@ -22,7 +22,7 @@ export default function ContactPage() {
                         </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                     <form className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">Name</label>

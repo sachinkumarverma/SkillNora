@@ -119,7 +119,7 @@ export default function AuthPage() {
             )}
             <div className="fixed inset-0 pointer-events-none grid-pattern opacity-[0.35]" />
             <div className="relative z-10 w-full grid gap-6 lg:grid-cols-[1fr_0.95fr]">
-                <section className='surface rounded-[2rem] p-6 md:p-8'>
+                <section className='surface rounded-xl p-6 md:p-8'>
                     <div className="flex items-center gap-3 mb-6">
                         <img src="/logo.png" alt="Skillnora" className="h-10 w-10 object-contain" />
                         <div className='inline-flex rounded-full bg-blue-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-blue-700 dark:text-blue-200'>Authentication</div>
@@ -145,7 +145,7 @@ export default function AuthPage() {
                     </div>
                 </section>
 
-                <section className='surface rounded-[2rem] p-6 md:p-8'>
+                <section className='surface rounded-xl p-6 md:p-8'>
                     <div className='flex flex-wrap items-center gap-2'>
                         {[
                             ['signin', 'Sign in'],
@@ -163,13 +163,13 @@ export default function AuthPage() {
                         <div className="min-h-[160px] space-y-4">
                             <div>
                                 <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Email</label>
-                                <input value={email} onChange={(e) => setEmail(e.target.value)} className='w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='you@domain.com' />
+                                <input value={email} onChange={(e) => setEmail(e.target.value)} className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='you@domain.com' />
                             </div>
 
                             {(mode === 'signin' || mode === 'signup') && (
                                 <div>
                                     <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Password</label>
-                                    <input value={password} onChange={(e) => setPassword(e.target.value)} type='password' className='w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='Enter your password' />
+                                    <input value={password} onChange={(e) => setPassword(e.target.value)} type='password' className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='Enter your password' />
                                 </div>
                             )}
 

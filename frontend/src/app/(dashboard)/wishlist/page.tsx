@@ -4,24 +4,67 @@ import { useRouter } from 'next/navigation'
 import { useWishlist } from '../../../hooks/useWishlist'
 import { trendingCourses } from '../../../lib/dummyData'
 
+import useUser from '../../../lib/useUser'
+import supabase from '../../../lib/supabaseClient'
+
 export default function WishlistPage() {
     const router = useRouter()
+    const { user } = useUser()
     const { wishlist, toggleWishlist } = useWishlist()
     
     const savedCourses = trendingCourses.filter(course => wishlist.includes(course.id))
+
+    const handleBulkBuy = async () => {
+        if (!user) {
+            router.push('/auth')
+            return
+        }
+
+        const { data: enrollments } = await supabase.from('enrollments').select('course_id, expires_at').eq('user_id', user.id)
+        
+        const activeEnrollments = new Set(
+            (enrollments || [])
+                .filter(e => !e.expires_at || new Date(e.expires_at) > new Date())
+                .map(e => e.course_id)
+        )
+
+        const cart = JSON.parse(localStorage.getItem('skillnora_cart') || '[]')
+        
+        let added = false
+        for (const course of savedCourses) {
+            if (!activeEnrollments.has(course.id) && !cart.some((c: any) => c.id === course.id)) {
+                cart.push({ id: course.id, title: course.title, price: course.price, slug: course.slug, image: course.image })
+                added = true
+            }
+        }
+
+        if (added) {
+            localStorage.setItem('skillnora_cart', JSON.stringify(cart))
+            window.dispatchEvent(new Event('cartUpdated'))
+        }
+        
+        router.push('/cart')
+    }
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
             <section>
                 <div className="mb-6 flex items-center justify-between">
                     <h1 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">My Wishlist</h1>
-                    <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold px-3 py-1 rounded-full text-sm">
-                        {savedCourses.length} items
-                    </span>
+                    <div className="flex items-center gap-4">
+                        {savedCourses.length > 0 && (
+                            <button onClick={handleBulkBuy} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">
+                                Bulk Buy
+                            </button>
+                        )}
+                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold px-3 py-1 rounded-full text-sm">
+                            {savedCourses.length} items
+                        </span>
+                    </div>
                 </div>
                 
                 {savedCourses.length === 0 ? (
-                    <div className="rounded-2xl border-2 border-dashed border-slate-200 py-16 flex flex-col items-center justify-center text-slate-500 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                    <div className="rounded-lg border-2 border-dashed border-slate-200 py-16 flex flex-col items-center justify-center text-slate-500 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
                             <svg className="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
                         </div>

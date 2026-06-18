@@ -60,7 +60,7 @@ export default function Navbar() {
         <header className='sticky top-0 z-40 border-b border-white/10 bg-white/80 backdrop-blur-xl dark:bg-slate-950/80'>
             <div className='mx-auto flex w-full max-w-none items-center justify-between px-4 py-4 sm:px-6 lg:px-10'>
                 <Link href='/' className='flex items-center gap-3'>
-                    <img src='/logo.png' alt='Skillnora logo' className='h-11 w-11 rounded-2xl object-cover shadow-lg shadow-blue-500/20' />
+                    <img src='/logo.png' alt='Skillnora logo' className='h-11 w-11 rounded-lg object-cover shadow-lg shadow-blue-500/20' />
                     <div>
                         <div className='text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400'>Skillnora</div>
                         <div className='text-sm font-medium text-slate-900 dark:text-white'>Learn • Grow • Succeed</div>
@@ -90,7 +90,7 @@ export default function Navbar() {
 
                             {menuOpen && (
                                 <div className='absolute right-0 mt-3 w-80 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-950/15 dark:border-slate-700 dark:bg-slate-950'>
-                                    <div className='flex items-center gap-3 rounded-2xl bg-slate-50 p-3 dark:bg-slate-900'>
+                                    <div className='flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900'>
                                         <div className='flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white text-sm font-bold text-white'>
                                             {avatarUrl ? <img src={avatarUrl} alt='User avatar' className='h-full w-full object-cover' /> : <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 via-cyan-500 to-violet-600'>{initials}</div>}
                                         </div>
@@ -104,10 +104,10 @@ export default function Navbar() {
                                     </div>
 
                                     <div className='mt-4 space-y-2 text-sm'>
-                                        <div className='rounded-2xl bg-slate-50 px-4 py-3 text-slate-700 dark:bg-slate-900 dark:text-slate-200'>
+                                        <div className='rounded-lg bg-slate-50 px-4 py-3 text-slate-700 dark:bg-slate-900 dark:text-slate-200'>
                                             Role: <span className='font-semibold'>{role}</span>
                                         </div>
-                                        <div className='rounded-2xl bg-slate-50 px-4 py-3 text-slate-700 dark:bg-slate-900 dark:text-slate-200'>
+                                        <div className='rounded-lg bg-slate-50 px-4 py-3 text-slate-700 dark:bg-slate-900 dark:text-slate-200'>
                                             Account: <span className='font-semibold'>{user.email}</span>
                                         </div>
                                     </div>

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import useUser from '../../lib/useUser'
 import supabase from '../../lib/supabaseClient'
 import { trendingCourses } from '../../lib/dummyData'
+import AskieBot from '../AskieBot'
 
 function getRole(user: any) {
     if (user?.email === 'sachinverma1489@gmail.com') return 'admin'
@@ -53,6 +54,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const searchRef = useRef<HTMLDivElement>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [showSuggestions, setShowSuggestions] = useState(false)
+    const [cartCount, setCartCount] = useState(0)
+
+    useEffect(() => {
+        const updateCart = () => {
+            const cart = JSON.parse(localStorage.getItem('skillnora_cart') || '[]')
+            setCartCount(cart.length)
+        }
+        updateCart()
+        window.addEventListener('cartUpdated', updateCart)
+        return () => window.removeEventListener('cartUpdated', updateCart)
+    }, [])
 
     const suggestions = useMemo(() => {
         if (!searchQuery.trim()) return []
@@ -94,8 +106,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             if (isProtected && !isPublicCertificate) {
                 router.replace('/auth')
             }
+        } else if (!loading && user) {
+            if (pathname === '/dashboard') {
+                if (role === 'admin') router.replace('/admin')
+                else if (role === 'instructor') router.replace('/instructor')
+            }
+            
+            // Prevent admin and instructor from accessing student pages that don't make sense for them
+            const studentOnlyPaths = ['/cart', '/wishlist', '/enrolled', '/notes', '/statistics', '/coding']
+            if ((role === 'admin' || role === 'instructor') && studentOnlyPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+                router.replace(role === 'admin' ? '/admin' : '/instructor')
+            }
         }
-    }, [loading, user, pathname, router])
+    }, [loading, user, pathname, router, role])
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -154,11 +177,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             ['https://cvpilot.vercel.app/', 'Create Resume', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z']
         ],
         instructor: [
-            ['/dashboard', 'Dashboard', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'], 
             ['/instructor', 'Instructor Studio', 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'], 
             ['/instructor/new', 'Course Builder', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'], 
-            ['/settings', 'Account Details', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
-            ['https://cvpilot.vercel.app/', 'Create Resume', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z']
+            ['/settings', 'Account Details', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z']
         ],
         admin: [
             ['/admin', 'Overview', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'], 
@@ -187,8 +208,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans fixed inset-0 z-50">
+            {/* Sidebar Overlay for Mobile */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm" 
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
             {/* Sidebar */}
-            <aside className={`flex flex-col border-r border-slate-200 bg-white transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${sidebarOpen ? 'w-64' : 'w-20'} shrink-0 relative z-20`}>
+            <aside className={`fixed inset-y-0 left-0 z-50 md:z-30 flex flex-col border-r border-slate-200 bg-white transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 md:relative md:translate-x-0 shrink-0 ${sidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full md:w-20'}`}>
                 <div className="flex h-16 items-center px-4 border-b border-slate-100 dark:border-slate-800/50">
                     <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden cursor-pointer w-full">
                         <img src="/logo.png" alt="Skillnora" className="h-8 w-8 shrink-0 object-contain" />
@@ -227,15 +255,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
             </aside>
 
-            {/* Main Area */}
-            <div className="flex flex-1 flex-col overflow-hidden relative z-10">
-                <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80 z-20">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                        </button>
-                        
-                        <div className="flex items-center text-sm font-semibold">
+        <div className="flex flex-1 flex-col overflow-hidden relative z-10 md:z-40 w-full">
+            <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 md:px-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80 z-20">
+                <div className="flex items-center gap-2 md:gap-4">
+                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 md:p-0">
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    </button>
+                    
+                    <div className="hidden sm:flex items-center text-sm font-semibold">
                             {breadcrumbs.length > 0 ? (
                                 <div className="flex items-center gap-2">
                                     {breadcrumbs.map((bc, idx) => (
@@ -250,14 +277,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             )}
                         </div>
 
-                        {/* Mega Menu Explore Dropdown */}
-                        <div className="relative group hidden lg:block ml-6">
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        {/* Mega Menu Explore Dropdown (Moved to left of search) */}
+                        <div className="relative group hidden lg:block mr-2">
                             <button className="flex h-10 items-center gap-1.5 font-bold text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors">
                                 Explore
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
                             </button>
-                            <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                <div className="w-[850px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-8 grid grid-cols-4 gap-8">
+                            <div className="absolute top-full -right-[350px] pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <div className="w-[850px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl p-8 grid grid-cols-4 gap-8">
                                     <div>
                                         <h4 className="font-black text-slate-900 dark:text-white mb-4 uppercase text-xs tracking-wider">Explore Roles</h4>
                                         <ul className="space-y-3 text-[13px] font-medium text-slate-500 dark:text-slate-400">
@@ -266,6 +296,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             <li><Link href="/courses?role=cyber-security" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Cyber Security Analyst</Link></li>
                                             <li><Link href="/courses?role=ui-ux" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">UI / UX Designer</Link></li>
                                             <li><Link href="/courses?role=machine-learning" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Machine Learning Engineer</Link></li>
+                                            <li><Link href="/courses?role=software-engineer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Software Engineer</Link></li>
+                                            <li><Link href="/courses?role=frontend-developer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Frontend Developer</Link></li>
+                                            <li><Link href="/courses?role=backend-developer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Backend Developer</Link></li>
+                                            <li><Link href="/courses?role=marketing-manager" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Marketing Manager</Link></li>
+                                            <li><Link href="/courses?role=financial-analyst" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Financial Analyst</Link></li>
                                         </ul>
                                     </div>
                                     <div>
@@ -276,6 +311,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             <li><Link href="/courses?category=data-science" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Data Science</Link></li>
                                             <li><Link href="/courses?category=it" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Information Technology</Link></li>
                                             <li><Link href="/courses?category=health" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Healthcare</Link></li>
+                                            <li><Link href="/courses?category=web-dev" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Web Development</Link></li>
+                                            <li><Link href="/courses?category=marketing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Digital Marketing</Link></li>
+                                            <li><Link href="/courses?category=cloud" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Cloud Computing</Link></li>
+                                            <li><Link href="/courses?category=design" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Graphic Design</Link></li>
+                                            <li><Link href="/courses?category=finance" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Finance & Accounting</Link></li>
                                         </ul>
                                     </div>
                                     <div>
@@ -295,14 +335,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             <li><Link href="/courses?skill=sql" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">SQL</Link></li>
                                             <li><Link href="/courses?skill=excel" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Excel</Link></li>
                                             <li><Link href="/courses?skill=power-bi" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Power BI</Link></li>
+                                            <li><Link href="/courses?skill=react" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">React</Link></li>
+                                            <li><Link href="/courses?skill=javascript" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">JavaScript</Link></li>
+                                            <li><Link href="/courses?skill=java" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Java</Link></li>
+                                            <li><Link href="/courses?skill=cpp" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">C++</Link></li>
+                                            <li><Link href="/courses?skill=go" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Go</Link></li>
                                         </ul>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex items-center gap-4">
                         <div className="relative hidden md:block" ref={searchRef}>
                             <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             <input 
@@ -312,7 +355,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 onFocus={() => setShowSuggestions(true)}
                                 onKeyDown={handleSearch}
                                 placeholder="Search courses, categories, roles..." 
-                                className="w-64 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-9 pr-8 text-sm outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:border-blue-500" 
+                                className="h-10 w-64 lg:w-80 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-white dark:focus:bg-slate-900"
                             />
                             {searchQuery && (
                                 <button 
@@ -323,7 +366,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 </button>
                             )}
                             {showSuggestions && searchQuery.trim() && (
-                                <div className="absolute top-full right-0 md:left-0 md:right-auto mt-2 w-[350px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50">
+                                <div className="absolute top-full right-0 md:left-0 md:right-auto mt-2 w-[350px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl overflow-hidden z-50">
                                     {suggestions.length > 0 ? (
                                         <ul>
                                             {suggestions.map(c => (
@@ -354,6 +397,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             )}
                         </div>
                         {user && (
+                            <Link href="/cart" className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">{cartCount}</span>
+                                )}
+                            </Link>
+                        )}
+                        {user && (
                             <div className="relative" ref={notificationsRef}>
                                 <button onClick={() => setNotificationsOpen(!notificationsOpen)} className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
@@ -361,7 +412,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 </button>
                                 
                                 {notificationsOpen && (
-                                    <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800 z-50 overflow-hidden flex flex-col">
+                                    <div className="absolute right-0 mt-3 w-80 rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800 z-50 overflow-hidden flex flex-col">
                                         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
                                             <p className="text-sm font-bold text-slate-900 dark:text-white">Notifications</p>
                                             <button className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Mark all read</button>
@@ -427,7 +478,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 </button>
 
                                 {dropdownOpen && (
-                                    <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800 z-50">
+                                    <div className="absolute right-0 mt-3 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800 z-50">
                                         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 mb-2">
                                             <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user.email}</p>
                                             <p className="text-xs font-medium text-slate-500 capitalize mt-1">Role: {role}</p>
@@ -473,6 +524,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </footer>
                 </main>
             </div>
+            <AskieBot />
         </div>
     )
 }

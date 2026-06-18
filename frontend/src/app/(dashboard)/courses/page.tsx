@@ -22,7 +22,7 @@ function CoursesContent() {
         let mounted = true
         api.api('/api/courses').then((d: any) => { 
             if (mounted) {
-                const apiCourses = Array.isArray(d) ? d : d.data ?? []
+                const apiCourses = d.courses || (Array.isArray(d) ? d : d.data) || []
                 const combined = [...apiCourses, ...trendingCourses]
                 setAllCourses(combined)
             }
@@ -135,7 +135,7 @@ function CoursesContent() {
                     ))}
                     
                     {courses.length === 0 && !loadingCourses && (
-                        <div className="col-span-full rounded-2xl border-2 border-dashed border-slate-200 py-12 flex flex-col items-center justify-center text-slate-500 dark:border-slate-800">
+                        <div className="col-span-full rounded-lg border-2 border-dashed border-slate-200 py-12 flex flex-col items-center justify-center text-slate-500 dark:border-slate-800">
                             <p className="text-sm font-medium text-slate-500">No courses yet.</p>
                         </div>
                     )}

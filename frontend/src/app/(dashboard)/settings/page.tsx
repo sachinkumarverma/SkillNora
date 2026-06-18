@@ -157,7 +157,7 @@ export default function SettingsPage() {
                                 <button
                                     key={tab.id}
                                     onClick={() => { setActiveTab(tab.id); setMessage(null) }}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-200 ${
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all duration-200 ${
                                         active 
                                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
                                         : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                         )}
                     </AnimatePresence>
 
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
                         
                         {activeTab === 'profile' && (
                             <div>
@@ -305,7 +305,7 @@ export default function SettingsPage() {
                                                 <button
                                                     key={t.id}
                                                     onClick={() => handleThemeChange(t.id)}
-                                                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                                                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all ${
                                                         theme === t.id 
                                                         ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' 
                                                         : 'border-slate-200 hover:border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600'
@@ -335,7 +335,7 @@ export default function SettingsPage() {
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Notifications</h2>
                                 
                                 <div className="space-y-6 max-w-lg">
-                                    <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                    <div className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                                         <div>
                                             <h4 className="font-bold text-slate-900 dark:text-white">Email Notifications</h4>
                                             <p className="text-xs text-slate-500 font-medium mt-1">Receive updates about your courses and account via email.</p>
@@ -348,7 +348,7 @@ export default function SettingsPage() {
                                         </button>
                                     </div>
 
-                                    <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                    <div className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                                         <div>
                                             <h4 className="font-bold text-slate-900 dark:text-white">Push Notifications</h4>
                                             <p className="text-xs text-slate-500 font-medium mt-1">Get instant alerts in your browser.</p>

@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 import Razorpay from 'razorpay'
 import crypto from 'crypto'
 
-dotenv.config({ path: '../.env' })
+dotenv.config({ path: '../.env', override: true })
 
 const app = express()
 
@@ -216,5 +216,44 @@ app.post('/api/enroll', async (req, res) => {
     } catch (err) { res.status(500).json({ error: String(err) }) }
 })
 
-const PORT = process.env.API_PORT || 4000
-app.listen(PORT, () => console.log(`Skillnora API running on http://localhost:${PORT}`))
+// AI Chat endpoint for AskieBot (Using Free Groq API)
+app.post('/api/ai/chat', async (req, res) => {
+    try {
+        const { messages } = req.body;
+        const key = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+        if (!key) {
+            return res.json({ reply: "I'm currently running in offline mock mode because the GROQ_API_KEY is not set. Please get a free key from console.groq.com and add it to your .env file!" });
+        }
+        
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [
+                    { role: 'system', content: "You are Askie, Skillnora's intelligent AI learning assistant. Be very friendly, concise, and helpful. Guide users to courses and help with general knowledge. Format text nicely but keep it short." },
+                    ...messages
+                ]
+            })
+        });
+        
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err);
+        }
+        
+        const data = await response.json();
+        res.json({ reply: data.choices[0].message.content });
+    } catch (err) {
+        console.error('AI Chat Error:', err);
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+const PORT = process.env.PORT || 4000
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`)
+})

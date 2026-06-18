@@ -4,6 +4,9 @@ import React from 'react'
 export const metadata = {
     title: 'Skillnora - AI eLearning Platform',
     description: 'A premium AI-powered eLearning platform for students, instructors, and admins',
+    icons: {
+        icon: '/logo.png',
+    }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

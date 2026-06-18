@@ -69,19 +69,19 @@ export default function DashboardPage() {
                                 </a>
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+                                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-100 dark:border-blue-800/30">
                                     <div className="text-3xl font-black text-blue-600 dark:text-blue-400 mb-1">24.5</div>
                                     <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">Hours Learned</div>
                                 </div>
-                                <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-2xl border border-purple-100 dark:border-purple-800/30">
+                                <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border border-purple-100 dark:border-purple-800/30">
                                     <div className="text-3xl font-black text-purple-600 dark:text-purple-400 mb-1">3</div>
                                     <div className="text-sm font-semibold text-purple-800 dark:text-purple-300">Courses in Progress</div>
                                 </div>
-                                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
+                                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-lg border border-emerald-100 dark:border-emerald-800/30">
                                     <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mb-1">2</div>
                                     <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Certificates Earned</div>
                                 </div>
-                                <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-2xl border border-amber-100 dark:border-amber-800/30">
+                                <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-lg border border-amber-100 dark:border-amber-800/30">
                                     <div className="text-3xl font-black text-amber-600 dark:text-amber-400 mb-1">12</div>
                                     <div className="text-sm font-semibold text-amber-800 dark:text-amber-300">Day Streak!</div>
                                 </div>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Continue Watching</h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {displayCourses.slice(0, 3).map((course, idx) => (
-                                    <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
+                                    <div key={idx} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
                                         <div className="w-24 h-24 shrink-0 rounded-xl bg-slate-100 overflow-hidden relative">
                                             <img src={course.image_url || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -134,15 +134,15 @@ export default function DashboardPage() {
 
                 {/* Features Links */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex items-center justify-between hover:border-blue-600 dark:hover:border-blue-500 cursor-pointer transition-colors">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 flex items-center justify-between hover:border-blue-600 dark:hover:border-blue-500 cursor-pointer transition-colors">
                         <span className="font-bold text-lg text-slate-900 dark:text-white">Launch a new career</span>
                         <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
                     </div>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex items-center justify-between hover:border-blue-600 dark:hover:border-blue-500 cursor-pointer transition-colors">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 flex items-center justify-between hover:border-blue-600 dark:hover:border-blue-500 cursor-pointer transition-colors">
                         <span className="font-bold text-lg text-slate-900 dark:text-white">Try Skillnora for Business</span>
                         <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg></div>
                     </div>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex items-center justify-between hover:border-blue-600 dark:hover:border-blue-500 cursor-pointer transition-colors">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 flex items-center justify-between hover:border-blue-600 dark:hover:border-blue-500 cursor-pointer transition-colors">
                         <span className="font-bold text-lg text-slate-900 dark:text-white">Earn a degree</span>
                         <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg></div>
                     </div>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
                             { name: 'Noeris B.', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop', quote: '"Skillnora rebuilt my confidence and showed me I could dream bigger. It wasn\'t just about gaining knowledge—it was about believing in my potential again."' },
                             { name: 'Abdullahi M.', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop', quote: '"I now feel more prepared to take on leadership roles and have already started mentoring some of my colleagues."' }
                         ].map((t, i) => (
-                            <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                            <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 hover:shadow-lg transition-shadow">
                                 <div className="flex items-center gap-4 mb-6">
                                     <img src={t.image} alt={t.name} className="w-16 h-16 rounded-full object-cover" />
                                     <h4 className="font-bold text-lg text-slate-900 dark:text-white">{t.name}</h4>

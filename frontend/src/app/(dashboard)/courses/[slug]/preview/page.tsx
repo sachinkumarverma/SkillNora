@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import api from '../../../../../lib/api'
 import { trendingCourses } from '../../../../../lib/dummyData'
 
+import supabase from '../../../../../lib/supabaseClient'
+
 export default function PreviewPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
     const router = useRouter()
@@ -12,20 +14,24 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
 
     useEffect(() => {
         let mounted = true
-        api.api(`/api/courses/${slug}`)
-            .then((d: any) => { 
-                if (mounted) {
-                    setCourse(d.data ?? d)
-                    setLoading(false)
-                }
-            })
-            .catch(() => { 
-                if (mounted) {
+        const fetchCourse = async () => {
+            const { data } = await supabase.from('courses').select('*, instructor:users(full_name, email), lectures(*)').eq('slug', slug).single()
+            if (mounted) {
+                if (data) {
+                    setCourse({
+                        ...data,
+                        instructor_name: data.instructor?.full_name || 'Instructor',
+                        image: data.thumbnail_url,
+                        price: `₹${data.price}`
+                    })
+                } else {
                     const found = trendingCourses.find(c => c.slug === slug)
                     if (found) setCourse(found)
-                    setLoading(false)
                 }
-            })
+                setLoading(false)
+            }
+        }
+        fetchCourse()
             
         return () => { mounted = false }
     }, [slug])
@@ -45,11 +51,17 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                 Back to Course
             </button>
 
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
                 {course.image && (
                     <div className="aspect-[21/9] w-full relative">
                         <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
+                            {course.provide_certificate && (
+                                <span className="w-max mb-4 bg-amber-500 text-slate-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                                    Includes Certificate
+                                </span>
+                            )}
                             <h1 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">{course.title}</h1>
                             <p className="text-lg text-slate-200 max-w-3xl">{course.description || 'Master the concepts and skills you need to advance your career in this comprehensive guide.'}</p>
                         </div>
@@ -59,15 +71,16 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="md:col-span-2 space-y-8">
-                    <section className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Why Choose This Course?</h2>
-                        <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300">
-                            <p>This course is meticulously designed for learners who want actionable, practical, and in-depth knowledge. Whether you are looking to upskill for a promotion, transition into a new career, or simply expand your horizons, this program provides the foundation and advanced techniques you need.</p>
-                            <p className="mt-4">You will get hands-on experience, guided projects, and insights from industry experts. Every module is structured to build upon the last, ensuring a smooth and comprehensive learning curve.</p>
-                        </div>
-                    </section>
+                    {course.detailed_overview && (
+                        <section className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Detailed Overview</h2>
+                            <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                                {course.detailed_overview}
+                            </div>
+                        </section>
+                    )}
 
-                    <section className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <section className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
                         <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">What You Will Learn</h2>
                         <ul className="grid sm:grid-cols-2 gap-4">
                             {[
@@ -88,17 +101,21 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                 </div>
 
                 <div className="md:col-span-1 space-y-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                         <h3 className="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-widest text-xs">Course Features</h3>
                         <div className="space-y-4 text-sm">
                             <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
-                                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span>{course.lectures?.length * 2 || 10} hours of on-demand video</span>
+                                <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span>{course.lectures?.length > 0 ? Math.ceil(course.lectures.length * 1.5) : 1} hours of on-demand video</span>
                             </div>
-                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
-                                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                <span>14 downloadable resources</span>
-                            </div>
+                            
+                            {course.attachments && course.attachments.length > 0 && (
+                                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                                    <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <span>{course.attachments.length} downloadable resource{course.attachments.length > 1 ? 's' : ''}</span>
+                                </div>
+                            )}
+
                             <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
                                 <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
                                 <span>Full lifetime access</span>
@@ -107,10 +124,12 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                                 <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                                 <span>Access on mobile and TV</span>
                             </div>
-                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
-                                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
-                                <span>Certificate of completion</span>
-                            </div>
+                            {course.provide_certificate && (
+                                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                                    <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                                    <span>Certificate of completion</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

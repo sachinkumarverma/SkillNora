@@ -18,21 +18,21 @@ export default function AdminApprovalsDashboard() {
                     
                     {/* Metrics Row */}
                     <div className="grid gap-4 md:grid-cols-3">
-                        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                             <div>
                                 <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Pending Courses</div>
                                 <div className="mt-1 text-2xl font-black text-slate-900 dark:text-white">1</div>
                             </div>
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-2xl dark:bg-orange-900/20">🔥</div>
                         </div>
-                        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                             <div>
                                 <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Active Instructors</div>
                                 <div className="mt-1 text-2xl font-black text-slate-900 dark:text-white">2</div>
                             </div>
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-2xl dark:bg-blue-900/20">👥</div>
                         </div>
-                        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                             <div>
                                 <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Flagged Users</div>
                                 <div className="mt-1 text-2xl font-black text-slate-900 dark:text-white">5</div>
@@ -42,7 +42,7 @@ export default function AdminApprovalsDashboard() {
                     </div>
 
                     {/* Approvals Table */}
-                    <div className="rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+                    <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-800">
                             <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Pending Approvals</h2>
                         </div>

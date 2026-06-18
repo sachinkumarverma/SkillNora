@@ -6,6 +6,7 @@ create table if not exists users (
   email text unique,
   full_name text,
   role text default 'student', -- student, instructor, admin
+  activity_heatmap jsonb default '{}'::jsonb, -- stores watch dates for heatmap
   created_at timestamptz default now()
 );
 
@@ -26,6 +27,7 @@ create table if not exists courses (
   is_published boolean default false,
   average_rating numeric(3,2) default null, -- e.g. 4.50
   total_reviews integer default 0,
+  attachments jsonb default '[]'::jsonb,
   created_at timestamptz default now()
 );
 
@@ -37,6 +39,7 @@ create table if not exists lectures (
   video_url text,
   thumbnail_url text,
   position integer,
+  mcqs jsonb default '[]'::jsonb, -- MCQ quiz questions for this module
   created_at timestamptz default now()
 );
 
@@ -46,6 +49,7 @@ create table if not exists enrollments (
   user_id uuid references users(id),
   course_id uuid references courses(id),
   enrolled_at timestamptz default now(),
+  expires_at timestamptz, -- if null, it's lifetime access
   progress jsonb default '{}'::jsonb
 );
 
@@ -99,3 +103,14 @@ $$ language plpgsql;
 create trigger trg_update_course_rating
 after insert or update or delete on reviews
 for each row execute function update_course_rating();
+
+-- refunds
+create table if not exists refunds (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id),
+  course_id uuid references courses(id),
+  amount numeric,
+  reason text,
+  status text default 'processed',
+  created_at timestamptz default now()
+);

@@ -83,7 +83,7 @@ export default function HeroCarousel() {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {banners.map((banner) => (
-                    <div key={banner.id} className={`relative shrink-0 w-full lg:w-[calc(50%-12px)] snap-start rounded-2xl overflow-hidden flex items-center ${banner.bgClass}`}>
+                    <div key={banner.id} className={`relative shrink-0 w-full lg:w-[calc(50%-12px)] snap-start rounded-lg overflow-hidden flex items-center ${banner.bgClass}`}>
                         <div className="p-6 md:p-8 z-10 w-full md:w-3/5">
                             <div className={`inline-block font-bold text-xs tracking-widest uppercase mb-2 ${banner.tagClass}`}>{banner.tag}</div>
                             <h1 className={`text-2xl md:text-3xl font-serif leading-tight mb-3 ${banner.textClass}`}>
