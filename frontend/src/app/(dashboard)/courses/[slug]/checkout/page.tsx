@@ -1,11 +1,9 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import useUser from '../../../../../lib/useUser'
-import api from '../../../../../lib/api'
-import { trendingCourses } from '../../../../../lib/dummyData'
-
-import supabase from '../../../../../lib/supabaseClient'
+import useUser from '@/lib/useUser'
+import { coursesService } from '@/services/coursesService'
+import { enrollmentsService } from '@/services/enrollmentsService'
 
 export default function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
@@ -21,10 +19,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
             router.replace('/auth')
             return
         }
-        
+
         let mounted = true
         const fetchCourse = async () => {
-            const { data } = await supabase.from('courses').select('*, instructor:users(full_name)').eq('slug', slug).single()
+            const data = await coursesService.getOne(slug as string)
             if (mounted) {
                 if (data) {
                     setCourse({
@@ -41,7 +39,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
             }
         }
         fetchCourse()
-            
+
         return () => { mounted = false }
     }, [slug, user, userLoading, router])
 
@@ -50,17 +48,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
         try {
             // Simulate payment delay
             await new Promise(resolve => setTimeout(resolve, 2000))
-            
+
             // Insert enrollment
             if (user && course && course.id) {
                 const expiryDate = new Date()
                 expiryDate.setFullYear(expiryDate.getFullYear() + 1)
-                
-                const { error } = await supabase.from('enrollments').insert({
-                    user_id: user.id,
-                    course_id: course.id,
-                    expires_at: expiryDate.toISOString()
-                })
+
+                await enrollmentsService.enroll(course.id)
                 if (error) {
                     console.error("Enrollment error:", error)
                 }
@@ -68,7 +62,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
         } catch (e) {
             console.error(e)
         }
-        
+
         setProcessing(false)
         alert("Payment successful! Welcome to the course!");
         router.push(`/courses/${slug}`);
@@ -97,7 +91,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                 <div className="p-8 md:w-7/12 flex flex-col justify-center">
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Secure Checkout</h1>
                     <h2 className="text-xl text-slate-700 dark:text-slate-300 font-serif mb-6">{course.title}</h2>
-                    
+
                     <div className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 mb-6">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-slate-500">Course Price</span>

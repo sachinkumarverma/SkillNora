@@ -1,6 +1,6 @@
 import * as service from './service.js'
 
-export async function getSignedUrl(req, res) {
+const getSignedUrl = async (req, res) => {
     try {
         const { bucket, filePath } = req.body
         if (!filePath) return res.status(400).json({ error: 'filePath required' })
@@ -8,3 +8,5 @@ export async function getSignedUrl(req, res) {
         res.json(data)
     } catch (err) { res.status(500).json({ error: String(err) }) }
 }
+
+export { getSignedUrl };

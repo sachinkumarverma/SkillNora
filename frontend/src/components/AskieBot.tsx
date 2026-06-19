@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import supabase from '../lib/supabaseClient'
+import { coursesService } from '@/services/coursesService'
 
 type Message = {
     id: string
@@ -34,7 +34,7 @@ export default function AskieBot() {
         let recommendedCourse: any = null
 
         // 1. Fetch courses from DB to see if we have a match locally
-        const { data: courses } = await supabase.from('courses').select('*').eq('is_published', true)
+        const courses = await coursesService.getAll()
         if (courses && courses.length > 0) {
             const match = courses.find(c => text.includes(c.title.toLowerCase()) || text.includes((c.category || '').toLowerCase()) || text.includes((c.primary_skill || '').toLowerCase()))
             if (match) {

@@ -1,6 +1,6 @@
 import * as service from './service.js'
 
-export async function enroll(req, res) {
+const enroll = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1] ?? null
         const { course_id } = req.body
@@ -8,3 +8,5 @@ export async function enroll(req, res) {
         res.json({ enrollment })
     } catch (err) { res.status(500).json({ error: String(err) }) }
 }
+
+export { enroll };

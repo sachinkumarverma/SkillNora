@@ -1,4 +1,4 @@
-import InstructorCourseBuilder from '../../../../components/views/InstructorCourseBuilder'
+import InstructorCourseBuilder from '@/components/views/InstructorCourseBuilder'
 
 export default function NewCoursePage() {
     return <InstructorCourseBuilder />

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import useUser from '../../../lib/useUser'
+import useUser from '@/lib/useUser'
 
 export default function CertificatesPage() {
     const { user } = useUser()

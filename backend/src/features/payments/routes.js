@@ -5,7 +5,6 @@ const router = express.Router()
 
 router.post('/create-order', controller.createOrder)
 router.post('/webhook', controller.webhook)
-// Dev helper to simulate a webhook POST (not for production)
 router.post('/simulate', controller.simulate)
 
 export default router

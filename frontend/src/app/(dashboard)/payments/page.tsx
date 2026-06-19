@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from 'react'
-import api from '../../../lib/api'
+import api from '@/lib/api'
 
 export default function PaymentsPage() {
     const [amount, setAmount] = useState('49')

@@ -1,20 +1,20 @@
 "use client"
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import supabase from '../../../lib/supabaseClient'
+import { authService } from '@/services/authService'
 
 export default function AuthCallback() {
     const router = useRouter()
     useEffect(() => {
         let mounted = true
         
-        const { data: authListener } = supabase.auth.onAuthStateChange((event: any, session: any) => {
+        const { data: authListener } = authService.onAuthStateChange((event: any, session: any) => {
             if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && mounted) {
                 router.replace('/dashboard')
             }
         })
         
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        authService.getSession().then(({ data: { session } }) => {
             if (session && mounted) {
                 router.replace('/dashboard')
             }

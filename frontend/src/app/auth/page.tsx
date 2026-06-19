@@ -1,7 +1,8 @@
 "use client"
 import React, { useState } from 'react'
-import supabase from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import apiClient from '@/lib/apiClient'
 import { Toaster, toast } from 'sonner'
 
 type Mode = 'signin' | 'signup' | 'magic' | 'reset'
@@ -18,27 +19,26 @@ function GoogleIcon() {
 }
 
 export default function AuthPage() {
+    const [mode, setMode] = useState<Mode>('signin')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [loading, setLoading] = useState(false)
-    const [mode, setMode] = useState<Mode>('signin')
     const [isInstructor, setIsInstructor] = useState(false)
+    const [loading, setLoading] = useState(false)
     const router = useRouter()
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+
+        if ((mode === 'signin' || mode === 'signup') && password.length < 6) {
+            toast.error('Password must be at least 6 characters.')
+            return
+        }
+
         setLoading(true)
 
         try {
             if (mode === 'signup') {
-                const { data, error } = await supabase.auth.signUp({ 
-                    email, 
-                    password, 
-                    options: { 
-                        emailRedirectTo: `${window.location.origin}/dashboard`,
-                        data: { role: isInstructor ? 'instructor' : 'student' } 
-                    } 
-                })
+                const { data, error } = await authService.signUp(email, password, isInstructor ? 'instructor' : 'student')
                 if (error) {
                     if (error.message.toLowerCase().includes("already registered")) {
                         toast.error('An account with this email already exists. Please sign in instead.')
@@ -49,53 +49,55 @@ export default function AuthPage() {
                     toast.error('An account with this email already exists. Please sign in instead.')
                 } else {
                     if (data?.user) {
-                        // Attempt to insert into users table directly (may fail if email confirmation required, but good fallback)
-                        await supabase.from('users').upsert({ id: data.user.id, email: data.user.email, role: isInstructor ? 'instructor' : 'student' })
+                        // Sync user to backend users table
+                        await apiClient.post('/api/users/sync', { 
+                            id: data.user.id, 
+                            email: data.user.email, 
+                            role: isInstructor ? 'instructor' : 'student' 
+                        }).catch(() => {})
                     }
                     toast.success('Account created. Check your email to confirm your account.')
                 }
             } else if (mode === 'signin') {
-                const { error } = await supabase.auth.signInWithPassword({ email, password })
+                const { error } = await authService.signInWithPassword(email, password)
                 if (error) {
                     if (error.message.toLowerCase().includes("invalid login credentials")) {
-                        toast.error("Invalid email or password. Please try again.")
+                        toast.error('Invalid email or password.')
                     } else {
                         toast.error(error.message)
                     }
                 } else {
-                    toast.success('Signed in successfully. Redirecting to your dashboard...')
+                    toast.success('Signed in successfully!')
                     router.push('/dashboard')
                 }
             } else if (mode === 'magic') {
-                const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } })
-                if (error?.message?.toLowerCase().includes("rate limit")) {
-                    toast.error("You can only request one magic link per minute. Please check your inbox or wait a bit.")
-                } else if (error) {
+                const { error } = await authService.signInWithOtp(email)
+                if (error) {
                     toast.error(error.message)
                 } else {
-                    toast.success('Magic link sent. Check your email and open the link to sign in.')
+                    toast.success('Magic link sent! Check your email.')
                 }
-            } else {
-                const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/update-password` })
-                if (error) toast.error(error.message)
-                else toast.success('Password reset email sent. Open the link to set a new password.')
+            } else if (mode === 'reset') {
+                const { error } = await authService.resetPasswordForEmail(email)
+                if (error) {
+                    toast.error(error.message)
+                } else {
+                    toast.success('Password reset email sent!')
+                }
             }
-        } catch (err: any) {
-            toast.error(err.message || "An unexpected error occurred.")
+        } catch (error: any) {
+            toast.error(error.message || 'An unexpected error occurred.')
         } finally {
             setLoading(false)
         }
     }
 
-    async function signInWithGoogle() {
-        setLoading(true)
+    async function handleGoogleLogin() {
         try {
-            const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/dashboard` } })
+            const { error } = await authService.signInWithOAuth('google')
             if (error) toast.error(error.message)
-        } catch (err: any) {
-            toast.error(err.message || "An unexpected error occurred.")
-        } finally {
-            setLoading(false)
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to initialize Google login.')
         }
     }
 
@@ -189,7 +191,7 @@ export default function AuthPage() {
                     </form>
 
                     <div className='mt-4 grid gap-3 sm:grid-cols-2'>
-                        <button type='button' onClick={signInWithGoogle} className='btn btn-outline py-3 transform transition hover:scale-[1.02] active:scale-95'>
+                        <button type='button' onClick={handleGoogleLogin} className='btn btn-outline py-3 transform transition hover:scale-[1.02] active:scale-95'>
                             <GoogleIcon />
                             Continue with Google
                         </button>

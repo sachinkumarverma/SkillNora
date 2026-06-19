@@ -1,8 +1,9 @@
 "use client"
 import React, { useState } from 'react'
-import supabase from '../../../lib/supabaseClient'
+
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import { authService } from '@/services/authService'
 
 export default function UpdatePasswordPage() {
     const [password, setPassword] = useState('')
@@ -19,17 +20,15 @@ export default function UpdatePasswordPage() {
         }
 
         setLoading(true)
-        const { error } = await supabase.auth.updateUser({ password })
-
-        if (error) {
-            toast.error(error.message)
+        try {
+            await authService.updatePassword(password)
+            await authService.logout()
+            toast.success('Password updated successfully. Please sign in with your new password.')
+            setTimeout(() => router.push('/auth'), 1500)
+        } catch (error: any) {
+            toast.error(error?.response?.data?.error || error.message || 'Failed to update password')
             setLoading(false)
-            return
         }
-
-        await supabase.auth.signOut()
-        toast.success('Password updated successfully. Please sign in with your new password.')
-        setTimeout(() => router.push('/auth'), 1500)
     }
 
     return (

@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import supabase from '../../../../lib/supabaseClient'
-import ConfirmDeleteModal from '../../../../components/views/ConfirmDeleteModal'
-import AdminCourseTable from '../../../../components/views/AdminCourseTable'
+import { coursesService } from '@/services/coursesService'
+import apiClient from '@/lib/apiClient'
+import ConfirmDeleteModal from '@/components/views/ConfirmDeleteModal'
+import AdminCourseTable from '@/components/views/AdminCourseTable'
 
 const CustomDropdown = ({ value, options, onChange }: { value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -54,21 +55,25 @@ export default function AdminCourseManagement() {
 
     useEffect(() => {
         const fetchCourses = async () => {
-            const { data } = await supabase.from('courses').select('*, instructor:users(full_name, email)')
-            if (data) {
-                const mapped = data.map((c: any) => ({
-                    id: c.id,
-                    title: c.title || 'Untitled Course',
-                    category: c.category || 'Uncategorized',
-                    instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
-                    price: `₹${c.price || 0}`,
-                    status: c.is_published ? 'Published' : 'Draft',
-                    enrollments: 0,
-                    rating: c.average_rating || 0,
-                    thumbnail_url: c.thumbnail_url,
-                    slug: c.slug
-                }))
-                setCourses(mapped)
+            try {
+                const data = await coursesService.getAdminAll();
+                if (data) {
+                    const mapped = data.map((c: any) => ({
+                        id: c.id,
+                        title: c.title || 'Untitled Course',
+                        category: c.category || 'Uncategorized',
+                        instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
+                        price: `₹${c.price || 0}`,
+                        status: c.is_published ? 'Published' : 'Draft',
+                        enrollments: 0,
+                        rating: c.average_rating || 0,
+                        thumbnail_url: c.thumbnail_url,
+                        slug: c.slug
+                    }))
+                    setCourses(mapped)
+                }
+            } catch (err) {
+                console.error("Failed to fetch courses", err);
             }
             setLoading(false)
         }
@@ -80,48 +85,10 @@ export default function AdminCourseManagement() {
         setLoading(true)
 
         try {
-            // Find active enrollments to issue partial refunds
-            const { data: activeEnrollments } = await supabase.from('enrollments')
-                .select('user_id, expires_at')
-                .eq('course_id', courseToDelete)
-                .gte('expires_at', new Date().toISOString())
-
-            if (activeEnrollments && activeEnrollments.length > 0) {
-                // Get the course price
-                const { data: courseData } = await supabase.from('courses').select('price').eq('id', courseToDelete).single()
-                const coursePrice = courseData?.price || 0
-                
-                // Calculate refund amount based on remaining duration (assuming 1 year total)
-                const refundsToInsert = activeEnrollments.map(enr => {
-                    const expiresAt = new Date(enr.expires_at).getTime()
-                    const now = new Date().getTime()
-                    const remainingMs = expiresAt - now
-                    const msInYear = 365 * 24 * 60 * 60 * 1000
-                    const percentRemaining = Math.max(0, Math.min(1, remainingMs / msInYear))
-                    const refundAmount = Math.round(coursePrice * percentRemaining * 100) / 100
-
-                    return {
-                        user_id: enr.user_id,
-                        course_id: courseToDelete,
-                        amount: refundAmount,
-                        reason: 'Course deleted by admin',
-                        status: 'processed'
-                    }
-                }).filter(r => r.amount > 0)
-
-                if (refundsToInsert.length > 0) {
-                    await supabase.from('refunds').insert(refundsToInsert)
-                }
-            }
-
-            const { error } = await supabase.from('courses').delete().eq('id', courseToDelete)
-            if (!error) {
-                setCourses(courses.filter(c => c.id !== courseToDelete))
-                setCourseToDelete(null)
-                alert('Course deleted successfully. Active students have been partially refunded based on their remaining subscription time.')
-            } else {
-                throw error
-            }
+            await apiClient.post('/api/courses/delete-with-refund', { ids: [courseToDelete] });
+            setCourses(courses.filter(c => c.id !== courseToDelete))
+            setCourseToDelete(null)
+            alert('Course deleted successfully. Active students have been partially refunded based on their remaining subscription time.')
         } catch (error: any) {
             alert('Failed to delete course: ' + error.message)
         } finally {
@@ -131,10 +98,10 @@ export default function AdminCourseManagement() {
 
     const handleArchiveCourse = async (courseId: string) => {
         setLoading(true)
-        const { error } = await supabase.from('courses').update({ is_published: false }).eq('id', courseId)
-        if (!error) {
+        try {
+            await coursesService.bulkPublish([courseId], false);
             setCourses(courses.map(c => c.id === courseId ? { ...c, status: 'Draft' } : c))
-        } else {
+        } catch (error: any) {
             alert('Failed to archive course: ' + error.message)
         }
         setLoading(false)
@@ -143,11 +110,11 @@ export default function AdminCourseManagement() {
     const handleBulkPublish = async () => {
         if (!selectedCourses.length) return
         setLoading(true)
-        const { error } = await supabase.from('courses').update({ is_published: true }).in('id', selectedCourses)
-        if (!error) {
+        try {
+            await coursesService.bulkPublish(selectedCourses, true);
             setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Published' } : c))
             setSelectedCourses([])
-        } else {
+        } catch (error: any) {
             alert('Failed to publish courses: ' + error.message)
         }
         setLoading(false)
@@ -156,11 +123,11 @@ export default function AdminCourseManagement() {
     const handleBulkArchive = async () => {
         if (!selectedCourses.length) return
         setLoading(true)
-        const { error } = await supabase.from('courses').update({ is_published: false }).in('id', selectedCourses)
-        if (!error) {
+        try {
+            await coursesService.bulkPublish(selectedCourses, false);
             setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Draft' } : c))
             setSelectedCourses([])
-        } else {
+        } catch (error: any) {
             alert('Failed to archive courses: ' + error.message)
         }
         setLoading(false)
@@ -172,40 +139,7 @@ export default function AdminCourseManagement() {
         
         setLoading(true)
         try {
-            for (const id of selectedCourses) {
-                const { data: activeEnrollments } = await supabase.from('enrollments')
-                    .select('user_id, expires_at')
-                    .eq('course_id', id)
-                    .gte('expires_at', new Date().toISOString())
-
-                if (activeEnrollments && activeEnrollments.length > 0) {
-                    const { data: courseData } = await supabase.from('courses').select('price').eq('id', id).single()
-                    const coursePrice = courseData?.price || 0
-                    
-                    const refundsToInsert = activeEnrollments.map(enr => {
-                        const expiresAt = new Date(enr.expires_at).getTime()
-                        const now = new Date().getTime()
-                        const remainingMs = expiresAt - now
-                        const msInYear = 365 * 24 * 60 * 60 * 1000
-                        const percentRemaining = Math.max(0, Math.min(1, remainingMs / msInYear))
-                        const refundAmount = Math.round(coursePrice * percentRemaining * 100) / 100
-
-                        return {
-                            user_id: enr.user_id,
-                            course_id: id,
-                            amount: refundAmount,
-                            reason: 'Course bulk deleted by admin',
-                            status: 'processed'
-                        }
-                    }).filter(r => r.amount > 0)
-
-                    if (refundsToInsert.length > 0) {
-                        await supabase.from('refunds').insert(refundsToInsert)
-                    }
-                }
-                await supabase.from('courses').delete().eq('id', id)
-            }
-            
+            await apiClient.post('/api/courses/delete-with-refund', { ids: selectedCourses });
             setCourses(courses.filter(c => !selectedCourses.includes(c.id)))
             setSelectedCourses([])
             alert(`Successfully deleted ${selectedCourses.length} courses and issued partial refunds.`)

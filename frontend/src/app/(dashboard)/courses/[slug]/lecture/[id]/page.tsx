@@ -1,12 +1,13 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import VideoPlayer from '../../../../../../components/VideoPlayer'
-import { trendingCourses } from '../../../../../../lib/dummyData'
-import useUser from '../../../../../../lib/useUser'
+import VideoPlayer from '@/components/VideoPlayer'
+
+import useUser from '@/lib/useUser'
 import dynamic from 'next/dynamic'
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
-import supabase from '../../../../../../lib/supabaseClient'
+import { coursesService } from '@/services/coursesService'
+import { commentsService } from '@/services/commentsService'
 import Link from 'next/link'
 
 export default function LecturePage({ params }: { params: Promise<{ slug: string, id: string }> }) {
@@ -26,6 +27,66 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [quizAnswers, setQuizAnswers] = useState<{ [key: number]: number }>({})
     const [quizResult, setQuizResult] = useState<{ score: number, passed: boolean } | null>(null)
 
+    // Comments State
+    const [comments, setComments] = useState<any[]>([])
+    const [newComment, setNewComment] = useState("")
+    const [loadingComments, setLoadingComments] = useState(true)
+    const [isPostingComment, setIsPostingComment] = useState(false)
+
+    useEffect(() => {
+        if (!slug || !id) return
+        const fetchComments = async () => {
+            try {
+                const data = await commentsService.getComments(slug as string, id as string)
+                if (data && Array.isArray(data.comments)) {
+                    setComments(data.comments)
+                } else if (Array.isArray(data)) {
+                    setComments(data)
+                }
+            } catch (err) {
+                console.error("Failed to fetch comments", err)
+            } finally {
+                setLoadingComments(false)
+            }
+        }
+        fetchComments()
+    }, [slug, id])
+
+    const handlePostComment = async () => {
+        if (!newComment.trim() || !user) return
+        setIsPostingComment(true)
+        try {
+            const added = await commentsService.addComment({
+                course_slug: slug,
+                lecture_id: id,
+                text: newComment,
+                user_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
+            })
+            if (added && added.comment) {
+                setComments([added.comment, ...comments])
+            } else if (added) {
+                setComments([added, ...comments])
+            }
+            setNewComment("")
+        } catch (err) {
+            console.error("Failed to post comment", err)
+            alert("Failed to post comment. Please try again.")
+        } finally {
+            setIsPostingComment(false)
+        }
+    }
+
+    const handleDeleteComment = async (commentId: string) => {
+        if (!confirm("Are you sure you want to delete this comment?")) return
+        try {
+            await commentsService.deleteComment(commentId)
+            setComments(comments.filter(c => c.id !== commentId))
+        } catch (err) {
+            console.error("Failed to delete comment", err)
+            alert("Failed to delete comment.")
+        }
+    }
+
     useEffect(() => {
         if (!slug || !id) return
         const progress = JSON.parse(localStorage.getItem('skillnora_progress') || '{}')
@@ -39,32 +100,18 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         if (!id || !slug) return
         let mounted = true
         const fetchLecture = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            const { data: course } = await supabase.from('courses').select('*, lectures(*)').eq('slug', slug).single()
-
+            const course = await coursesService.getOne(slug as string)
             if (mounted) {
                 if (course) {
-                    const l = (course.lectures || []).find((x: any) => String(x.id) === String(id))
-                    setLecture(l ?? null)
-                    setCourseInfo({ title: course.title, slug, totalLectures: course.lectures?.length || 1 })
-                    setAttachments(course.attachments || [])
-
-                    if (user) {
-                        const { data: enrollment } = await supabase.from('enrollments').select('id, expires_at').eq('user_id', user.id).eq('course_id', course.id).single()
-                        if (enrollment) {
-                            if (!enrollment.expires_at || new Date(enrollment.expires_at) > new Date()) {
-                                setIsEnrolled(true)
-                            }
-                        }
+                    setCourseInfo({ title: course.title, slug: course.slug, totalLectures: course.lectures?.length || 1 })
+                    const lec = course.lectures?.find((l: any) => String(l.id) === String(id))
+                    if (lec) setLecture(lec)
+                    
+                    if (course.isEnrolled) {
+                        setIsEnrolled(true)
                     }
                 } else {
-                    // Fallback to dummy data
-                    const dummyCourse = trendingCourses.find(c => c.slug === slug)
-                    if (dummyCourse) {
-                        setCourseInfo({ title: dummyCourse.title, slug, totalLectures: dummyCourse.lectures?.length || 1 })
-                        const l = dummyCourse.lectures?.find(x => String(x.id) === String(id))
-                        if (l) setLecture(l)
-                    }
+                    setLecture(null)
                 }
                 setLoading(false)
             }
@@ -324,6 +371,70 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                                 Save Notes
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Comments Section */}
+                    <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
+                            <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                            Discussion
+                        </h2>
+                        
+                        <div className="flex flex-col gap-4">
+                            <div className="flex gap-4">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex-shrink-0 flex items-center justify-center font-bold text-blue-600">
+                                    {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                                </div>
+                                <div className="flex-1">
+                                    <textarea 
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        placeholder="Ask a question or share your thoughts..."
+                                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:border-blue-500 transition-colors resize-y min-h-[100px]"
+                                    ></textarea>
+                                    <div className="mt-2 flex justify-end">
+                                        <button 
+                                            onClick={handlePostComment}
+                                            disabled={!newComment.trim() || isPostingComment}
+                                            className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                        >
+                                            {isPostingComment ? 'Posting...' : 'Post Comment'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 space-y-4">
+                                {loadingComments ? (
+                                    <div className="text-center text-slate-500 py-4">Loading comments...</div>
+                                ) : comments.length === 0 ? (
+                                    <div className="text-center text-slate-500 py-4 italic">No comments yet. Be the first to start the discussion!</div>
+                                ) : (
+                                    comments.map((comment: any) => (
+                                        <div key={comment.id} className="flex gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex-shrink-0 flex items-center justify-center font-bold text-indigo-600">
+                                                {comment.user_name?.charAt(0) || 'U'}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="font-bold text-slate-900 dark:text-white">{comment.user_name}</span>
+                                                    <span className="text-xs text-slate-500">{new Date(comment.created_at).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{comment.text}</p>
+                                                {user?.id === comment.user_id && (
+                                                    <button 
+                                                        onClick={() => handleDeleteComment(comment.id)}
+                                                        className="text-xs text-red-500 hover:text-red-700 mt-2 font-medium"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 </main>

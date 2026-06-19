@@ -2,10 +2,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import useUser from '../../lib/useUser'
-import supabase from '../../lib/supabaseClient'
-import { trendingCourses } from '../../lib/dummyData'
-import AskieBot from '../AskieBot'
+import useUser from '@/lib/useUser'
+import { authService } from '@/services/authService'
+import AskieBot from '@/components/AskieBot'
 
 function getRole(user: any) {
     if (user?.email === 'sachinverma1489@gmail.com') return 'admin'
@@ -67,15 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }, [])
 
     const suggestions = useMemo(() => {
-        if (!searchQuery.trim()) return []
-        const q = searchQuery.toLowerCase()
-        return trendingCourses.filter(c => 
-            c.title.toLowerCase().includes(q) ||
-            (c.instructor || (c as any).instructor_name || '').toLowerCase().includes(q) ||
-            ((c as any).category || '').toLowerCase().includes(q) ||
-            ((c as any).role || '').toLowerCase().includes(q) ||
-            ((c as any).skill || '').toLowerCase().includes(q)
-        ).slice(0, 5)
+        return []
     }, [searchQuery])
 
     const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -99,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     useEffect(() => {
         if (!loading && !user) {
-            const protectedPaths = ['/wishlist', '/certificates', '/settings', '/admin', '/instructor', '/enrolled', '/notes', '/statistics', '/coding']
+            const protectedPaths = ['/cart', '/wishlist', '/certificates', '/settings', '/admin', '/instructor', '/enrolled', '/notes', '/statistics', '/coding']
             const isProtected = protectedPaths.some(p => pathname.startsWith(p))
             const isPublicCertificate = pathname.match(/^\/certificates\/[^/]+$/)
             
@@ -150,7 +141,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     async function signOut() {
         setDropdownOpen(false)
         setIsLoggingOut(true)
-        await supabase.auth.signOut()
+        await authService.logout()
         router.push('/auth')
     }
 

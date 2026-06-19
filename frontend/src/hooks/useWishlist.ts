@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import useUser from '../lib/useUser'
+import useUser from '@/lib/useUser'
 
 const WISHLIST_EVENT = 'wishlist_updated'
 

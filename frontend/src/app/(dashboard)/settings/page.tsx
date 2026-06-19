@@ -1,9 +1,10 @@
 "use client"
 import React, { useState, useEffect } from 'react'
-import supabase from '../../../lib/supabaseClient'
-import useUser from '../../../lib/useUser'
+import useUser from '@/lib/useUser'
+import { authService } from '@/services/authService'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import apiClient from '@/lib/apiClient'
 
 export default function SettingsPage() {
     const { user, loading } = useUser()
@@ -53,10 +54,7 @@ export default function SettingsPage() {
         setMessage(null)
         
         try {
-            const { error } = await supabase.auth.updateUser({
-                data: { full_name: fullName }
-            })
-            if (error) throw error
+            await authService.updateProfile({ full_name: fullName })
             setMessage({ text: 'Profile updated successfully!', type: 'success' })
         } catch (error: any) {
             setMessage({ text: error.message || 'Failed to update profile', type: 'error' })
@@ -79,8 +77,8 @@ export default function SettingsPage() {
         setIsSaving(true)
         setMessage(null)
         try {
-            const { error } = await supabase.auth.updateUser({ password })
-            if (error) throw error
+            await authService.updatePassword(password)
+
             setPassword('')
             setConfirmPassword('')
             setMessage({ text: 'Password updated successfully!', type: 'success' })
@@ -102,24 +100,29 @@ export default function SettingsPage() {
             const fileName = `${user.id}-${Math.random()}.${fileExt}`
             const filePath = `avatars/${fileName}`
 
-            // Assuming a 'public' bucket exists in supabase
-            const { error: uploadError } = await supabase.storage.from('public').upload(filePath, file)
-            if (uploadError && uploadError.message !== 'Bucket not found') {
-                // Ignore bucket not found for local dev, let's just simulate or use a random avatar UI if bucket fails
-                console.warn(uploadError)
-            }
-
-            // Get public URL
-            const { data: publicUrlData } = supabase.storage.from('public').getPublicUrl(filePath)
-            
-            // For robust fallback, if upload fails, we can just use DiceBear
-            const finalAvatarUrl = uploadError ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}-${Date.now()}` : publicUrlData.publicUrl
-
-            const { error } = await supabase.auth.updateUser({
-                data: { avatar_url: finalAvatarUrl, picture: finalAvatarUrl }
+            // Fetch signed upload URL from our backend
+            const { data } = await apiClient.post('/api/upload/url', {
+                bucket: 'public',
+                filePath
             })
             
-            if (error) throw error
+            if (data.uploadUrl) {
+                // Upload file directly using the signed URL
+                const res = await fetch(data.uploadUrl, {
+                    method: 'PUT',
+                    body: file,
+                    headers: { 'Content-Type': file.type }
+                })
+                
+                if (!res.ok) {
+                    throw new Error('Failed to upload file to storage')
+                }
+            }
+
+            const finalAvatarUrl = data.publicUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}-${Date.now()}`
+
+            await authService.updateProfile({ avatar_url: finalAvatarUrl })
+            
             setMessage({ text: 'Avatar updated successfully!', type: 'success' })
         } catch (error: any) {
             setMessage({ text: error.message || 'Failed to upload avatar', type: 'error' })

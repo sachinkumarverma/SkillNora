@@ -1,12 +1,12 @@
 "use client"
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { useWishlist } from '../../../hooks/useWishlist'
-import { trendingCourses } from '../../../lib/dummyData'
+import { useWishlist } from '@/hooks/useWishlist'
+
 
 export default function EnrolledPage() {
     const router = useRouter()
-    
+
     // MOCK: Replace with actual enrolled courses fetch logic
     const enrolledCourses = trendingCourses.slice(0, 3)
 
@@ -19,7 +19,7 @@ export default function EnrolledPage() {
                         {enrolledCourses.length} active
                     </span>
                 </div>
-                
+
                 {enrolledCourses.length === 0 ? (
                     <div className="rounded-lg border-2 border-dashed border-slate-200 py-16 flex flex-col items-center justify-center text-slate-500 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
@@ -27,7 +27,7 @@ export default function EnrolledPage() {
                         </div>
                         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">You aren't enrolled in any courses</h2>
                         <p className="text-sm font-medium text-slate-500 max-w-md text-center">Save courses you want to learn later by clicking the heart icon on any course card.</p>
-                        <button 
+                        <button
                             onClick={() => router.push('/courses')}
                             className="mt-6 bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition-colors"
                         >
@@ -37,28 +37,28 @@ export default function EnrolledPage() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {enrolledCourses.map((course) => (
-                            <div 
-                                key={course.id} 
+                            <div
+                                key={course.id}
                                 onClick={() => router.push(`/courses/${course.slug}`)}
                                 className="group flex flex-col cursor-pointer transition-all duration-300"
                             >
                                 <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 mb-3">
-                                    <img 
-                                        src={course.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop'} 
-                                        alt={course.title} 
+                                    <img
+                                        src={course.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop'}
+                                        alt={course.title}
                                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                     />
                                     <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10"></div>
                                 </div>
-                                
+
                                 <h3 className="font-bold text-slate-900 dark:text-white text-[15px] leading-tight line-clamp-2 mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors min-h-[2.75rem]">
                                     {course.title}
                                 </h3>
-                                
+
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium line-clamp-1">
                                     {course.instructor || (course as any).instructor_name || 'Expert Instructor'}
                                 </p>
-                                
+
                                 <div className="mt-auto flex items-end justify-between">
                                     <div>
                                         <div className="flex items-center gap-1.5 mb-2 text-xs font-bold">
@@ -73,7 +73,7 @@ export default function EnrolledPage() {
                                             Enrolled
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                                     >
                                         Continue

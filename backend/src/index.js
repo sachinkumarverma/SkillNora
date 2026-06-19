@@ -14,13 +14,11 @@ const app = express()
 const FRONTEND_ORIGIN = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'
 app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }))
 
-// JSON body parser for most routes
 app.use(express.json({ limit: '5mb' }))
 
-// Raw body parser for webhook endpoints
 import raw from 'body-parser'
 app.use('/api/payments/webhook', raw.raw({ type: '*/*' }))
-// attach readable raw body string to req.bodyRaw for controllers
+
 app.use('/api/payments/webhook', (req, _res, next) => {
     try {
         if (req && req.body && Buffer.isBuffer(req.body)) req.bodyRaw = req.body.toString('utf8')

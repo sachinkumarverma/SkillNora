@@ -1,11 +1,9 @@
 "use client"
 import React, { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import api from '../../../lib/api'
-
-import { trendingCourses } from '../../../lib/dummyData'
-import { useWishlist } from '../../../hooks/useWishlist'
-import useUser from '../../../lib/useUser'
+import api from '@/lib/api'
+import { useWishlist } from '@/hooks/useWishlist'
+import useUser from '@/lib/useUser'
 
 function CoursesContent() {
     const router = useRouter()

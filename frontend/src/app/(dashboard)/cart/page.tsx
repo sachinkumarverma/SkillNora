@@ -1,8 +1,8 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import useUser from '../../../lib/useUser'
-import supabase from '../../../lib/supabaseClient'
+import useUser from '@/lib/useUser'
+import apiClient from '@/lib/apiClient'
 import { useRouter } from 'next/navigation'
 
 export default function CartPage() {
@@ -40,29 +40,12 @@ export default function CartPage() {
             // Generate dummy order ID for now
             const orderId = 'order_' + crypto.randomUUID().substring(0, 8)
             
-            // Insert order record for total amount
-            const { error: orderError } = await supabase.from('orders').insert({
-                razorpay_order_id: orderId,
-                user_id: user.id,
-                amount: totalAmount,
-                status: 'paid'
-            })
-            
-            if (orderError) throw orderError
-
-            // Determine expiry (e.g. 1 year from now for subscriptions)
-            const expiryDate = new Date()
-            expiryDate.setFullYear(expiryDate.getFullYear() + 1)
-
-            // Insert enrollments
-            const enrollmentsToInsert = cart.map(c => ({
-                user_id: user.id,
-                course_id: c.id,
-                expires_at: expiryDate.toISOString()
-            }))
-            
-            const { error: enrollError } = await supabase.from('enrollments').insert(enrollmentsToInsert)
-            if (enrollError) throw enrollError
+            // Send to backend to record order and enroll
+            await apiClient.post('/api/payments/record-order-and-enroll', {
+                orderId,
+                totalAmount,
+                enrollments: enrollmentsToInsert
+            });
 
             // Clear cart
             localStorage.setItem('skillnora_cart', '[]')

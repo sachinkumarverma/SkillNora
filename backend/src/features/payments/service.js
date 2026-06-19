@@ -1,15 +1,17 @@
 import { supabase } from '../../lib/supabase.js'
+import { query } from '../../config/db.js'
 import crypto from 'crypto'
 import Razorpay from 'razorpay'
 
 const RZ_ID = process.env.RAZORPAY_KEY_ID
 const RZ_SECRET = process.env.RAZORPAY_KEY_SECRET
 let razor = null
+
 if (RZ_ID && RZ_SECRET) {
     try { razor = new Razorpay({ key_id: RZ_ID, key_secret: RZ_SECRET }) } catch (e) { console.warn('Failed to init Razorpay client', e) }
 }
 
-export async function createOrder(payload) {
+const createOrder = async (payload) => {
     const amount = Math.round(Number(payload.amount) * 100)
     if (!amount || amount <= 0) throw new Error('Invalid amount')
     const options = { amount, currency: payload.currency || 'INR', receipt: payload.receipt || `rcpt_${Date.now()}`, payment_capture: 1 }
@@ -23,13 +25,16 @@ export async function createOrder(payload) {
     }
 
     try {
-        await supabase.from('orders').insert({ razorpay_order_id: order.id, user_id: payload.user_id ?? null, course_id: payload.course_id ?? null, amount: payload.amount, currency: options.currency, status: 'created', receipt: options.receipt })
+        await query(
+            'INSERT INTO orders (razorpay_order_id, user_id, course_id, amount, currency, status, receipt) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [order.id, payload.user_id ?? null, payload.course_id ?? null, payload.amount, options.currency, 'created', options.receipt]
+        )
     } catch (e) { console.warn('Failed to persist order', e) }
 
     return order
 }
 
-export async function handleWebhook(rawBody, headers) {
+const handleWebhook = async (rawBody, headers) => {
     const secret = process.env.RAZORPAY_KEY_SECRET || ''
     const signature = headers['x-razorpay-signature'] || headers['X-Razorpay-Signature'] || ''
 
@@ -46,15 +51,20 @@ export async function handleWebhook(rawBody, headers) {
     if (payment) {
         const rpOrderId = payment.order_id
         const status = payment.status || 'unknown'
-        try { await supabase.from('orders').update({ status }).eq('razorpay_order_id', rpOrderId) } catch (e) { console.warn('Failed to update order', e) }
+        try { await query('UPDATE orders SET status = $1 WHERE razorpay_order_id = $2', [status, rpOrderId]) } catch (e) { console.warn('Failed to update order', e) }
         // If paid, create enrollment
         if (status === 'captured' || status === 'paid') {
             try {
-                const orderRow = await supabase.from('orders').select('*').eq('razorpay_order_id', rpOrderId).maybeSingle()
-                if (orderRow.data && orderRow.data.user_id && orderRow.data.course_id) {
-                    await supabase.from('enrollments').insert({ user_id: orderRow.data.user_id, course_id: orderRow.data.course_id })
+                const orderRes = await query('SELECT * FROM orders WHERE razorpay_order_id = $1', [rpOrderId])
+                if (orderRes.rows.length > 0) {
+                    const orderRow = orderRes.rows[0]
+                    if (orderRow.user_id && orderRow.course_id) {
+                        await query('INSERT INTO enrollments (user_id, course_id) VALUES ($1, $2)', [orderRow.user_id, orderRow.course_id])
+                    }
                 }
             } catch (e) { console.warn('Failed to create enrollment after payment', e) }
         }
     }
 }
+
+export { createOrder, handleWebhook };

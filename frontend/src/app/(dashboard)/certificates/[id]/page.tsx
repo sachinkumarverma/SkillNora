@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import useUser from '../../../../lib/useUser'
+import useUser from '@/lib/useUser'
 
 export default function CertificateViewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)

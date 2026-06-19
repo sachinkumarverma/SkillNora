@@ -8,7 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true })
 
 const OPENAI_BASE = 'https://api.openai.com/v1'
 
-export async function generateSummary(text) {
+const generateSummary = async (text) => {
     const key = process.env.OPENAI_API_KEY || ''
     if (!key) {
         // Dev fallback: make a naive summary by splitting sentences
@@ -23,6 +23,7 @@ export async function generateSummary(text) {
         max_tokens: 250,
         temperature: 0.2
     }
+    
     const res = await fetch(`${OPENAI_BASE}/chat/completions`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` }, body: JSON.stringify(body) })
     if (!res.ok) {
         const txt = await res.text()
@@ -37,3 +38,6 @@ export async function generateSummary(text) {
 }
 
 export default { generateSummary }
+
+
+export { generateSummary };

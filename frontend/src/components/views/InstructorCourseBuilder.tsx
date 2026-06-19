@@ -2,8 +2,10 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import supabase from '../../lib/supabaseClient'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { coursesService } from '@/services/coursesService'
+import apiClient from '@/lib/apiClient'
+// keep for auth
 import { useEffect } from 'react'
 import Confetti from 'react-confetti'
 import { useWindowSize } from 'react-use'
@@ -86,56 +88,60 @@ export default function InstructorCourseBuilder() {
 
     useEffect(() => {
         const fetchUserAndInstructors = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data } = await apiClient.get('/api/auth/profile')
+            const user = data.user
             if (user) {
                 setCurrentUser(user)
-                
-                // Fallback email bypass in case the users table is inaccessible or RLS blocked
                 const isAdmin = user.email === 'sachinverma1489@gmail.com' || user.email === 'admin@skillnora.com'
                 
-                // Fetch secure role directly from the database if possible
-                const { data: userData, error } = await supabase.from('users').select('role').eq('id', user.id).single()
-                
-                const role = isAdmin ? 'admin' : (userData?.role || 'instructor')
-                setCurrentUserRole(role)
+                try {
+                    const userData = await apiClient.get('/api/users/me').then(res => res.data.user)
+                    const role = isAdmin ? 'admin' : (userData?.role || 'instructor')
+                    setCurrentUserRole(role)
 
-                if (role === 'admin') {
-                    // Fetch all instructors securely
-                    const { data: insts } = await supabase.from('users').select('id, full_name, email').in('role', ['instructor', 'admin'])
-                    if (insts) setInstructors(insts)
+                    if (role === 'admin') {
+                        const insts = await apiClient.get('/api/users/instructors').then(res => res.data.instructors)
+                        if (insts) setInstructors(insts)
+                    }
+                } catch (e) {
+                    console.error("Error fetching user data", e);
                 }
             }
             if (editCourseId) {
-                const { data: c } = await supabase.from('courses').select('*, instructor:users(full_name, email)').eq('id', editCourseId).single()
-                if (c) {
-                    setCourseData({
-                        title: c.title || '',
-                        description: c.description || '',
-                        detailed_overview: c.detailed_overview || '',
-                        price: c.price ? String(c.price) : '',
-                        discountPrice: c.discount_price ? String(c.discount_price) : '',
-                        category: c.category || 'Artificial Intelligence',
-                        target_role: c.target_role || 'Machine Learning Engineer',
-                        primary_skill: c.primary_skill || 'Python',
-                        certificate_type: c.certificate_type || 'Professional Certificates',
-                        thumbnail_url: c.thumbnail_url || '',
-                        instructor_id: c.instructor_id || 'myself',
-                        initial_instructor_name: c.instructor?.full_name || c.instructor?.email,
-                        provide_certificate: true,
-                        attachments: c.attachments || []
-                    })
-                    if (c.thumbnail_url) setThumbnailMode('unsplash')
-                }
-                const { data: lectures } = await supabase.from('lectures').select('*').eq('course_id', editCourseId).order('position', { ascending: true })
-                if (lectures && lectures.length > 0) {
-                    setModules(lectures.map((l: any, i: number) => ({
-                        id: l.id || Date.now() + i,
-                        title: l.title || '',
-                        videoMode: l.video_url?.includes('http') ? 'link' : 'upload',
-                        videoUrl: l.video_url || '',
-                        thumbnailMode: l.thumbnail_url ? 'unsplash' : 'upload',
-                        thumbnailUrl: l.thumbnail_url || ''
-                    })))
+                try {
+                    const c = await coursesService.getOne(editCourseId as string)
+                    if (c) {
+                        setCourseData({
+                            title: c.title || '',
+                            description: c.description || '',
+                            detailed_overview: c.detailed_overview || '',
+                            price: c.price ? String(c.price) : '',
+                            discountPrice: c.discount_price ? String(c.discount_price) : '',
+                            category: c.category || 'Artificial Intelligence',
+                            target_role: c.target_role || 'Machine Learning Engineer',
+                            primary_skill: c.primary_skill || 'Python',
+                            certificate_type: c.certificate_type || 'Professional Certificates',
+                            thumbnail_url: c.thumbnail_url || '',
+                            instructor_id: c.instructor_id || 'myself',
+                            initial_instructor_name: c.instructor?.full_name || c.instructor?.email,
+                            provide_certificate: true,
+                            attachments: c.attachments || []
+                        })
+                        if (c.thumbnail_url) setThumbnailMode('unsplash')
+                        
+                        if (c.lectures && c.lectures.length > 0) {
+                            setModules(c.lectures.map((l: any, i: number) => ({
+                                id: l.id || Date.now() + i,
+                                title: l.title || '',
+                                videoMode: l.video_url?.includes('http') ? 'link' : 'upload',
+                                videoUrl: l.video_url || '',
+                                thumbnailMode: l.thumbnail_url ? 'unsplash' : 'upload',
+                                thumbnailUrl: l.thumbnail_url || ''
+                            })))
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error fetching course", e);
                 }
             }
         }
@@ -151,7 +157,8 @@ export default function InstructorCourseBuilder() {
         }
         setIsSaving(true)
         try {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data } = await apiClient.get('/api/auth/profile')
+            const user = data.user
             if (!user) {
                 alert('Please sign in to publish a course')
                 return
@@ -187,34 +194,22 @@ export default function InstructorCourseBuilder() {
 
             let course;
             if (editCourseId) {
-                const { data, error } = await supabase.from('courses').update(coursePayload).eq('id', editCourseId).select().single()
-                if (error) throw error
-                course = data
+                course = await coursesService.update(editCourseId as string, coursePayload);
             } else {
-                const { data, error } = await supabase.from('courses').insert(coursePayload).select().single()
-                if (error) throw error
-                course = data
+                course = await coursesService.create(coursePayload);
             }
 
             if (course) {
-                // To handle modules on edit, first delete the existing ones
-                if (editCourseId) {
-                    await supabase.from('lectures').delete().eq('course_id', course.id)
-                }
-
-                // Insert modules (lectures)
                 const lecturesToInsert = modules.map((mod, index) => ({
                     course_id: course.id,
                     title: mod.title,
                     video_url: mod.videoUrl,
                     thumbnail_url: mod.videoMode === 'link' ? '' : mod.thumbnailUrl,
                     position: index + 1
-                    // Removed mcqs from payload as the column doesn't exist in Supabase DB yet
                 }))
 
                 if (lecturesToInsert.length > 0) {
-                    const { error: lecturesError } = await supabase.from('lectures').insert(lecturesToInsert)
-                    if (lecturesError) throw lecturesError
+                    await coursesService.updateLectures(course.id, lecturesToInsert);
                 }
             }
 

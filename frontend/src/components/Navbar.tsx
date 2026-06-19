@@ -1,8 +1,8 @@
 "use client"
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import useUser from '../lib/useUser'
+import useUser from '@/lib/useUser'
 import Link from 'next/link'
-import supabase from '../lib/supabaseClient'
+import { authService } from '@/services/authService'
 
 function getRole(user: any) {
     return user?.user_metadata?.role || user?.app_metadata?.role || 'student'
@@ -50,7 +50,7 @@ export default function Navbar() {
     }
 
     async function signOut() {
-        await supabase.auth.signOut()
+        await authService.logout()
         window.location.href = '/'
     }
 

@@ -1,10 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import api from '../../../../../lib/api'
-import { trendingCourses } from '../../../../../lib/dummyData'
-
-import supabase from '../../../../../lib/supabaseClient'
+import { coursesService } from '@/services/coursesService'
 
 export default function PreviewPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
@@ -15,7 +12,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
     useEffect(() => {
         let mounted = true
         const fetchCourse = async () => {
-            const { data } = await supabase.from('courses').select('*, instructor:users(full_name, email), lectures(*)').eq('slug', slug).single()
+            const data = await coursesService.getOne(slug as string)
             if (mounted) {
                 if (data) {
                     setCourse({
@@ -32,7 +29,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
             }
         }
         fetchCourse()
-            
+
         return () => { mounted = false }
     }, [slug])
 
@@ -108,7 +105,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                                 <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 <span>{course.lectures?.length > 0 ? Math.ceil(course.lectures.length * 1.5) : 1} hours of on-demand video</span>
                             </div>
-                            
+
                             {course.attachments && course.attachments.length > 0 && (
                                 <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
                                     <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>

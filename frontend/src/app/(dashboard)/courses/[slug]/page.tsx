@@ -1,9 +1,9 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import { trendingCourses } from '../../../../lib/dummyData'
-import useUser from '../../../../lib/useUser'
+
+import useUser from '@/lib/useUser'
 import { useRouter } from 'next/navigation'
-import supabase from '../../../../lib/supabaseClient'
+import { coursesService } from '@/services/coursesService'
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
@@ -38,39 +38,24 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         if (!slug) return
         let mounted = true
         const fetchCourse = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            const { data } = await supabase.from('courses').select('*, instructor:users(full_name), lectures(*)').eq('slug', slug).single()
+            const data = await coursesService.getOne(slug as string)
             if (mounted) {
                 if (data) {
                     setCourse({
                         ...data,
                         instructor_name: data.instructor?.full_name || 'Instructor',
-                        image: data.thumbnail_url,
-                        price: `₹${data.price}`
+                        lectures: data.lectures || []
                     })
-                    if (user) {
-                        const { data: enrollment } = await supabase.from('enrollments').select('id, expires_at').eq('user_id', user.id).eq('course_id', data.id).single()
-                        if (enrollment) {
-                            if (!enrollment.expires_at || new Date(enrollment.expires_at) > new Date()) {
-                                setIsEnrolled(true)
-                            }
-                        }
-                    }
+                    if (data.isEnrolled) {
+                        setIsEnrolled(true)
                 } else {
-                    // Fallback to dummy
-                    const found = trendingCourses.find(c => c.slug === slug)
-                    if (found) {
-                        setCourse({
-                            ...found,
-                            instructor_name: found.instructor
-                        })
-                    }
+                    setCourse(null)
                 }
                 setLoading(false)
             }
         }
         fetchCourse()
-            
+
         return () => { mounted = false }
     }, [slug])
 
@@ -103,7 +88,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             <div className="text-blue-600 font-bold tracking-wide uppercase text-xs mb-3">{course.category || 'Course'}</div>
                             <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white leading-tight mb-4">{course.title}</h1>
                             <p className="text-lg text-slate-600 dark:text-slate-300 mb-6 font-medium whitespace-pre-wrap">{course.detailed_overview || course.description || 'Comprehensive learning material to advance your career and skills.'}</p>
-                            
+
                             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-8">
                                 <div className="flex items-center gap-1.5 font-bold">
                                     <span className="text-amber-500">{course.average_rating || '0.00'}</span>
@@ -172,7 +157,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             {course.image && !imageError ? (
                                 <img src={course.image} alt={course.title} onError={() => setImageError(true)} className="w-full h-full object-cover" />
                             ) : (
-                                <svg className="w-16 h-16 text-slate-300 dark:text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <svg className="w-16 h-16 text-slate-300 dark:text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             )}
                         </div>
                         <div className="p-6">
@@ -189,7 +174,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                 </button>
                             )}
                             <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "You have full lifetime access" : "30-Day Money-Back Guarantee"}</p>
-                            
+
                             <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800 text-sm">
                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                                     <span className="flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> Total Lectures</span>

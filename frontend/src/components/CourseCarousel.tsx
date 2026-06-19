@@ -1,6 +1,6 @@
 "use client"
 import React, { useRef } from 'react'
-import { useWishlist } from '../hooks/useWishlist'
+import { useWishlist } from '@/hooks/useWishlist'
 
 export default function CourseCarousel({ title, courses }: { title: string, courses: any[] }) {
     const scrollContainerRef = useRef<HTMLDivElement>(null)

@@ -1,6 +1,6 @@
 import * as service from './service.js'
 
-export async function createOrder(req, res) {
+const createOrder = async (req, res) => {
     try {
         const payload = req.body
         const order = await service.createOrder(payload)
@@ -8,7 +8,7 @@ export async function createOrder(req, res) {
     } catch (err) { res.status(500).json({ error: String(err) }) }
 }
 
-export async function webhook(req, res) {
+const webhook = async (req, res) => {
     try {
         const raw = req.bodyRaw || JSON.stringify(req.body)
         const headers = req.headers
@@ -17,7 +17,7 @@ export async function webhook(req, res) {
     } catch (err) { res.status(400).json({ error: String(err) }) }
 }
 
-export async function simulate(_req, res) {
+const simulate = async (_req, res) => {
     try {
         // Create a fake payment event similar to Razorpay payload
         const fake = {
@@ -46,3 +46,5 @@ export async function simulate(_req, res) {
         res.json({ ok: true, fake })
     } catch (err) { res.status(500).json({ error: String(err) }) }
 }
+
+export { createOrder, webhook, simulate };
