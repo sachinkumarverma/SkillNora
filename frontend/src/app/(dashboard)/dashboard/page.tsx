@@ -18,7 +18,7 @@ export default function DashboardPage() {
         let active = true
         api.api('/api/courses').then((data) => {
             if (!active) return
-            setCourses(Array.isArray(data) ? data : data.data ?? [])
+            setCourses(Array.isArray(data) ? data : data.courses || data.data || [])
         }).catch(() => {
             if (active) setCourses([])
         }).finally(() => {
@@ -27,7 +27,7 @@ export default function DashboardPage() {
         return () => { active = false }
     }, [])
 
-    const displayCourses = courses.length > 0 ? courses : trendingCourses
+    const displayCourses = courses
 
     return (
         <div className="bg-white dark:bg-slate-950 min-h-screen pb-16">

@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-    LineChart,
-    Line,
     BarChart,
     Bar,
     XAxis,

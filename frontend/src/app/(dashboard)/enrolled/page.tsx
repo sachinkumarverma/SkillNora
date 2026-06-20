@@ -1,8 +1,6 @@
 "use client"
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { useWishlist } from '@/hooks/useWishlist'
-
 
 export default function EnrolledPage() {
     const router = useRouter()

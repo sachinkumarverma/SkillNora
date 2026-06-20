@@ -9,6 +9,7 @@ const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
 import { coursesService } from '@/services/coursesService'
 import { commentsService } from '@/services/commentsService'
 import Link from 'next/link'
+import apiClient from '@/lib/apiClient'
 
 export default function LecturePage({ params }: { params: Promise<{ slug: string, id: string }> }) {
     const { slug, id } = React.use(params)
@@ -18,7 +19,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [certUnlocked, setCertUnlocked] = useState(false)
     const [timeElapsed, setTimeElapsed] = useState(false)
     const [videoCompleted, setVideoCompleted] = useState(false)
-    const [courseInfo, setCourseInfo] = useState<{ title: string, slug: string, totalLectures: number } | null>(null)
+    const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, totalLectures: number } | null>(null)
     const [noteText, setNoteText] = useState("")
     const [noteSaved, setNoteSaved] = useState(false)
     const [isEnrolled, setIsEnrolled] = useState(false)
@@ -32,6 +33,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [newComment, setNewComment] = useState("")
     const [loadingComments, setLoadingComments] = useState(true)
     const [isPostingComment, setIsPostingComment] = useState(false)
+    const [imageFile, setImageFile] = useState<File | null>(null)
+    const [replyingTo, setReplyingTo] = useState<any | null>(null)
 
     useEffect(() => {
         if (!slug || !id) return
@@ -52,22 +55,47 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         fetchComments()
     }, [slug, id])
 
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setImageFile(e.target.files[0])
+        }
+    }
+
     const handlePostComment = async () => {
-        if (!newComment.trim() || !user) return
+        if ((!newComment.trim() && !imageFile) || !user) return
         setIsPostingComment(true)
         try {
+            let uploadedImageUrl = null;
+            if (imageFile) {
+                const fileExt = imageFile.name.split('.').pop()
+                const fileName = `comments/${user.id}-${Math.random()}.${fileExt}`
+                const { data } = await apiClient.post('/api/upload/url', {
+                    bucket: 'course-thumbnails',
+                    filePath: fileName
+                })
+                if (data.uploadUrl) {
+                    await fetch(data.uploadUrl, { method: 'PUT', body: imageFile, headers: { 'Content-Type': imageFile.type } })
+                    uploadedImageUrl = data.publicUrl
+                }
+            }
+
             const added = await commentsService.addComment({
                 course_slug: slug,
                 lecture_id: id,
                 text: newComment,
-                user_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
+                image_url: uploadedImageUrl,
+                parent_id: replyingTo?.id || null,
+                user_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+                role: user?.user_metadata?.role || 'student'
             })
             if (added && added.comment) {
-                setComments([added.comment, ...comments])
+                setComments([...comments, added.comment])
             } else if (added) {
-                setComments([added, ...comments])
+                setComments([...comments, added])
             }
             setNewComment("")
+            setImageFile(null)
+            setReplyingTo(null)
         } catch (err) {
             console.error("Failed to post comment", err)
             alert("Failed to post comment. Please try again.")
@@ -87,28 +115,26 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         }
     }
 
-    useEffect(() => {
-        if (!slug || !id) return
-        const progress = JSON.parse(localStorage.getItem('skillnora_progress') || '{}')
-        if (progress[slug] && progress[slug].includes(String(id))) {
-            setVideoCompleted(true)
-            setTimeElapsed(true)
-        }
-    }, [slug, id])
+
 
     useEffect(() => {
         if (!id || !slug) return
         let mounted = true
         const fetchLecture = async () => {
-            const course = await coursesService.getOne(slug as string)
+            const res = await coursesService.getOne(slug as string)
+            const course = res?.course || res
             if (mounted) {
                 if (course) {
-                    setCourseInfo({ title: course.title, slug: course.slug, totalLectures: course.lectures?.length || 1 })
+                    setCourseInfo({ id: course.id, title: course.title, slug: course.slug, totalLectures: course.lectures?.length || 1 })
                     const lec = course.lectures?.find((l: any) => String(l.id) === String(id))
                     if (lec) setLecture(lec)
                     
                     if (course.isEnrolled) {
                         setIsEnrolled(true)
+                        if (course.progress && course.progress[course.slug]?.includes(String(id))) {
+                            setVideoCompleted(true)
+                            setTimeElapsed(true)
+                        }
                     }
                 } else {
                     setLecture(null)
@@ -172,36 +198,20 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             return
         }
 
-        // Handle lecture completion
+        // Handle lecture completion using DB
         if (timeElapsed && videoCompleted) {
-            // Save current lecture as completed in progress
-            const progress = JSON.parse(localStorage.getItem('skillnora_progress') || '{}')
-            if (!progress[courseInfo.slug]) {
-                progress[courseInfo.slug] = []
-            }
-            if (!progress[courseInfo.slug].includes(String(lecture.id))) {
-                progress[courseInfo.slug].push(String(lecture.id))
-                localStorage.setItem('skillnora_progress', JSON.stringify(progress))
-            }
-
-            // Grant certificate ONLY if all lectures are completed
-            if (progress[courseInfo.slug].length >= courseInfo.totalLectures) {
-                setCertUnlocked(true)
-                const currentCerts = JSON.parse(localStorage.getItem('skillnora_certificates') || '[]')
-                if (!currentCerts.find((c: any) => c.courseSlug === courseInfo.slug)) {
-                    const newCert = {
-                        id: crypto.randomUUID(),
-                        courseSlug: courseInfo.slug,
-                        courseTitle: courseInfo.title,
-                        studentName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Skillnora Student',
-                        date: new Date().toISOString()
-                    }
-                    currentCerts.push(newCert)
-                    localStorage.setItem('skillnora_certificates', JSON.stringify(currentCerts))
+            coursesService.completeLecture({
+                courseId: courseInfo.id,
+                slug: courseInfo.slug,
+                lectureId: lecture.id,
+                totalLectures: courseInfo.totalLectures
+            }).then((res: any) => {
+                if (res?.certificateUnlocked) {
+                    setCertUnlocked(true);
                 }
-            }
+            }).catch(console.error);
         }
-    }, [courseInfo, lecture, timeElapsed, videoCompleted, user])
+    }, [courseInfo, lecture, timeElapsed, videoCompleted])
 
     const handleVideoEnd = () => {
         if (lecture?.mcqs && lecture.mcqs.length > 0) {
@@ -237,7 +247,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             <div className="flex items-center gap-2 text-sm text-slate-500">
                                 <span className="font-bold text-blue-600">Lecture {id}</span>
                                 <span>•</span>
-                                <span>{lecture.duration || 'Video'}</span>
+                                <span>Video Lecture</span>
                             </div>
                             {certUnlocked && (
                                 <a href="/certificates" className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-bold animate-pulse hover:bg-green-200 transition">
@@ -263,16 +273,27 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             ) : null}
                             {isEnrolled && (
                                 <>
-                                    <ReactPlayer
-                                        url={lecture.videoUrl || lecture.video_url}
-                                        width="100%"
-                                        height="100%"
-                                        controls
-                                        playing={!showQuiz}
-                                        onEnded={handleVideoEnd}
-                                        config={{ file: { attributes: { poster: lecture.poster_url } } }}
-                                        style={{ position: 'absolute', top: 0, left: 0 }}
-                                    />
+                                    {(lecture.videoUrl?.includes('youtube') || lecture.video_url?.includes('youtube')) ? (
+                                        <iframe
+                                            src={lecture.videoUrl || lecture.video_url}
+                                            width="100%"
+                                            height="100%"
+                                            style={{ position: 'absolute', top: 0, left: 0 }}
+                                            allowFullScreen
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        />
+                                    ) : (
+                                        <ReactPlayer
+                                            url={lecture.videoUrl || lecture.video_url}
+                                            width="100%"
+                                            height="100%"
+                                            controls
+                                            playing={!showQuiz}
+                                            onEnded={handleVideoEnd}
+                                            config={{ file: { attributes: { poster: lecture.poster_url } } }}
+                                            style={{ position: 'absolute', top: 0, left: 0 }}
+                                        />
+                                    )}
                                     {showQuiz && !videoCompleted && (
                                         <div className="absolute inset-0 z-20 bg-slate-900/95 backdrop-blur flex flex-col p-4 sm:p-8 overflow-y-auto custom-scrollbar">
                                             {quizResult ? (
@@ -344,6 +365,17 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                 </>
                             )}
                         </div>
+                        
+                        {isEnrolled && !videoCompleted && (
+                            <div className="mt-4 flex justify-end">
+                                <button
+                                    onClick={handleVideoEnd}
+                                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                                >
+                                    Mark as Complete
+                                </button>
+                            </div>
+                        )}
                     </div>
 
 
@@ -376,65 +408,165 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
 
                     {/* Comments Section */}
                     <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-                            <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                            Discussion
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                            <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.92 2 10.75c0 2.76 1.48 5.21 3.76 6.8-.29 1.48-1.12 3.06-1.17 3.16-.13.25-.09.56.09.77.19.22.48.31.76.24 3.16-.76 5.51-2.12 6.55-2.76.66.07 1.33.11 2.01.11 5.52 0 10-3.92 10-8.75S17.52 2 12 2zm0 15.5c-.75 0-1.5-.06-2.22-.17-.23-.03-.46.02-.66.13-1.07.62-3.19 1.76-5.84 2.29.53-1.28 1.13-2.92 1.34-4.2.06-.33-.04-.66-.27-.89C2.48 13.3 1.5 11.23 1.5 9.25 1.5 5.25 6.2 2 12 2s10.5 3.25 10.5 7.25S17.8 17.5 12 17.5z"/></svg>
+                            Q&A Discussions
                         </h2>
                         
-                        <div className="flex flex-col gap-4">
-                            <div className="flex gap-4">
-                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex-shrink-0 flex items-center justify-center font-bold text-blue-600">
-                                    {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'U'}
-                                </div>
-                                <div className="flex-1">
-                                    <textarea 
-                                        value={newComment}
-                                        onChange={(e) => setNewComment(e.target.value)}
-                                        placeholder="Ask a question or share your thoughts..."
-                                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:border-blue-500 transition-colors resize-y min-h-[100px]"
-                                    ></textarea>
-                                    <div className="mt-2 flex justify-end">
-                                        <button 
-                                            onClick={handlePostComment}
-                                            disabled={!newComment.trim() || isPostingComment}
-                                            className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                                        >
-                                            {isPostingComment ? 'Posting...' : 'Post Comment'}
-                                        </button>
+                        {(!replyingTo || !replyingTo.id) && (
+                            <div className="border border-slate-200 dark:border-slate-800 rounded-xl mb-8 overflow-hidden bg-white dark:bg-slate-900">
+                                <textarea 
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="Ask a question or share a thought..."
+                                    className="w-full p-4 bg-transparent text-sm outline-none resize-y min-h-[100px] text-slate-800 dark:text-slate-200 placeholder-slate-400"
+                                ></textarea>
+                                {imageFile && (
+                                    <div className="p-4 border-t border-slate-100 dark:border-slate-800 relative">
+                                        <img src={URL.createObjectURL(imageFile)} alt="Preview" className="max-w-[200px] max-h-[200px] rounded-lg object-contain border border-slate-200 dark:border-slate-700" />
+                                        <button onClick={() => setImageFile(null)} className="absolute top-2 left-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-md text-sm font-bold z-10 transition-colors">×</button>
                                     </div>
+                                )}
+                                <div className="border-t border-slate-100 dark:border-slate-800 p-3 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                                    <label className="flex items-center gap-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium px-2 py-1 rounded cursor-pointer transition-colors">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        Add Image
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+                                    </label>
+                                    <button 
+                                        onClick={handlePostComment}
+                                        disabled={(!newComment.trim() && !imageFile) || isPostingComment}
+                                        className="px-6 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm shadow-sm"
+                                    >
+                                        {isPostingComment ? 'Posting...' : 'Post'}
+                                    </button>
                                 </div>
                             </div>
+                        )}
 
-                            <div className="mt-4 space-y-4">
-                                {loadingComments ? (
-                                    <div className="text-center text-slate-500 py-4">Loading comments...</div>
-                                ) : comments.length === 0 ? (
-                                    <div className="text-center text-slate-500 py-4 italic">No comments yet. Be the first to start the discussion!</div>
-                                ) : (
-                                    comments.map((comment: any) => (
-                                        <div key={comment.id} className="flex gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
-                                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex-shrink-0 flex items-center justify-center font-bold text-indigo-600">
-                                                {comment.user_name?.charAt(0) || 'U'}
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <span className="font-bold text-slate-900 dark:text-white">{comment.user_name}</span>
-                                                    <span className="text-xs text-slate-500">{new Date(comment.created_at).toLocaleDateString()}</span>
+                        <div className="space-y-6">
+                            {loadingComments ? (
+                                <div className="text-center text-slate-500 py-4">Loading comments...</div>
+                            ) : comments.length === 0 ? (
+                                <div className="text-center text-slate-500 py-4 italic">No comments yet. Be the first to start the discussion!</div>
+                            ) : (() => {
+                                const myRootIds = new Set(comments.filter(c => c.user_id === user?.id && !c.parent_id).map(c => c.id));
+                                const visibleComments = comments.filter(c => {
+                                    if (user?.user_metadata?.role === 'admin' || user?.user_metadata?.role === 'instructor') return true;
+                                    if (c.user_id === user?.id) return true;
+                                    if (myRootIds.has(c.parent_id)) return true;
+                                    if (c.parent_id && comments.find(p => p.id === c.parent_id)?.user_id === user?.id) return true;
+                                    return false;
+                                });
+                                const rootComments = visibleComments.filter(c => !c.parent_id);
+                                const getReplies = (parentId: string) => visibleComments.filter(c => c.parent_id === parentId);
+
+                                return rootComments.map((comment: any) => (
+                                    <div key={comment.id} className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
+                                            {comment.user_name?.charAt(0) || 'U'}
+                                        </div>
+                                        <div className="flex-1 w-full min-w-0">
+                                            <div className="flex items-center justify-between gap-2 mb-1 w-full">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-slate-900 dark:text-white">{user?.id === comment.user_id ? 'You' : comment.user_name}</span>
+                                                    {comment.role === 'instructor' && <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Instructor</span>}
+                                                    <span className="text-xs text-slate-400 font-medium">{new Date(comment.created_at).toLocaleDateString()} {new Date(comment.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                                 </div>
-                                                <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{comment.text}</p>
                                                 {user?.id === comment.user_id && (
-                                                    <button 
-                                                        onClick={() => handleDeleteComment(comment.id)}
-                                                        className="text-xs text-red-500 hover:text-red-700 mt-2 font-medium"
-                                                    >
-                                                        Delete
+                                                    <button onClick={() => handleDeleteComment(comment.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete Comment">
+                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                     </button>
                                                 )}
                                             </div>
+                                            <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{comment.text}</p>
+                                            {comment.image_url && (
+                                                <div className="mt-3 max-w-sm rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                                                    <img src={comment.image_url} alt="Attachment" className="w-full h-auto" />
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-between mt-2">
+                                                <div className="flex items-center gap-4">
+                                                    <button onClick={() => setReplyingTo(comment)} className="text-xs text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-colors flex items-center gap-1">
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                                                        Reply
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {replyingTo?.id === comment.id && (
+                                                <div className="border border-slate-200 dark:border-slate-800 rounded-xl mt-4 mb-4 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
+                                                    <div className="bg-slate-50 dark:bg-slate-800 p-2 flex justify-between items-center border-b border-slate-200 dark:border-slate-700 text-xs">
+                                                        <span className="text-slate-600 dark:text-slate-300 font-medium ml-2">Replying to <span className="font-bold">{replyingTo.user_name}</span></span>
+                                                        <button onClick={() => setReplyingTo(null)} className="text-slate-400 hover:text-red-500 p-1">
+                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </div>
+                                                    <textarea 
+                                                        value={newComment}
+                                                        onChange={(e) => setNewComment(e.target.value)}
+                                                        placeholder="Write a reply..."
+                                                        className="w-full p-3 bg-transparent text-sm outline-none resize-y min-h-[80px] text-slate-800 dark:text-slate-200 placeholder-slate-400"
+                                                    ></textarea>
+                                                    {imageFile && (
+                                                        <div className="p-3 border-t border-slate-100 dark:border-slate-800 relative">
+                                                            <img src={URL.createObjectURL(imageFile)} alt="Preview" className="max-w-[150px] max-h-[150px] rounded-lg object-contain border border-slate-200 dark:border-slate-700" />
+                                                            <button onClick={() => setImageFile(null)} className="absolute top-1 left-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600 shadow-md text-xs font-bold z-10 transition-colors">×</button>
+                                                        </div>
+                                                    )}
+                                                    <div className="border-t border-slate-100 dark:border-slate-800 p-2 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                                                        <label className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-medium px-2 py-1 rounded cursor-pointer transition-colors">
+                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                            Add Image
+                                                            <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+                                                        </label>
+                                                        <button 
+                                                            onClick={handlePostComment}
+                                                            disabled={(!newComment.trim() && !imageFile) || isPostingComment}
+                                                            className="px-4 py-1.5 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors text-xs shadow-sm"
+                                                        >
+                                                            {isPostingComment ? 'Posting...' : 'Reply'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Replies */}
+                                            {getReplies(comment.id).length > 0 && (
+                                                <div className="mt-4 space-y-4 border-l-2 border-slate-100 dark:border-slate-800 pl-4">
+                                                    {getReplies(comment.id).map(reply => (
+                                                        <div key={reply.id} className="flex gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs uppercase">
+                                                                {reply.user_name?.charAt(0) || 'U'}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center justify-between gap-2 mb-1 w-full">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-bold text-slate-900 dark:text-white text-sm">{user?.id === reply.user_id ? 'You' : reply.user_name}</span>
+                                                                        {reply.role === 'instructor' && <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Instructor</span>}
+                                                                        <span className="text-xs text-slate-400 font-medium">{new Date(reply.created_at).toLocaleDateString()}</span>
+                                                                    </div>
+                                                                    {user?.id === reply.user_id && (
+                                                                        <button onClick={() => handleDeleteComment(reply.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete Reply">
+                                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{reply.text}</p>
+                                                                {reply.image_url && (
+                                                                    <div className="mt-3 max-w-sm rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                                                                        <img src={reply.image_url} alt="Attachment" className="w-full h-auto" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                    ))
-                                )}
-                            </div>
+                                    </div>
+                                ));
+                            })()}
                         </div>
                     </div>
                 </main>

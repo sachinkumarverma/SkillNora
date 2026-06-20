@@ -109,7 +109,8 @@ export default function InstructorCourseBuilder() {
             }
             if (editCourseId) {
                 try {
-                    const c = await coursesService.getOne(editCourseId as string)
+                    const res = await coursesService.getOne(editCourseId as string)
+                    const c = res?.course || res
                     if (c) {
                         setCourseData({
                             title: c.title || '',

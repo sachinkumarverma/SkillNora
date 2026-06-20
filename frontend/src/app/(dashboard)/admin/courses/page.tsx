@@ -58,7 +58,8 @@ export default function AdminCourseManagement() {
             try {
                 const data = await coursesService.getAdminAll();
                 if (data) {
-                    const mapped = data.map((c: any) => ({
+                    const courseList = data.courses || (Array.isArray(data) ? data : []);
+                    const mapped = courseList.map((c: any) => ({
                         id: c.id,
                         title: c.title || 'Untitled Course',
                         category: c.category || 'Uncategorized',

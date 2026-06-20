@@ -57,11 +57,11 @@ const getBySlugOrId = async identifier => {
 
 const checkEnrollment = async (userId, courseId) => {
   if (!userId || !courseId) return false;
-  const sql = `SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2 LIMIT 1`;
+  const sql = `SELECT * FROM enrollments WHERE user_id = $1 AND course_id = $2 LIMIT 1`;
   const {
     rows
   } = await query(sql, [userId, courseId]);
-  return rows.length > 0;
+  return rows[0] || null;
 };
 
 const create = async payload => {

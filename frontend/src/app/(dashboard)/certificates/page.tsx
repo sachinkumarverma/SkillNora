@@ -1,17 +1,36 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import useUser from '@/lib/useUser'
+import useUser from '../../../lib/useUser'
+import { certificatesService } from '@/services/certificatesService'
 
 export default function CertificatesPage() {
     const { user } = useUser()
     const router = useRouter()
     const [certs, setCerts] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const stored = JSON.parse(localStorage.getItem('skillnora_certificates') || '[]')
-        setCerts(stored)
-    }, [])
+        if (!user) return;
+        
+        const fetchCerts = async () => {
+            try {
+                const data = await certificatesService.getMyCertificates();
+                setCerts(data.certificates || []);
+            } catch (err) {}
+            setLoading(false);
+        }
+        
+        fetchCerts();
+    }, [user])
+
+    if (loading && user) {
+        return (
+            <div className="flex h-[60vh] w-full items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+            </div>
+        )
+    }
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-12">

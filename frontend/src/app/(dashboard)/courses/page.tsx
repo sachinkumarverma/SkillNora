@@ -21,11 +21,10 @@ function CoursesContent() {
         api.api('/api/courses').then((d: any) => { 
             if (mounted) {
                 const apiCourses = d.courses || (Array.isArray(d) ? d : d.data) || []
-                const combined = [...apiCourses, ...trendingCourses]
-                setAllCourses(combined)
+                setAllCourses(apiCourses)
             }
         }).catch(() => { 
-            if (mounted) setAllCourses(trendingCourses)
+            if (mounted) setAllCourses([])
         }).finally(() => {
             if (mounted) setLoadingCourses(false)
         })

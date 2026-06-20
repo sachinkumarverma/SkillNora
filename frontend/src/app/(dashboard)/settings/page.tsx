@@ -3,13 +3,10 @@ import React, { useState, useEffect } from 'react'
 import useUser from '@/lib/useUser'
 import { authService } from '@/services/authService'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRouter } from 'next/navigation'
 import apiClient from '@/lib/apiClient'
 
 export default function SettingsPage() {
     const { user, loading } = useUser()
-    const router = useRouter()
-    
     const [activeTab, setActiveTab] = useState('profile')
     const [isSaving, setIsSaving] = useState(false)
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null)

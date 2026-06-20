@@ -1,9 +1,9 @@
 "use client"
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import apiClient from '@/lib/apiClient'
 import { Toaster, toast } from 'sonner'
+import { authService } from '@/services/authService'
 
 type Mode = 'signin' | 'signup' | 'magic' | 'reset'
 

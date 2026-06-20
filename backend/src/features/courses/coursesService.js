@@ -40,7 +40,8 @@ const getCourse = async (identifier, userId = null) => {
     instructor_name: course.instructor?.full_name || 'Instructor',
     image: course.thumbnail_url,
     priceFormatted: `₹${course.price}`,
-    isEnrolled
+    isEnrolled: !!isEnrolled,
+    progress: isEnrolled?.progress || {}
   };
 };
 

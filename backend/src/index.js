@@ -28,10 +28,14 @@ app.use('/api/payments/webhook', (req, _res, next) => {
 
 app.use('/api/courses', coursesRoutes)
 app.use('/api/payments', paymentsRoutes)
+import { uploadApi } from './features/upload/uploadApi.js'
 app.use('/api/upload', uploadRoutes)
+app.use('/api/upload', uploadApi)
 app.use('/api/ai', aiRoutes)
 app.use('/api/enroll', enrollRoutes)
 app.use('/api/auth', authRoutes)
+import { commentsApi } from './features/comments/commentsApi.js'
+app.use('/api/comments', commentsApi)
 
 app.get('/health', (_req, res) => res.json({ ok: true }))
 

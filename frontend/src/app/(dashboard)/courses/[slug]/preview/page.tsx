@@ -12,7 +12,8 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
     useEffect(() => {
         let mounted = true
         const fetchCourse = async () => {
-            const data = await coursesService.getOne(slug as string)
+            const res = await coursesService.getOne(slug as string)
+            const data = res?.course || res
             if (mounted) {
                 if (data) {
                     setCourse({
@@ -22,8 +23,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                         price: `₹${data.price}`
                     })
                 } else {
-                    const found = trendingCourses.find(c => c.slug === slug)
-                    if (found) setCourse(found)
+                    setCourse(null)
                 }
                 setLoading(false)
             }
@@ -76,25 +76,6 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                             </div>
                         </section>
                     )}
-
-                    <section className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">What You Will Learn</h2>
-                        <ul className="grid sm:grid-cols-2 gap-4">
-                            {[
-                                "Master the core fundamentals and advanced concepts",
-                                "Build real-world projects to add to your portfolio",
-                                "Learn best practices and industry standards",
-                                "Gain problem-solving skills for complex scenarios",
-                                "Understand the architecture and underlying principles",
-                                "Access exclusive resources and reference materials"
-                            ].map((feature, i) => (
-                                <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300">
-                                    <svg className="w-5 h-5 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                    <span>{feature}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
                 </div>
 
                 <div className="md:col-span-1 space-y-6">
@@ -103,7 +84,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                         <div className="space-y-4 text-sm">
                             <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
                                 <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span>{course.lectures?.length > 0 ? Math.ceil(course.lectures.length * 1.5) : 1} hours of on-demand video</span>
+                                <span>{course.lectures?.length || 0} lectures of on-demand video</span>
                             </div>
 
                             {course.attachments && course.attachments.length > 0 && (
@@ -128,6 +109,25 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 className="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-widest text-xs">What You Will Learn</h3>
+                        <ul className="grid grid-cols-1 gap-3">
+                            {[
+                                "Master the core fundamentals and advanced concepts",
+                                "Build real-world projects to add to your portfolio",
+                                "Learn best practices and industry standards",
+                                "Gain problem-solving skills for complex scenarios",
+                                "Understand the architecture and underlying principles",
+                                "Access exclusive resources and reference materials"
+                            ].map((feature, i) => (
+                                <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300 text-sm">
+                                    <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                    <span>{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
             </div>

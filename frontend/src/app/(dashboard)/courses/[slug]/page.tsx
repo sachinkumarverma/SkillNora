@@ -38,7 +38,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         if (!slug) return
         let mounted = true
         const fetchCourse = async () => {
-            const data = await coursesService.getOne(slug as string)
+            const res = await coursesService.getOne(slug as string)
+            const data = res?.course || res
             if (mounted) {
                 if (data) {
                     setCourse({
@@ -48,6 +49,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                     })
                     if (data.isEnrolled) {
                         setIsEnrolled(true)
+                    }
                 } else {
                     setCourse(null)
                 }
@@ -87,7 +89,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                         <div className="relative z-10">
                             <div className="text-blue-600 font-bold tracking-wide uppercase text-xs mb-3">{course.category || 'Course'}</div>
                             <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white leading-tight mb-4">{course.title}</h1>
-                            <p className="text-lg text-slate-600 dark:text-slate-300 mb-6 font-medium whitespace-pre-wrap">{course.detailed_overview || course.description || 'Comprehensive learning material to advance your career and skills.'}</p>
+                            <p className="text-lg text-slate-600 dark:text-slate-300 mb-6 font-medium whitespace-pre-wrap">{course.description || 'Comprehensive learning material to advance your career and skills.'}</p>
 
                             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-8">
                                 <div className="flex items-center gap-1.5 font-bold">
@@ -134,8 +136,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                         <div>
                                             <div className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{l.title}</div>
                                             <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                {l.duration || 'Video Lecture'}
+                                                <svg className="w-3 h-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                Video Lecture
                                             </div>
                                         </div>
                                     </div>
@@ -151,8 +153,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                 </div>
 
                 {/* Sidebar */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden sticky top-24">
+                <div className="lg:col-span-1 h-fit sticky top-24">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center">
                             {course.image && !imageError ? (
                                 <img src={course.image} alt={course.title} onError={() => setImageError(true)} className="w-full h-full object-cover" />
@@ -181,8 +183,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                     <span className="font-bold text-slate-900 dark:text-white">{course.lectures?.length || 0}</span>
                                 </div>
                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                                    <span className="flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Duration</span>
-                                    <span className="font-bold text-slate-900 dark:text-white">{course.lectures?.length ? `${Math.ceil(course.lectures.length * 1.5)} hours` : 'Flexible'}</span>
+                                    <span className="flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Quizzes</span>
+                                    <span className="font-bold text-slate-900 dark:text-white">{course.quizzes_exist ? 'Yes' : 'No'}</span>
                                 </div>
                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                                     <span className="flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg> Certificate</span>
