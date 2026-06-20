@@ -3,5 +3,5 @@ import { notificationsController } from './notificationsController.js';
 
 export const notificationsApi = Router();
 
-notificationsApi.get('/my', notificationsController.getMy);
+notificationsApi.get('/user', notificationsController.getUserNotifications);
 notificationsApi.post('/read', notificationsController.markRead);

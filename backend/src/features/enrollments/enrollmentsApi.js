@@ -3,7 +3,7 @@ import { enrollmentsController } from './enrollmentsController.js';
 
 const enrollmentsApi = Router();
 
-enrollmentsApi.post('/', enrollmentsController.enroll);
-enrollmentsApi.get('/my', enrollmentsController.getMy);
+enrollmentsApi.post('/', enrollmentsController.createEnrollment);
+enrollmentsApi.get('/user', enrollmentsController.getUserEnrollments);
 
 export { enrollmentsApi };

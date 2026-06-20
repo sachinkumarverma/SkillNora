@@ -42,7 +42,6 @@ app.get('/health', (_req, res) => res.json({ ok: true }))
 
 app.use('/api/profile', usersApi)
 app.use('/api/courses', coursesApi)
-app.use('/api/enroll', enrollmentsApi)
 app.use('/api/enrollments', enrollmentsApi)
 app.use('/api/upload', uploadApi)
 app.use('/api/payments', paymentsApi)

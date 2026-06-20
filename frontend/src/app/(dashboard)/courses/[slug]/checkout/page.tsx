@@ -54,7 +54,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                 const expiryDate = new Date()
                 expiryDate.setFullYear(expiryDate.getFullYear() + 1)
 
-                await enrollmentsService.enroll(course.id)
+                await enrollmentsService.createEnrollment(course.id)
                 if (error) {
                     console.error("Enrollment error:", error)
                 }

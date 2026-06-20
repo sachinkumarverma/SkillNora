@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     useEffect(() => {
         if (user) {
             import('@/lib/apiClient').then(({ default: apiClient }) => {
-                apiClient.get('/api/notifications/my').then(res => {
+                apiClient.get('/api/notifications/user').then(res => {
                     if (res && res.data && res.data.notifications) {
                         setNotifications(res.data.notifications)
                     }

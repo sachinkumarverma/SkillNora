@@ -1,7 +1,7 @@
 import { enrollmentsService } from './enrollmentsService.js';
 import { supabaseServer } from '../../config/db.js';
 
-const enroll = async (req, res) => {
+const createEnrollment = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({
@@ -50,7 +50,7 @@ const enroll = async (req, res) => {
   }
 };
 
-const getMy = async (req, res) => {
+const getUserEnrollments = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({
@@ -74,6 +74,6 @@ const getMy = async (req, res) => {
 };
 
 export const enrollmentsController = {
-  enroll,
-  getMy
+  createEnrollment,
+  getUserEnrollments
 };

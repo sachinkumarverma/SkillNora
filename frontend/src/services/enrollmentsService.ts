@@ -1,14 +1,14 @@
 import apiClient from '@/lib/apiClient';
 
-const getMyEnrollments = async () => {
-    return (await apiClient.get('/api/enroll/my')).data;
+const getUserEnrollments = async () => {
+    return (await apiClient.get('/api/enrollments/user')).data;
 };
 
-const enroll = async (course_id: string) => {
-    return (await apiClient.post('/api/enroll', { course_id })).data;
+const createEnrollment = async (course_id: string) => {
+    return (await apiClient.post('/api/enrollments', { course_id })).data;
 };
 
 export const enrollmentsService = {
-    getMyEnrollments,
-    enroll
+    getUserEnrollments,
+    createEnrollment
 };

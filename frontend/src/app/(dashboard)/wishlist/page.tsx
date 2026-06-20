@@ -17,7 +17,7 @@ export default function WishlistPage() {
             return
         }
 
-        const enrollments = await enrollmentsService.getMyEnrollments()
+        const enrollments = await enrollmentsService.getUserEnrollments()
 
         const activeEnrollments = new Set(
             (enrollments || [])

@@ -1,6 +1,6 @@
 import { query } from '../../config/db.js';
 
-const enroll = async (userId, courseId) => {
+const insertEnrollment = async (userId, courseId) => {
   // Check if already enrolled to avoid duplicates since there's no unique constraint
   const checkSql = `SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2 LIMIT 1`;
   const checkResult = await query(checkSql, [userId, courseId]);
@@ -26,7 +26,7 @@ const getCoursePrice = async courseId => {
   return rows[0].price;
 };
 
-const getMyEnrollments = async userId => {
+const findEnrollmentsByUserId = async userId => {
   const sql = `SELECT course_id FROM enrollments WHERE user_id = $1`;
   const {
     rows
@@ -35,7 +35,7 @@ const getMyEnrollments = async userId => {
 };
 
 export const enrollmentsRepository = {
-  enroll,
+  insertEnrollment,
   getCoursePrice,
-  getMyEnrollments
+  findEnrollmentsByUserId
 };
