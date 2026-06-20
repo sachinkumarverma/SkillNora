@@ -33,8 +33,15 @@ const deleteComment = async (id, userId) => {
   return true;
 };
 
+const getCommentById = async (id) => {
+  const sql = `SELECT * FROM lecture_comments WHERE id = $1`;
+  const { rows } = await query(sql, [id]);
+  return rows[0];
+};
+
 export const commentsRepository = {
   getCommentsByLecture,
   insertComment,
-  deleteComment
+  deleteComment,
+  getCommentById
 };

@@ -153,7 +153,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                 </div>
 
                 {/* Sidebar */}
-                <div className="lg:col-span-1 h-fit sticky top-24">
+                <div className="lg:col-span-1">
                     <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center">
                             {course.image && !imageError ? (
@@ -164,7 +164,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                         </div>
                         <div className="p-6">
                             <div className="text-3xl font-black text-slate-900 dark:text-white mb-6">
-                                {course.price || 'Free'}
+                                {course.price ? `Rs. ${course.price}` : 'Free'}
                             </div>
                             {isEnrolled ? (
                                 <button onClick={handlePreview} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm mb-3">

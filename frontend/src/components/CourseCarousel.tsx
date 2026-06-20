@@ -54,7 +54,7 @@ export default function CourseCarousel({ title, courses }: { title: string, cour
                 {courses.map(course => (
                     <a key={course.id} href={`/courses/${course.slug}`} className="min-w-[300px] max-w-[300px] snap-start group flex flex-col bg-white dark:bg-slate-900 rounded-[1.25rem] border border-slate-200/80 dark:border-slate-800/80 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 cursor-pointer shrink-0 relative">
                         <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
-                            <img src={course.image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                            <img src={course.image || course.thumbnail_url || course.image_url || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                         <div className="p-5 flex flex-col flex-1 bg-white dark:bg-slate-900">
@@ -76,7 +76,7 @@ export default function CourseCarousel({ title, courses }: { title: string, cour
                                     </div>
                                     
                                     <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
-                                        {course.price || '₹1,999'}
+                                        {course.price ? `Rs. ${course.price}` : 'Free'}
                                     </div>
                                 </div>
                                 <button 

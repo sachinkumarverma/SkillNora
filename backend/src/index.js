@@ -37,6 +37,12 @@ app.use('/api/auth', authRoutes)
 import { commentsApi } from './features/comments/commentsApi.js'
 app.use('/api/comments', commentsApi)
 
+import { enrollmentsApi } from './features/enrollments/enrollmentsApi.js'
+app.use('/api/enrollments', enrollmentsApi)
+
+import { notificationsApi } from './features/notifications/notificationsApi.js'
+app.use('/api/notifications', notificationsApi)
+
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
 const PORT = process.env.BACKEND_PORT || 4000

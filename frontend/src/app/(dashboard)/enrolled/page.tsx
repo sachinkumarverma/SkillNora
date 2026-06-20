@@ -1,12 +1,35 @@
 "use client"
 import React from 'react'
 import { useRouter } from 'next/navigation'
+import api from '@/lib/api'
 
 export default function EnrolledPage() {
     const router = useRouter()
 
-    // MOCK: Replace with actual enrolled courses fetch logic
-    const enrolledCourses = trendingCourses.slice(0, 3)
+    const [courses, setCourses] = React.useState<any[]>([])
+    const [enrolledIds, setEnrolledIds] = React.useState<string[]>([])
+    const [loading, setLoading] = React.useState(true)
+
+    React.useEffect(() => {
+        let active = true
+        import('@/lib/apiClient').then(({ default: apiClient }) => {
+            Promise.all([
+                apiClient.get('/api/courses').then(r => r.data),
+                apiClient.get('/api/enrollments/my').then(r => r.data).catch(() => ({ enrolledIds: [] }))
+            ]).then(([coursesData, enrollData]) => {
+                if (!active) return
+                const allCourses = Array.isArray(coursesData) ? coursesData : coursesData.courses || coursesData.data || []
+                setCourses(allCourses)
+                setEnrolledIds(enrollData?.enrolledIds || [])
+                setLoading(false)
+            }).catch(console.error)
+        })
+        return () => { active = false }
+    }, [])
+
+    const enrolledCourses = courses.filter(c => enrolledIds.includes(c.id))
+
+    if (loading) return <div className="p-8 text-center">Loading...</div>
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto">

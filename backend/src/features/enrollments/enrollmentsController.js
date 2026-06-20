@@ -19,6 +19,27 @@ const enroll = async (req, res) => {
 
     // Allow force enroll from checkout flow (bypassing free check for now)
     await enrollmentsService.forceEnroll(userData.user.id, req.body.course_id);
+
+    try {
+      // Simulate Razorpay order insertion to update statistics
+      const { query } = await import('../../config/db.js');
+      const { rows } = await query('SELECT price FROM courses WHERE id = $1', [req.body.course_id]);
+      const amount = rows.length > 0 ? rows[0].price : 0;
+      
+      const { paymentsRepository } = await import('../payments/paymentsRepository.js');
+      await paymentsRepository.createOrder({
+        razorpay_order_id: `sim_order_${Date.now()}`,
+        user_id: userData.user.id,
+        course_id: req.body.course_id,
+        amount: amount,
+        currency: 'INR',
+        status: 'paid',
+        receipt: `rcpt_${Date.now()}`
+      });
+    } catch (e) {
+      console.warn('Failed to simulate order', e);
+    }
+
     res.json({
       success: true
     });

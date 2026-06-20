@@ -43,12 +43,16 @@ app.get('/health', (_req, res) => res.json({ ok: true }))
 app.use('/api/profile', usersApi)
 app.use('/api/courses', coursesApi)
 app.use('/api/enroll', enrollmentsApi)
-app.use('/api/upload-url', uploadApi)
+app.use('/api/enrollments', enrollmentsApi)
+app.use('/api/upload', uploadApi)
 app.use('/api/payments', paymentsApi)
 app.use('/api/ai', aiApi)
 app.use('/api/certificates', certificatesApi)
 app.use('/api/comments', commentsApi)
 app.use('/api/statistics', statisticsApi)
+
+import { notificationsApi } from './src/features/notifications/notificationsApi.js'
+app.use('/api/notifications', notificationsApi)
 
 const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {

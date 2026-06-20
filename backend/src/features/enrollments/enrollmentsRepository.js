@@ -1,14 +1,19 @@
 import { query } from '../../config/db.js';
 
-const enroll = async (userId, courseId, expiresAt) => {
+const enroll = async (userId, courseId) => {
+  // Check if already enrolled to avoid duplicates since there's no unique constraint
+  const checkSql = `SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2 LIMIT 1`;
+  const checkResult = await query(checkSql, [userId, courseId]);
+  if (checkResult.rows.length > 0) return checkResult.rows[0];
+
   const sql = `
-            INSERT INTO enrollments (user_id, course_id, expires_at)
-            VALUES ($1, $2, $3)
+            INSERT INTO enrollments (user_id, course_id)
+            VALUES ($1, $2)
             RETURNING *
         `;
   const {
     rows
-  } = await query(sql, [userId, courseId, expiresAt]);
+  } = await query(sql, [userId, courseId]);
   return rows[0];
 };
 

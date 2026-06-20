@@ -50,17 +50,18 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
 
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
                 {course.image && (
-                    <div className="aspect-[21/9] w-full relative">
-                        <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
+                    <div className="w-full relative min-h-[400px] md:min-h-[500px] flex flex-col justify-end">
+                        <img src={course.image} alt={course.title} className="absolute inset-0 w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+                        <div className="relative z-10 p-8 md:p-12 w-full">
                             {course.provide_certificate && (
                                 <span className="w-max mb-4 bg-amber-500 text-slate-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
                                     Includes Certificate
                                 </span>
                             )}
-                            <h1 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">{course.title}</h1>
-                            <p className="text-lg text-slate-200 max-w-3xl">{course.description || 'Master the concepts and skills you need to advance your career in this comprehensive guide.'}</p>
+                            <h1 className="text-3xl md:text-4xl font-black text-white mb-4 leading-tight break-words">{course.title}</h1>
+                            <p className="text-base md:text-lg text-slate-200 max-w-4xl line-clamp-6">{course.description || 'Master the concepts and skills you need to advance your career in this comprehensive guide.'}</p>
                         </div>
                     </div>
                 )}
@@ -70,7 +71,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                 <div className="md:col-span-2 space-y-8">
                     {course.detailed_overview && (
                         <section className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Detailed Overview</h2>
+                            <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Why to Choose this Course</h2>
                             <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
                                 {course.detailed_overview}
                             </div>

@@ -182,11 +182,14 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     }
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setTimeElapsed(true)
-        }, 120000)
-        return () => clearTimeout(timer)
-    }, [])
+        if (courseInfo?.id) {
+            try {
+                const recent = JSON.parse(localStorage.getItem('skillnora_recent_courses') || '[]');
+                const updated = [courseInfo.id, ...recent.filter((id: string) => id !== courseInfo.id)].slice(0, 10);
+                localStorage.setItem('skillnora_recent_courses', JSON.stringify(updated));
+            } catch (e) {}
+        }
+    }, [courseInfo])
 
     useEffect(() => {
         if (!courseInfo || !lecture) return
@@ -199,7 +202,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         }
 
         // Handle lecture completion using DB
-        if (timeElapsed && videoCompleted) {
+        if (videoCompleted) {
             coursesService.completeLecture({
                 courseId: courseInfo.id,
                 slug: courseInfo.slug,
@@ -211,14 +214,13 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                 }
             }).catch(console.error);
         }
-    }, [courseInfo, lecture, timeElapsed, videoCompleted])
+    }, [courseInfo, lecture, videoCompleted])
 
     const handleVideoEnd = () => {
         if (lecture?.mcqs && lecture.mcqs.length > 0) {
             setShowQuiz(true)
         } else {
             setVideoCompleted(true)
-            setTimeElapsed(true)
         }
     }
 
@@ -236,7 +238,6 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         </div>
     )
 
-    const isYoutube = lecture.videoUrl?.includes('youtube.com') || lecture.video_url?.includes('youtube.com')
 
     return (
         <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8">
@@ -273,27 +274,48 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             ) : null}
                             {isEnrolled && (
                                 <>
-                                    {(lecture.videoUrl?.includes('youtube') || lecture.video_url?.includes('youtube')) ? (
-                                        <iframe
-                                            src={lecture.videoUrl || lecture.video_url}
-                                            width="100%"
-                                            height="100%"
-                                            style={{ position: 'absolute', top: 0, left: 0 }}
-                                            allowFullScreen
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        />
-                                    ) : (
-                                        <ReactPlayer
-                                            url={lecture.videoUrl || lecture.video_url}
-                                            width="100%"
-                                            height="100%"
-                                            controls
-                                            playing={!showQuiz}
-                                            onEnded={handleVideoEnd}
-                                            config={{ file: { attributes: { poster: lecture.poster_url } } }}
-                                            style={{ position: 'absolute', top: 0, left: 0 }}
-                                        />
-                                    )}
+                                    {(() => {
+                                        const url = lecture.videoUrl || lecture.video_url || '';
+                                        const isYoutube = url.includes('youtube') || url.includes('youtu.be');
+                                        
+                                        if (isYoutube) {
+                                            let embedUrl = url;
+                                            if (!url.includes('/embed/')) {
+                                                let videoId = '';
+                                                if (url.includes('youtu.be/')) {
+                                                    videoId = url.split('youtu.be/')[1]?.split('?')[0];
+                                                } else if (url.includes('watch?v=')) {
+                                                    videoId = url.split('watch?v=')[1]?.split('&')[0];
+                                                }
+                                                if (videoId) {
+                                                    embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0`;
+                                                }
+                                            }
+                                            return (
+                                                <iframe
+                                                    src={embedUrl}
+                                                    width="100%"
+                                                    height="100%"
+                                                    style={{ position: 'absolute', top: 0, left: 0 }}
+                                                    allowFullScreen
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                />
+                                            );
+                                        }
+
+                                        return (
+                                            <ReactPlayer
+                                                url={url}
+                                                width="100%"
+                                                height="100%"
+                                                controls
+                                                playing={!showQuiz}
+                                                onEnded={handleVideoEnd}
+                                                config={{ file: { attributes: { poster: lecture.poster_url } } }}
+                                                style={{ position: 'absolute', top: 0, left: 0 }}
+                                            />
+                                        );
+                                    })()}
                                     {showQuiz && !videoCompleted && (
                                         <div className="absolute inset-0 z-20 bg-slate-900/95 backdrop-blur flex flex-col p-4 sm:p-8 overflow-y-auto custom-scrollbar">
                                             {quizResult ? (
@@ -305,7 +327,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                             </div>
                                                             <h2 className="text-3xl font-bold text-white mb-3">Great Job!</h2>
                                                             <p className="text-slate-300 mb-4 sm:mb-8 text-sm sm:text-base">You scored {quizResult.score}% and passed the module quiz.</p>
-                                                            <button onClick={() => { setShowQuiz(false); setVideoCompleted(true); setTimeElapsed(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Continue Course</button>
+                                                            <button onClick={() => { setShowQuiz(false); setVideoCompleted(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Continue Course</button>
                                                         </>
                                                     ) : (
                                                         <>
@@ -594,30 +616,10 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
                         <div className="flex flex-col mb-4 gap-4">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">About this lecture</h2>
-                            {!certUnlocked && (
-                                <div className={`px-4 py-3 rounded-xl font-bold text-sm transition-colors w-full text-center flex items-center justify-center gap-2 ${videoCompleted ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>
-                                    {videoCompleted ? (
-                                        <>
-                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                            Completed
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg className="w-5 h-5 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                            In Progress (Watch to complete)
-                                        </>
-                                    )}
-                                </div>
-                            )}
                         </div>
                         <div className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed font-medium">
                             {lecture.description || 'Watch this comprehensive lecture to master the concepts presented. Follow along with the code and practice to solidify your understanding.'}
                         </div>
-                        {!certUnlocked && videoCompleted && !timeElapsed && (
-                            <div className="mt-4 text-xs text-amber-600 dark:text-amber-400 font-medium">
-                                Note: You must watch the video for at least 2 minutes to unlock the certificate.
-                            </div>
-                        )}
                     </div>
                 </aside>
             </div>

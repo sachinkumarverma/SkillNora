@@ -54,6 +54,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [searchQuery, setSearchQuery] = useState('')
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [cartCount, setCartCount] = useState(0)
+    const [notifications, setNotifications] = useState<any[]>([])
 
     useEffect(() => {
         const updateCart = () => {
@@ -64,6 +65,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         window.addEventListener('cartUpdated', updateCart)
         return () => window.removeEventListener('cartUpdated', updateCart)
     }, [])
+
+    useEffect(() => {
+        if (user) {
+            import('@/lib/apiClient').then(({ default: apiClient }) => {
+                apiClient.get('/api/notifications/my').then(res => {
+                    if (res && res.data && res.data.notifications) {
+                        setNotifications(res.data.notifications)
+                    }
+                }).catch(console.error)
+            })
+        }
+    }, [user])
+
+    const markNotificationsRead = () => {
+        import('@/lib/apiClient').then(({ default: apiClient }) => {
+            apiClient.post('/api/notifications/read').then(() => {
+                setNotifications(notifications.map(n => ({ ...n, is_read: true })))
+            }).catch(console.error)
+        })
+    }
 
     const suggestions = useMemo(() => {
         return []
@@ -399,50 +420,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             <div className="relative" ref={notificationsRef}>
                                 <button onClick={() => setNotificationsOpen(!notificationsOpen)} className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                                    <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
+                                    {notifications.filter(n => !n.is_read).length > 0 && (
+                                        <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
+                                    )}
                                 </button>
                                 
                                 {notificationsOpen && (
                                     <div className="absolute right-0 mt-3 w-80 rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800 z-50 overflow-hidden flex flex-col">
                                         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
                                             <p className="text-sm font-bold text-slate-900 dark:text-white">Notifications</p>
-                                            <button className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Mark all read</button>
+                                            <button onClick={markNotificationsRead} className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Mark all read</button>
                                         </div>
                                         <div className="max-h-80 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full p-2 space-y-1">
-                                            {/* Notification Item 1 */}
-                                            <div className="p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer flex gap-3 relative">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                            {notifications.length === 0 ? (
+                                                <div className="p-4 text-center text-sm text-slate-500">No new notifications</div>
+                                            ) : notifications.map((notif: any) => (
+                                                <div key={notif.id} onClick={() => {
+                                                    if (notif.link) {
+                                                        router.push(notif.link);
+                                                        setNotificationsOpen(false);
+                                                    }
+                                                }} className="p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer flex gap-3 relative">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2">{notif.message}</p>
+                                                        <p className="text-xs text-blue-600 dark:text-blue-400 font-bold mt-1">{new Date(notif.created_at).toLocaleDateString()}</p>
+                                                    </div>
+                                                    {!notif.is_read && <div className="w-2 h-2 rounded-full bg-blue-500 absolute right-3 top-4"></div>}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2">Alex replied to your comment on "React Hooks Masterclass"</p>
-                                                    <p className="text-xs text-blue-600 dark:text-blue-400 font-bold mt-1">2 mins ago</p>
-                                                </div>
-                                                <div className="w-2 h-2 rounded-full bg-blue-500 absolute right-3 top-4"></div>
-                                            </div>
-                                            {/* Notification Item 2 */}
-                                            <div className="p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer flex gap-3 relative">
-                                                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2">Course purchase successful! You are now enrolled in "AI Engineer Agentic Track"</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">1 hour ago</p>
-                                                </div>
-                                            </div>
-                                            {/* Notification Item 3 */}
-                                            <div className="p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer flex gap-3 relative">
-                                                <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2"><span className="text-purple-600 dark:text-purple-400 font-bold">Important Update:</span> New learning paths are now available for Premium users.</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">1 day ago</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="p-2 border-t border-slate-100 dark:border-slate-700/50">
-                                            <button className="w-full py-2 text-center text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">View all notifications</button>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
