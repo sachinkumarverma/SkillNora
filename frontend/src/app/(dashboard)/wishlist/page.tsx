@@ -25,19 +25,13 @@ export default function WishlistPage() {
                 .map(e => e.course_id)
         )
 
-        const cart = JSON.parse(localStorage.getItem('skillnora_cart') || '[]')
+        const cartModule = await import('@/services/cartService')
+        const cart = await cartModule.cartService.getCart()
 
-        let added = false
         for (const course of savedCourses) {
             if (!activeEnrollments.has(course.id) && !cart.some((c: any) => c.id === course.id)) {
-                cart.push({ id: course.id, title: course.title, price: course.price, slug: course.slug, image: course.image })
-                added = true
+                await cartModule.cartService.addToCart(course.id)
             }
-        }
-
-        if (added) {
-            localStorage.setItem('skillnora_cart', JSON.stringify(cart))
-            window.dispatchEvent(new Event('cartUpdated'))
         }
 
         router.push('/cart')

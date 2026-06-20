@@ -21,11 +21,17 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
             } catch (e) { }
         }
 
-        const certs = JSON.parse(localStorage.getItem('skillnora_certificates') || '[]')
-        const found = certs.find((c: any) => c.id === id || c.courseSlug === id)
-        if (found) {
-            setCert(found)
+        const fetchCert = async () => {
+            if (user) {
+                try {
+                    const certModule = await import('@/services/certificatesService')
+                    const certs = await certModule.certificatesService.getUserCertificates()
+                    const found = certs.find((c: any) => c.id === id || c.course_id === id)
+                    if (found) setCert(found)
+                } catch (e) {}
+            }
         }
+        fetchCert()
     }, [id, searchParams])
 
     const handlePrint = () => {

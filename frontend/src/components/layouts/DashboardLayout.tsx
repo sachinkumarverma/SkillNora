@@ -57,14 +57,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [notifications, setNotifications] = useState<any[]>([])
 
     useEffect(() => {
-        const updateCart = () => {
-            const cart = JSON.parse(localStorage.getItem('skillnora_cart') || '[]')
-            setCartCount(cart.length)
+        const updateCart = async () => {
+            if (user) {
+                try {
+                    const cartModule = await import('@/services/cartService')
+                    const cart = await cartModule.cartService.getCart()
+                    setCartCount(cart.length)
+                } catch { setCartCount(0) }
+            } else {
+                const cart = JSON.parse(localStorage.getItem('skillnora_cart') || '[]')
+                setCartCount(cart.length)
+            }
         }
         updateCart()
         window.addEventListener('cartUpdated', updateCart)
         return () => window.removeEventListener('cartUpdated', updateCart)
-    }, [])
+    }, [user])
 
     useEffect(() => {
         if (user) {

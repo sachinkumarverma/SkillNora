@@ -2,15 +2,24 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+import { notesService } from '@/services/notesService'
+import useUser from '@/lib/useUser'
+
 export default function NotesPage() {
     const [notes, setNotes] = useState<any[]>([])
+    const { user } = useUser()
 
     useEffect(() => {
-        const stored = JSON.parse(localStorage.getItem('skillnora_notes') || '[]')
-        // Sort by newest first
-        stored.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        setNotes(stored)
-    }, [])
+        const loadNotes = async () => {
+            let stored = []
+            if (user) {
+                stored = await notesService.getNotes()
+                stored.sort((a: any, b: any) => new Date(b.created_at || b.updatedAt).getTime() - new Date(a.created_at || a.updatedAt).getTime())
+            }
+            setNotes(stored)
+        }
+        loadNotes()
+    }, [user])
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full">

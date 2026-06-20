@@ -4,6 +4,7 @@ import Link from 'next/link'
 import useUser from '@/lib/useUser'
 import apiClient from '@/lib/apiClient'
 import { useRouter } from 'next/navigation'
+import { cartService } from '@/services/cartService'
 
 export default function CartPage() {
     const [cart, setCart] = useState<any[]>([])
@@ -12,14 +13,18 @@ export default function CartPage() {
     const [isCheckingOut, setIsCheckingOut] = useState(false)
 
     useEffect(() => {
-        setCart(JSON.parse(localStorage.getItem('skillnora_cart') || '[]'))
-    }, [])
+        if (user) {
+            cartService.getCart().then(setCart)
+        } else {
+            setCart([])
+        }
+    }, [user])
 
-    const removeFromCart = (id: string) => {
-        const newCart = cart.filter(c => c.id !== id)
-        setCart(newCart)
-        localStorage.setItem('skillnora_cart', JSON.stringify(newCart))
-        window.dispatchEvent(new Event('cartUpdated'))
+    const removeFromCart = async (id: string) => {
+        if (user) {
+            await cartService.removeFromCart(id)
+            setCart(await cartService.getCart())
+        }
     }
 
     const calculateTotal = () => {
@@ -48,8 +53,9 @@ export default function CartPage() {
             });
 
             // Clear cart
-            localStorage.setItem('skillnora_cart', '[]')
-            window.dispatchEvent(new Event('cartUpdated'))
+            if (user) {
+                await cartService.clearCart()
+            }
             setCart([])
             
             alert('Payment successful! You are now enrolled in these courses.')

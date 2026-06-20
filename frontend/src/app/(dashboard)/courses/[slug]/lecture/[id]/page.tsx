@@ -145,61 +145,51 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         fetchLecture()
         return () => { mounted = false }
     }, [slug, id])
-
     useEffect(() => {
         if (!slug || !id) return
-        const notes = JSON.parse(localStorage.getItem('skillnora_notes') || '[]')
-        const existingNote = notes.find((n: any) => n.courseSlug === slug && String(n.lectureId) === String(id))
-        if (existingNote) {
-            setNoteText(existingNote.text)
+        const loadNotes = async () => {
+            if (user) {
+                const notesModule = await import('@/services/notesService')
+                const notes = await notesModule.notesService.getNotes()
+                const existingNote = notes.find((n: any) => String(n.course_id) === String(courseInfo?.id) && String(n.lecture_id) === String(id))
+                if (existingNote) setNoteText(existingNote.text)
+            } else {
+                setNoteText('')
+            }
         }
-    }, [slug, id])
+        loadNotes()
+    }, [slug, id, user, courseInfo])
 
-    const saveNote = () => {
+    const saveNote = async () => {
         if (!courseInfo || !lecture) return
-        const notes = JSON.parse(localStorage.getItem('skillnora_notes') || '[]')
-        const noteIndex = notes.findIndex((n: any) => n.courseSlug === slug && String(n.lectureId) === String(id))
-
-        const noteData = {
-            id: crypto.randomUUID(),
-            courseSlug: slug,
-            lectureId: id,
-            courseTitle: courseInfo.title,
-            lectureTitle: lecture.title,
-            text: noteText,
-            updatedAt: new Date().toISOString()
-        }
-
-        if (noteIndex >= 0) {
-            notes[noteIndex] = noteData
+        if (user) {
+            const notesModule = await import('@/services/notesService')
+            await notesModule.notesService.saveNote(courseInfo.id, lecture.id, noteText)
+            setNoteSaved(true)
+            setTimeout(() => setNoteSaved(false), 3000)
         } else {
-            notes.push(noteData)
+            alert('Please sign in to save notes')
         }
-
-        localStorage.setItem('skillnora_notes', JSON.stringify(notes))
-        setNoteSaved(true)
-        setTimeout(() => setNoteSaved(false), 3000)
     }
 
     useEffect(() => {
-        if (courseInfo?.id) {
-            try {
-                const recent = JSON.parse(localStorage.getItem('skillnora_recent_courses') || '[]');
-                const updated = [courseInfo.id, ...recent.filter((id: string) => id !== courseInfo.id)].slice(0, 10);
-                localStorage.setItem('skillnora_recent_courses', JSON.stringify(updated));
-            } catch (e) {}
-        }
+        // Recent courses logic should be fetched from DB enrollments via last_accessed_at
     }, [courseInfo])
 
     useEffect(() => {
         if (!courseInfo || !lecture) return
 
-        // Check if already certified
-        const certs = JSON.parse(localStorage.getItem('skillnora_certificates') || '[]')
-        if (certs.find((c: any) => c.courseSlug === courseInfo.slug)) {
-            setCertUnlocked(true)
-            return
+        // Certificates logic should be fetched from DB 
+        const loadCert = async () => {
+            if (user) {
+                const certModule = await import('@/services/certificatesService')
+                const certs = await certModule.certificatesService.getUserCertificates()
+                if (certs.find((c: any) => c.course_id === courseInfo.id)) {
+                    setCertUnlocked(true)
+                }
+            }
         }
+        loadCert()
 
         // Handle lecture completion using DB
         if (videoCompleted) {

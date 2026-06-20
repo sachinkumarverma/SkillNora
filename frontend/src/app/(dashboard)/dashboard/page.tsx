@@ -38,21 +38,7 @@ export default function DashboardPage() {
     const enrolledCourses = courses.filter(c => enrolledIds.includes(c.id))
     
     // Sort enrolled courses by recently watched if available
-    try {
-        if (typeof window !== 'undefined') {
-            const recentOrder = JSON.parse(localStorage.getItem('skillnora_recent_courses') || '[]');
-            if (recentOrder.length > 0) {
-                enrolledCourses.sort((a, b) => {
-                    const indexA = recentOrder.indexOf(a.id);
-                    const indexB = recentOrder.indexOf(b.id);
-                    if (indexA === -1 && indexB === -1) return 0;
-                    if (indexA === -1) return 1;
-                    if (indexB === -1) return -1;
-                    return indexA - indexB;
-                });
-            }
-        }
-    } catch (e) {}
+    // Currently disabled until DB sorting is fully wired up
 
     return (
         <div className="bg-white dark:bg-slate-950 min-h-screen pb-16">

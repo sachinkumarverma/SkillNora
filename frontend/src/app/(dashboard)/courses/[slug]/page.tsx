@@ -16,11 +16,16 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     const router = useRouter()
 
     useEffect(() => {
-        if (course) {
-            const cart = JSON.parse(localStorage.getItem('skillnora_cart') || '[]')
-            setInCart(cart.some((c: any) => c.id === course.id))
+        if (course && user) {
+            import('@/services/cartService').then(({ cartService }) => {
+                cartService.getCart().then(cart => {
+                    setInCart(cart.some((c: any) => c.id === course.id || c.course_id === course.id))
+                }).catch(() => setInCart(false))
+            })
+        } else {
+            setInCart(false)
         }
-    }, [course])
+    }, [course, user])
 
     const handleEnroll = () => {
         if (!user) {
