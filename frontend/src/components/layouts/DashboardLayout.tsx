@@ -36,9 +36,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }, [pathname])
 
     const breadcrumbs = useMemo(() => {
-        const parts = pathname.split('/').filter(Boolean)
+        const parts = pathname?.split('/').filter(Boolean) || []
         if (parts.length === 0 || parts[0] === 'dashboard') return [{ label: 'Dashboard' }]
-        const crumbs = [{ label: title, href: `/${parts[0]}` }]
+        const crumbs: {label: string, href?: string}[] = [{ label: title, href: `/${parts[0]}` }]
         if (parts.length > 1) crumbs.push({ label: parts[parts.length - 1] })
         return crumbs
     }, [pathname, title])

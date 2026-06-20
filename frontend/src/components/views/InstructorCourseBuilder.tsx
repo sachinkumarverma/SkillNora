@@ -56,7 +56,7 @@ export default function InstructorCourseBuilder() {
     const [isInstructorDropdownOpen, setIsInstructorDropdownOpen] = useState(false)
     
     // Course Metadata
-    const [courseData, setCourseData] = useState({
+    const [courseData, setCourseData] = useState<any>({
         title: '',
         description: '',
         detailed_overview: '',
@@ -78,8 +78,8 @@ export default function InstructorCourseBuilder() {
     const [instructors, setInstructors] = useState<any[]>([])
     
     // Modules
-    const [modules, setModules] = useState([
-        { id: 1, title: 'Introduction to the Course', videoMode: 'upload' as 'upload'|'link', videoUrl: '', thumbnailMode: 'upload' as 'upload'|'unsplash', thumbnailUrl: '' }
+    const [modules, setModules] = useState<any[]>([
+        { id: 1, title: 'Introduction to the Course', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '' }
     ])
 
     const router = useRouter()
