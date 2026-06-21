@@ -158,7 +158,7 @@ export default function AuthPage() {
                     </div>
 
                     <form className='mt-6 flex flex-col gap-4' onSubmit={handleSubmit}>
-                        <div className="min-h-[160px] space-y-4">
+                        <div className="min-h-[240px] space-y-4">
                             <div>
                                 <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Email</label>
                                 <input value={email} onChange={(e) => setEmail(e.target.value)} className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='you@domain.com' />

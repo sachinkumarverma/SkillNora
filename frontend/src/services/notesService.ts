@@ -20,8 +20,14 @@ const deleteNote = async (noteId: string) => {
     window.dispatchEvent(new Event('notesUpdated'))
 }
 
+const bulkDeleteNotes = async (noteIds: string[]) => {
+    await apiClient.post('/api/notes/bulk-delete', { noteIds })
+    window.dispatchEvent(new Event('notesUpdated'))
+}
+
 export const notesService = {
     getNotes,
     saveNote,
-    deleteNote
+    deleteNote,
+    bulkDeleteNotes
 }

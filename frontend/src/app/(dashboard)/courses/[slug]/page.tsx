@@ -5,6 +5,7 @@ import useUser from '@/lib/useUser'
 import Loader from '@/components/ui/Loader'
 import { useRouter } from 'next/navigation'
 import { coursesService } from '@/services/coursesService'
+import apiClient from '@/lib/apiClient'
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
@@ -15,6 +16,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     const [inCart, setInCart] = useState(false)
     const { user } = useUser()
     const router = useRouter()
+
+    const [rating, setRating] = useState(0)
+    const [hoverRating, setHoverRating] = useState(0)
+    const [reviewText, setReviewText] = useState('')
+    const [submittingReview, setSubmittingReview] = useState(false)
+    const [isEditingReview, setIsEditingReview] = useState(false)
 
     useEffect(() => {
         if (course && user) {
@@ -56,6 +63,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                     if (data.isEnrolled) {
                         setIsEnrolled(true)
                     }
+                    if (user && data.reviews) {
+                        const myReview = data.reviews.find((r: any) => r.user_id === user.id)
+                        if (myReview) {
+                            setRating(myReview.rating)
+                            setReviewText(myReview.review_text || '')
+                        }
+                    }
                 } else {
                     setCourse(null)
                 }
@@ -65,7 +79,34 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         fetchCourse()
 
         return () => { mounted = false }
-    }, [slug])
+    }, [slug, user])
+
+    const submitReview = async () => {
+        if (!rating) return alert('Please select a rating')
+        setSubmittingReview(true)
+        try {
+            const myReview = course?.reviews?.find((r: any) => r.user_id === user?.id)
+            if (myReview) {
+                await apiClient.put(`/api/courses/${course.id}/reviews/${myReview.id}`, { rating, review_text: reviewText })
+            } else {
+                await apiClient.post(`/api/courses/${course.id}/reviews`, { rating, review_text: reviewText })
+            }
+            const res = await coursesService.getOne(slug as string)
+            const data = res?.course || res
+            if (data) {
+                setCourse({
+                    ...data,
+                    instructor_name: data.instructor?.full_name || 'Instructor',
+                    lectures: data.lectures || []
+                })
+            }
+            setIsEditingReview(false)
+        } catch (e) {
+            console.error('Failed to submit review', e)
+            alert('Failed to submit review')
+        }
+        setSubmittingReview(false)
+    }
 
     if (loading) return <Loader />
 
@@ -95,9 +136,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
                             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-8">
                                 <div className="flex items-center gap-1.5 font-bold">
-                                    <span className="text-amber-500">{course.average_rating || '0.00'}</span>
+                                    <span className="text-amber-500">{Number(course.average_rating || 0).toFixed(1)}</span>
                                     <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                    <span className="font-normal">({course.total_reviews || '0'} ratings)</span>
+                                    <span className="font-normal">({course.reviews?.length || 0} ratings)</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -137,18 +178,102 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                         </div>
                                         <div>
                                             <div className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{l.title}</div>
-                                            <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                                                <svg className="w-3 h-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                Video Lecture
+                                            <div className="text-xs text-slate-500 flex items-center gap-2 mt-1">
+                                                <span className="flex items-center gap-1">
+                                                    <svg className="w-3 h-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    Video Lecture
+                                                </span>
+                                                {l.mcqs && (typeof l.mcqs === 'string' ? JSON.parse(l.mcqs) : l.mcqs).length > 0 && (
+                                                    <span className="flex items-center gap-1 text-purple-600 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-400 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                                                        + Quiz ({(typeof l.mcqs === 'string' ? JSON.parse(l.mcqs) : l.mcqs).length} Qs)
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
-                                    <a href={`/courses/${course.slug}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:underline">Watch</a>
+                                    <a href={`/courses/${course.slug}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:underline shrink-0">Watch</a>
                                 </div>
                             )) : (
                                 <div className="text-center py-10 text-slate-500 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
                                     No lectures have been added to this course yet.
                                 </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Reviews List */}
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm mt-8">
+                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Student Reviews</h2>
+                        
+                        {/* Add Review Form */}
+                        {isEnrolled && (
+                            <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-slate-200 dark:border-slate-800">
+                                <h3 className="font-bold text-slate-900 dark:text-white mb-4">
+                                    {course?.reviews?.find((r: any) => r.user_id === user?.id) && !isEditingReview ? "Your Review" : "Write a Review"}
+                                </h3>
+                                
+                                {course?.reviews?.find((r: any) => r.user_id === user?.id) && !isEditingReview ? (
+                                    <div>
+                                        <div className="flex items-center gap-1 mb-2">
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                                <svg key={star} className={`w-5 h-5 ${star <= rating ? 'text-yellow-400' : 'text-slate-300 dark:text-slate-700'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                            ))}
+                                        </div>
+                                        <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">{reviewText}</p>
+                                        <button onClick={() => setIsEditingReview(true)} className="text-sm font-bold text-blue-600 hover:text-blue-700">Edit Review</button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="flex gap-1">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    onMouseEnter={() => setHoverRating(star)}
+                                                    onMouseLeave={() => setHoverRating(0)}
+                                                    onClick={() => setRating(star)}
+                                                >
+                                                    <svg className={`w-8 h-8 transition-colors ${star <= (hoverRating || rating) ? 'text-yellow-400' : 'text-slate-300 dark:text-slate-700'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <textarea
+                                            value={reviewText}
+                                            onChange={(e) => setReviewText(e.target.value)}
+                                            placeholder="What did you think of the course?"
+                                            className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            rows={3}
+                                        />
+                                        <div className="flex gap-3">
+                                            <button onClick={submitReview} disabled={submittingReview || !rating} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm disabled:opacity-50">
+                                                {submittingReview ? 'Submitting...' : 'Submit Review'}
+                                            </button>
+                                            {isEditingReview && (
+                                                <button onClick={() => { setIsEditingReview(false); const myRev = course?.reviews?.find((r: any) => r.user_id === user?.id); if (myRev) { setRating(myRev.rating); setReviewText(myRev.review_text || ''); } }} className="text-slate-500 hover:text-slate-700 font-bold text-sm">Cancel</button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Existing Reviews */}
+                        <div className="space-y-6">
+                            {course.reviews && course.reviews.length > 0 ? course.reviews.map((review: any) => (
+                                <div key={review.id} className="border-b border-slate-100 dark:border-slate-800 pb-6 last:border-0 last:pb-0">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="font-bold text-slate-900 dark:text-white">{review.full_name || 'Anonymous Student'}</div>
+                                        <div className="flex">
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                                <svg key={star} className={`w-4 h-4 ${star <= review.rating ? 'text-yellow-400' : 'text-slate-200 dark:text-slate-800'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{review.review_text}</p>
+                                </div>
+                            )) : (
+                                <div className="text-slate-500 text-sm italic">No reviews yet. Be the first to review!</div>
                             )}
                         </div>
                     </div>
@@ -168,6 +293,25 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             <div className="text-3xl font-black text-slate-900 dark:text-white mb-6">
                                 {course.price ? `Rs. ${course.price}` : 'Free'}
                             </div>
+                            
+                            {/* AI Matrix Recommendation */}
+                            {isEnrolled && course?.progress?.quizScores && (() => {
+                                const scores = Object.values(course.progress.quizScores);
+                                const avg = scores.length ? scores.reduce((a: any, b: any) => Number(a) + Number(b), 0) / scores.length : 100;
+                                if (avg < 75) {
+                                    return (
+                                        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
+                                            <div className="font-bold flex items-center gap-2 mb-1">
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                                AI Learning Recommendation
+                                            </div>
+                                            Your average quiz score is {Math.round(avg)}%. We highly recommend retaking this course to strengthen your foundational knowledge!
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
+
                             {isEnrolled ? (
                                 <button onClick={handlePreview} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm mb-3">
                                     Go to Course

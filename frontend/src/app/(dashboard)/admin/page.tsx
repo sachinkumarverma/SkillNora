@@ -13,25 +13,7 @@ import {
     Area
 } from 'recharts'
 
-const revenueData = [
-    { name: 'Jan', value: 4000 },
-    { name: 'Feb', value: 5000 },
-    { name: 'Mar', value: 4800 },
-    { name: 'Apr', value: 6500 },
-    { name: 'May', value: 8000 },
-    { name: 'Jun', value: 7500 },
-    { name: 'Jul', value: 11000 },
-]
-
-const enrollmentData = [
-    { name: 'Mon', count: 120 },
-    { name: 'Tue', count: 150 },
-    { name: 'Wed', count: 200 },
-    { name: 'Thu', count: 180 },
-    { name: 'Fri', count: 250 },
-    { name: 'Sat', count: 350 },
-    { name: 'Sun', count: 310 },
-]
+// Dummy data fallbacks removed
 
 const StatCard = ({ title, value, trend, isPositive, delay }: { title: string, value: string, trend: string, isPositive: boolean, delay: number }) => (
     <motion.div
@@ -53,11 +35,69 @@ const StatCard = ({ title, value, trend, isPositive, delay }: { title: string, v
     </motion.div>
 )
 
+import apiClient from '@/lib/apiClient'
+import Loader from '@/components/ui/Loader'
+
 export default function AdminOverviewPage() {
     const [mounted, setMounted] = useState(false)
+    const [stats, setStats] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+
     useEffect(() => {
         setMounted(true)
+        apiClient.get('/api/statistics')
+            .then(res => {
+                setStats(res.data.stats)
+                setLoading(false)
+            })
+            .catch(err => {
+                console.error('Failed to load stats', err)
+                setLoading(false)
+            })
     }, [])
+
+    if (loading) return <Loader />
+
+    // Process chart data from real stats
+    // Revenue chart (monthly)
+    const revenueByMonth = new Array(12).fill(0)
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    if (stats?.activityData?.revenue) {
+        stats.activityData.revenue.forEach((r: any) => {
+            const date = new Date(r.created_at)
+            if (date.getFullYear() === new Date().getFullYear()) {
+                revenueByMonth[date.getMonth()] += Number(r.amount)
+            }
+        })
+    }
+    const realRevenueData = monthNames.map((name, i) => ({ name, value: revenueByMonth[i] }))
+
+    // Enrollments chart (weekly: last 7 days)
+    const enrollmentsByDay = [0, 0, 0, 0, 0, 0, 0]
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    // Calculate past 7 days properly or just simple day of week mapping
+    if (stats?.activityData?.enrollments) {
+        stats.activityData.enrollments.forEach((eDate: string) => {
+            const date = new Date(eDate)
+            const now = new Date()
+            const diffTime = Math.abs(now.getTime() - date.getTime())
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+            if (diffDays <= 7) {
+                enrollmentsByDay[date.getDay()]++
+            }
+        })
+    }
+    // Reorder array so today is last
+    const today = new Date().getDay()
+    const realEnrollmentData = []
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        realEnrollmentData.push({
+            name: dayNames[d.getDay()],
+            count: enrollmentsByDay[d.getDay()]
+        })
+    }
 
     return (
         <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
@@ -96,10 +136,10 @@ export default function AdminOverviewPage() {
 
             {/* Top Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Revenue" value="₹14,85,920" trend="12.5%" isPositive={true} delay={0.1} />
-                <StatCard title="Active Students" value="12,480" trend="8.2%" isPositive={true} delay={0.2} />
-                <StatCard title="Published Courses" value="342" trend="3.1%" isPositive={true} delay={0.3} />
-                <StatCard title="Refund Rate" value="1.2%" trend="0.4%" isPositive={false} delay={0.4} />
+                <StatCard title="Total Revenue" value={`₹${(stats?.totalRevenue || 0).toLocaleString()}`} trend="--" isPositive={true} delay={0.1} />
+                <StatCard title="Active Students" value={(stats?.activeStudents || 0).toLocaleString()} trend="--" isPositive={true} delay={0.2} />
+                <StatCard title="Published Courses" value={(stats?.publishedCourses || 0).toLocaleString()} trend="--" isPositive={true} delay={0.3} />
+                <StatCard title="Refund Rate" value="0%" trend="--" isPositive={true} delay={0.4} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -123,7 +163,7 @@ export default function AdminOverviewPage() {
                     <div className="h-80 w-full min-w-0">
                         {mounted && (
                             <ResponsiveContainer width="99%" height="100%">
-                                <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <AreaChart data={realRevenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -159,7 +199,7 @@ export default function AdminOverviewPage() {
                     <div className="flex-1 w-full min-h-[250px] min-w-0">
                         {mounted && (
                             <ResponsiveContainer width="99%" height="100%">
-                                <BarChart data={enrollmentData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                                <BarChart data={realEnrollmentData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
@@ -199,20 +239,27 @@ export default function AdminOverviewPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                    <td className="px-6 py-4 font-mono font-medium text-slate-600 dark:text-slate-400">#TXN-9{i}82{i}1</td>
-                                    <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">Alex Morgan</td>
-                                    <td className="px-6 py-4 font-medium text-slate-600 dark:text-slate-300">Advanced AI Agents Masterclass</td>
-                                    <td className="px-6 py-4 font-black text-slate-900 dark:text-white">₹3,499</td>
+                            {stats?.recentTransactions?.map((txn: any) => (
+                                <tr key={txn.transaction_id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                    <td className="px-6 py-4 font-mono font-medium text-slate-600 dark:text-slate-400">#{txn.transaction_id.substring(0, 8).toUpperCase()}</td>
+                                    <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">{txn.user_name || 'Anonymous'}</td>
+                                    <td className="px-6 py-4 font-medium text-slate-600 dark:text-slate-300">{txn.course_title || 'Unknown Course'}</td>
+                                    <td className="px-6 py-4 font-black text-slate-900 dark:text-white">₹{Number(txn.amount).toLocaleString()}</td>
                                     <td className="px-6 py-4">
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md w-fit text-xs font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            Success
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md w-fit text-xs font-bold ${txn.status === 'success' || txn.status === 'created' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'}`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${txn.status === 'success' || txn.status === 'created' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                            {txn.status || 'Success'}
                                         </span>
                                     </td>
                                 </tr>
                             ))}
+                            {(!stats?.recentTransactions || stats.recentTransactions.length === 0) && (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                                        No recent transactions.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

@@ -19,8 +19,11 @@ const bulkDelete = async (userId, ids) => {
 };
 
 const updateLectures = async (userId, courseId, lectures) => {
-  const instructorId = await coursesRepository.checkInstructor(courseId);
-  if (instructorId !== userId) throw new Error('Forbidden');
+  const role = await coursesRepository.getUserRole(userId);
+  if (role !== 'admin') {
+    const instructorId = await coursesRepository.checkInstructor(courseId);
+    if (instructorId !== userId) throw new Error('Forbidden');
+  }
   return await coursesRepository.updateLectures(courseId, lectures);
 };
 
@@ -48,15 +51,24 @@ const getCourse = async (identifier, userId = null) => {
 const createCourse = async (userId, payload) => {
   const role = await coursesRepository.getUserRole(userId);
   if (role !== 'instructor' && role !== 'admin') throw new Error('Only instructors can create courses');
+  
+  let finalInstructorId = userId;
+  if (role === 'admin' && payload.instructor_id !== undefined) {
+      finalInstructorId = payload.instructor_id;
+  }
+
   return await coursesRepository.create({
     ...payload,
-    instructor_id: userId
+    instructor_id: finalInstructorId
   });
 };
 
 const updateCourse = async (userId, courseId, payload) => {
-  const instructorId = await coursesRepository.checkInstructor(courseId);
-  if (instructorId !== userId) throw new Error('Forbidden');
+  const role = await coursesRepository.getUserRole(userId);
+  if (role !== 'admin') {
+    const instructorId = await coursesRepository.checkInstructor(courseId);
+    if (instructorId !== userId) throw new Error('Forbidden');
+  }
   return await coursesRepository.update(courseId, payload);
 };
 
@@ -66,7 +78,7 @@ const deleteCourse = async (userId, courseId) => {
   return await coursesRepository.delete(courseId);
 };
 
-const completeLecture = async (userId, courseId, slug, lectureId, totalLectures) => {
+const completeLecture = async (userId, courseId, slug, lectureId, totalLectures, quizScore) => {
   const isCertified = await coursesRepository.checkCertificate(userId, courseId);
   let certUnlocked = isCertified;
   const enrollment = await coursesRepository.getEnrollment(userId, courseId);
@@ -75,8 +87,16 @@ const completeLecture = async (userId, courseId, slug, lectureId, totalLectures)
     if (!prog[slug]) prog[slug] = [];
     if (!prog[slug].includes(String(lectureId))) {
       prog[slug].push(String(lectureId));
-      await coursesRepository.updateProgress(userId, courseId, prog);
     }
+    
+    // Save quiz score if provided
+    if (quizScore !== undefined && quizScore !== null) {
+      if (!prog.quizScores) prog.quizScores = {};
+      prog.quizScores[lectureId] = Math.max(prog.quizScores[lectureId] || 0, quizScore);
+    }
+    
+    await coursesRepository.updateProgress(userId, courseId, prog);
+    
     if (!isCertified && prog[slug].length >= totalLectures) {
       const crypto = await import('crypto');
       await coursesRepository.issueCertificate(userId, courseId, crypto.randomUUID().slice(0, 8).toUpperCase());
@@ -98,5 +118,11 @@ export const coursesService = {
   createCourse,
   updateCourse,
   deleteCourse,
-  completeLecture
+  completeLecture,
+  addReview: async (userId, courseId, rating, reviewText) => {
+    return await coursesRepository.addReview(userId, courseId, rating, reviewText);
+  },
+  updateReview: async (userId, reviewId, rating, reviewText) => {
+    return await coursesRepository.updateReview(userId, reviewId, rating, reviewText);
+  }
 };

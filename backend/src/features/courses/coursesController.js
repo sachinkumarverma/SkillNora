@@ -200,12 +200,13 @@ const complete = async (req, res) => {
       courseId,
       slug,
       lectureId,
-      totalLectures
+      totalLectures,
+      quizScore
     } = req.body;
     if (!courseId || !slug || !lectureId || !totalLectures) return res.status(400).json({
       error: 'Missing parameters'
     });
-    const result = await coursesService.completeLecture(userData.user.id, courseId, slug, lectureId, totalLectures);
+    const result = await coursesService.completeLecture(userData.user.id, courseId, slug, lectureId, totalLectures, quizScore);
     res.json(result);
   } catch (err) {
     res.status(500).json({
@@ -245,6 +246,43 @@ const deleteWithRefund = async (req, res) => {
     }
 };
 
+
+const addReview = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    const { data: userData } = await supabaseServer.auth.getUser(token);
+    if (!userData.user) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const { rating, review_text } = req.body;
+    const courseId = req.params.id;
+    if (!rating || !courseId) return res.status(400).json({ error: 'Missing parameters' });
+    
+    const result = await coursesService.addReview(userData.user.id, courseId, rating, review_text);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const updateReview = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    const { data: userData } = await supabaseServer.auth.getUser(token);
+    if (!userData.user) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const { rating, review_text } = req.body;
+    const reviewId = req.params.reviewId;
+    if (!rating || !reviewId) return res.status(400).json({ error: 'Missing parameters' });
+    
+    const result = await coursesService.updateReview(userData.user.id, reviewId, rating, review_text);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const coursesController = {
   listAdmin,
   bulkPublish,
@@ -256,5 +294,7 @@ export const coursesController = {
   create,
   update,
   removeCourse,
-  complete
+  complete,
+  addReview,
+  updateReview
 };

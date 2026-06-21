@@ -1,7 +1,16 @@
 import { query } from '../../config/db.js';
 
 const getAllAdmin = async () => {
-  const sql = `SELECT c.*, u.full_name as instructor_name, u.email as instructor_email FROM courses c LEFT JOIN users u ON c.instructor_id = u.id ORDER BY created_at DESC`;
+  const sql = `
+    SELECT 
+      c.*, 
+      u.full_name as instructor_name, 
+      u.email as instructor_email,
+      (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enrollment_count
+    FROM courses c 
+    LEFT JOIN users u ON c.instructor_id = u.id 
+    ORDER BY created_at DESC
+  `;
   const {
     rows
   } = await query(sql);
@@ -46,8 +55,8 @@ const getAllPublished = async () => {
 const getBySlugOrId = async identifier => {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
   const courseSql = isUuid 
-    ? `SELECT c.*, u.full_name as instructor_name, COALESCE(AVG(r.rating), 0) as average_rating, COUNT(r.id) as review_count FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.id = $1 GROUP BY c.id, u.full_name LIMIT 1` 
-    : `SELECT c.*, u.full_name as instructor_name, COALESCE(AVG(r.rating), 0) as average_rating, COUNT(r.id) as review_count FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.slug = $1 GROUP BY c.id, u.full_name LIMIT 1`;
+    ? `SELECT c.*, u.full_name as instructor_name, COALESCE(AVG(r.rating), 0) as average_rating FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.id = $1 GROUP BY c.id, u.full_name LIMIT 1` 
+    : `SELECT c.*, u.full_name as instructor_name, COALESCE(AVG(r.rating), 0) as average_rating FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.slug = $1 GROUP BY c.id, u.full_name LIMIT 1`;
   const {
     rows: cRows
   } = await query(courseSql, [identifier]);
@@ -58,6 +67,11 @@ const getBySlugOrId = async identifier => {
     rows: lRows
   } = await query(lecSql, [course.id]);
   course.lectures = lRows;
+  
+  const reviewsSql = `SELECT r.*, u.full_name, u.email FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.course_id = $1 ORDER BY r.created_at DESC`;
+  const { rows: rRows } = await query(reviewsSql, [course.id]);
+  course.reviews = rRows;
+  
   course.instructor = {
     full_name: course.instructor_name
   };
@@ -74,6 +88,7 @@ const checkEnrollment = async (userId, courseId) => {
 };
 
 const create = async payload => {
+  if (payload.attachments) payload.attachments = JSON.stringify(payload.attachments);
   const keys = Object.keys(payload);
   const values = Object.values(payload);
   const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
@@ -85,6 +100,7 @@ const create = async payload => {
 };
 
 const update = async (id, payload) => {
+  if (payload.attachments) payload.attachments = JSON.stringify(payload.attachments);
   const keys = Object.keys(payload);
   const values = Object.values(payload);
   const sets = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
@@ -160,8 +176,8 @@ const updateLectures = async (courseId, lectures) => {
   await query(`DELETE FROM lectures WHERE course_id = $1`, [courseId]);
   if (lectures && lectures.length > 0) {
     for (const lec of lectures) {
-      const sql = `INSERT INTO lectures (course_id, title, description, video_url, duration, "order") VALUES ($1, $2, $3, $4, $5, $6)`;
-      await query(sql, [courseId, lec.title, lec.description, lec.video_url, lec.duration, lec.order]);
+      const sql = `INSERT INTO lectures (course_id, title, video_url, thumbnail_url, position, mcqs) VALUES ($1, $2, $3, $4, $5, $6)`;
+      await query(sql, [courseId, lec.title, lec.video_url, lec.thumbnail_url, lec.position, JSON.stringify(lec.mcqs || [])]);
     }
   }
   return true;
@@ -204,6 +220,18 @@ const issueRefund = async (userId, courseId, amount) => {
     return true;
 };
 
+const addReview = async (userId, courseId, rating, reviewText) => {
+  const sql = `INSERT INTO reviews (user_id, course_id, rating, review_text) VALUES ($1, $2, $3, $4) RETURNING *`;
+  const { rows } = await query(sql, [userId, courseId, rating, reviewText]);
+  return rows[0];
+};
+
+const updateReview = async (userId, reviewId, rating, reviewText) => {
+  const sql = `UPDATE reviews SET rating = $1, review_text = $2 WHERE id = $3 AND user_id = $4 RETURNING *`;
+  const { rows } = await query(sql, [rating, reviewText, reviewId, userId]);
+  return rows[0];
+};
+
 export const coursesRepository = {
   getAllAdmin,
   updatePublishStatus,
@@ -224,5 +252,7 @@ export const coursesRepository = {
   checkCertificate,
   deleteMultiple,
   updateLectures,
-  getAll
+  getAll,
+  addReview,
+  updateReview
 };

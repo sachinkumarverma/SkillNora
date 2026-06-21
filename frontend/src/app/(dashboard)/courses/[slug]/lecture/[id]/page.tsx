@@ -227,7 +227,10 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     setCourseInfo({ id: course.id, title: course.title, slug: course.slug, totalLectures: course.lectures?.length || 1 })
                     const lecIndex = course.lectures?.findIndex((l: any) => String(l.id) === String(id))
                     const lec = course.lectures?.[lecIndex]
-                    if (lec) setLecture({ ...lec, index: lecIndex !== -1 ? lecIndex + 1 : 1 })
+                    if (lec) {
+                        const parsedMcqs = Array.isArray(lec.mcqs) ? lec.mcqs : (typeof lec.mcqs === 'string' ? (function(){ try { const p = JSON.parse(lec.mcqs); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : []);
+                        setLecture({ ...lec, mcqs: parsedMcqs, index: lecIndex !== -1 ? lecIndex + 1 : 1 })
+                    }
                     
                     if (course.isEnrolled) {
                         setIsEnrolled(true)
@@ -300,14 +303,15 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                 courseId: courseInfo.id,
                 slug: courseInfo.slug,
                 lectureId: lecture.id,
-                totalLectures: courseInfo.totalLectures
+                totalLectures: courseInfo.totalLectures,
+                quizScore: quizResult ? quizResult.score : null
             }).then((res: any) => {
                 if (res?.certificateUnlocked) {
                     setCertUnlocked(true);
                 }
             }).catch(console.error);
         }
-    }, [courseInfo, lecture, videoCompleted])
+    }, [courseInfo, lecture, videoCompleted, quizResult])
 
     const handleVideoEnd = () => {
         if (lecture?.mcqs && lecture.mcqs.length > 0) {
@@ -405,91 +409,108 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             />
                                         );
                                     })()}
-                                    {showQuiz && !videoCompleted && (
-                                        <div className="absolute inset-0 z-20 bg-slate-900/95 backdrop-blur flex flex-col p-4 sm:p-8 overflow-y-auto custom-scrollbar">
-                                            {quizResult ? (
-                                                <div className="flex-1 flex flex-col items-center justify-center text-center animate-in zoom-in">
-                                                    {quizResult.passed ? (
-                                                        <>
-                                                            <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-6">
-                                                                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                                            </div>
-                                                            <h2 className="text-3xl font-bold text-white mb-3">Great Job!</h2>
-                                                            <p className="text-slate-300 mb-4 sm:mb-8 text-sm sm:text-base">You scored {quizResult.score}% and passed the module quiz.</p>
-                                                            <button onClick={() => { setShowQuiz(false); setVideoCompleted(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Continue Course</button>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <div className="w-20 h-20 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-6">
-                                                                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                            </div>
-                                                            <h2 className="text-3xl font-bold text-white mb-3">Needs Review</h2>
-                                                            <p className="text-slate-300 mb-4 sm:mb-8 text-sm sm:text-base">You scored {quizResult.score}%. We recommend reviewing the video to strengthen your understanding.</p>
-                                                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
-                                                                <button onClick={() => { setShowQuiz(false); setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 sm:py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Watch Again</button>
-                                                                <button onClick={() => { setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 sm:py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Retake Quiz</button>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <div className="max-w-2xl w-full mx-auto pb-8">
-                                                    <h2 className="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4">Knowledge Check</h2>
-                                                    <div className="space-y-6">
-                                                        {lecture.mcqs.map((mcq: any, qIdx: number) => (
-                                                            <div key={qIdx} className="bg-slate-800 rounded-xl p-6">
-                                                                <p className="text-lg font-medium text-white mb-4">{qIdx + 1}. {mcq.question}</p>
-                                                                <div className="space-y-3">
-                                                                    {mcq.options.map((opt: string, optIdx: number) => (
-                                                                        <button
-                                                                            key={optIdx}
-                                                                            onClick={() => setQuizAnswers({ ...quizAnswers, [qIdx]: optIdx })}
-                                                                            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors border ${quizAnswers[qIdx] === optIdx ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'}`}
-                                                                        >
-                                                                            {opt}
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <div className="mt-8 flex justify-end">
-                                                        <button
-                                                            disabled={Object.keys(quizAnswers).length !== lecture.mcqs.length}
-                                                            onClick={() => {
-                                                                let correct = 0;
-                                                                lecture.mcqs.forEach((m: any, i: number) => {
-                                                                    if (quizAnswers[i] === m.correctIndex) correct++;
-                                                                });
-                                                                const score = Math.round((correct / lecture.mcqs.length) * 100);
-                                                                setQuizResult({ score, passed: score >= 70 });
-                                                            }}
-                                                            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg"
-                                                        >
-                                                            Submit Answers
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                 </>
                             )}
                         </div>
                         
-                        {isEnrolled && !videoCompleted && (
+                        {isEnrolled && !showQuiz && (
                             <div className="mt-4 flex justify-end">
-                                <button
-                                    onClick={handleVideoEnd}
-                                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
-                                >
-                                    Mark as Complete
-                                </button>
+                                {lecture?.mcqs && lecture.mcqs.length > 0 ? (
+                                    <button
+                                        onClick={() => setShowQuiz(true)}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                                    >
+                                        {videoCompleted ? "Retake Module Quiz" : "Take Module Quiz"}
+                                    </button>
+                                ) : !videoCompleted ? (
+                                    <button
+                                        onClick={handleVideoEnd}
+                                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                                    >
+                                        Mark as Complete
+                                    </button>
+                                ) : null}
                             </div>
                         )}
                     </div>
 
-
+                    {/* Quiz Section */}
+                    {isEnrolled && showQuiz && (
+                        <div className="mt-6 bg-slate-900 rounded-xl border border-slate-800 shadow-sm flex flex-col p-6 sm:p-10">
+                            {quizResult ? (
+                                <div className="flex-1 flex flex-col items-center justify-center text-center animate-in zoom-in py-8">
+                                    {quizResult.passed ? (
+                                        <>
+                                            <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-6">
+                                                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                            </div>
+                                            <h2 className="text-3xl font-bold text-white mb-3">Great Job!</h2>
+                                            <p className="text-slate-300 mb-8 text-sm sm:text-base">You scored {quizResult.score}% and passed the module quiz.</p>
+                                            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                                                <button onClick={() => { setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Retake Quiz</button>
+                                                <button onClick={() => { setShowQuiz(false); setVideoCompleted(true); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Continue Course</button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-20 h-20 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-6">
+                                                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </div>
+                                            <h2 className="text-3xl font-bold text-white mb-3">Needs Review</h2>
+                                            <p className="text-slate-300 mb-8 text-sm sm:text-base">You scored {quizResult.score}%. We recommend reviewing the video to strengthen your understanding.</p>
+                                            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                                                <button onClick={() => { setShowQuiz(false); setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Watch Again</button>
+                                                <button onClick={() => { setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Retake Quiz</button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="max-w-3xl w-full mx-auto">
+                                    <div className="flex items-center justify-between border-b border-slate-700 pb-4 mb-6">
+                                        <h2 className="text-2xl font-bold text-white">Knowledge Check</h2>
+                                        <button onClick={() => setShowQuiz(false)} className="text-slate-400 hover:text-white transition-colors">
+                                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                    <div className="space-y-6">
+                                        {(Array.isArray(lecture.mcqs) ? lecture.mcqs : (typeof lecture.mcqs === 'string' ? JSON.parse(lecture.mcqs) : [])).map((mcq: any, qIdx: number) => (
+                                            <div key={qIdx} className="bg-slate-800 rounded-xl p-6">
+                                                <p className="text-lg font-medium text-white mb-4">{qIdx + 1}. {mcq.question}</p>
+                                                <div className="space-y-3">
+                                                    {mcq.options.map((opt: string, optIdx: number) => (
+                                                        <button
+                                                            key={optIdx}
+                                                            onClick={() => setQuizAnswers({ ...quizAnswers, [qIdx]: optIdx })}
+                                                            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors border ${quizAnswers[qIdx] === optIdx ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'}`}
+                                                        >
+                                                            {opt}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-8 flex justify-end">
+                                        <button
+                                            disabled={Object.keys(quizAnswers).length !== lecture.mcqs.length}
+                                            onClick={() => {
+                                                let correct = 0;
+                                                lecture.mcqs.forEach((m: any, i: number) => {
+                                                    if (quizAnswers[i] === m.correctIndex) correct++;
+                                                });
+                                                const score = Math.round((correct / lecture.mcqs.length) * 100);
+                                                setQuizResult({ score, passed: score >= 70 });
+                                            }}
+                                            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg"
+                                        >
+                                            Submit Answers
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Notes Section */}
                     <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>

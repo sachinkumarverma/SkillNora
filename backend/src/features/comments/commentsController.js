@@ -1,5 +1,6 @@
 import { commentsService } from './commentsService.js';
 import { supabaseServer } from '../../config/db.js';
+import { logger } from '../../utils/logger.js';
 import { notificationsService } from '../notifications/notificationsService.js';
 import { commentsRepository } from './commentsRepository.js';
 import { coursesRepository } from '../courses/coursesRepository.js';
@@ -11,6 +12,7 @@ const getComments = async (req, res) => {
       comments
     });
   } catch (err) {
+    logger.error('Error fetching comments:', err);
     res.status(500).json({
       error: err.message
     });
@@ -55,11 +57,12 @@ const postComment = async (req, res) => {
             }
         }
     } catch (notifErr) {
-        console.error("Failed to send notification:", notifErr);
+        logger.error("Failed to send notification:", notifErr);
     }
 
     res.json({ comment });
   } catch (err) {
+    logger.error('Error adding comment:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -78,6 +81,7 @@ const deleteComment = async (req, res) => {
       success: true
     });
   } catch (err) {
+    logger.error('Error deleting comment:', err);
     res.status(500).json({
       error: err.message
     });
@@ -131,6 +135,7 @@ const reactToComment = async (req, res) => {
 
     res.json({ comment: updatedComment });
   } catch (err) {
+    logger.error('Error reacting to comment:', err);
     res.status(500).json({ error: err.message });
   }
 };

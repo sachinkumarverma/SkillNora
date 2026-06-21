@@ -2,25 +2,19 @@ import { query } from '../../config/db.js';
 
 const getNotes = async (userId) => {
   const { rows } = await query(`
-    SELECT n.*, c.title as "courseTitle", c.slug as "courseSlug", c.lectures
+    SELECT n.*, c.title as "courseTitle", c.slug as "courseSlug", l.title as "lectureTitle"
     FROM notes n
     LEFT JOIN courses c ON n.course_id = c.id
+    LEFT JOIN lectures l ON n.lecture_id::text = l.id::text
     WHERE n.user_id = $1
-    ORDER BY n.created_at DESC
+    ORDER BY n.updated_at DESC
   `, [userId]);
   
   return rows.map(row => {
-    let lectureTitle = 'Unknown Lecture';
-    if (row.lectures) {
-      const lecture = row.lectures.find(l => String(l.id) === String(row.lecture_id));
-      if (lecture) lectureTitle = lecture.title;
-    }
-    delete row.lectures;
     return {
       ...row,
       lectureId: row.lecture_id,
-      updatedAt: row.updated_at || row.created_at,
-      lectureTitle
+      updatedAt: row.updated_at || row.created_at
     };
   });
 };
@@ -48,8 +42,15 @@ const deleteNote = async (userId, noteId) => {
   await query(`DELETE FROM notes WHERE id = $1 AND user_id = $2`, [noteId, userId]);
 };
 
+const bulkDeleteNotes = async (userId, noteIds) => {
+  if (!noteIds || noteIds.length === 0) return;
+  const placeholders = noteIds.map((_, i) => `$${i + 2}`).join(',');
+  await query(`DELETE FROM notes WHERE user_id = $1 AND id IN (${placeholders})`, [userId, ...noteIds]);
+};
+
 export const notesRepository = {
   getNotes,
   saveNote,
-  deleteNote
+  deleteNote,
+  bulkDeleteNotes
 };

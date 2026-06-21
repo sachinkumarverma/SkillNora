@@ -66,7 +66,7 @@ export default function AdminCourseManagement() {
                         instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
                         price: `₹${c.price || 0}`,
                         status: c.is_published ? 'Published' : 'Draft',
-                        enrollments: 0,
+                        enrollments: Number(c.enrollment_count) || 0,
                         rating: c.average_rating || 0,
                         thumbnail_url: c.thumbnail_url,
                         slug: c.slug

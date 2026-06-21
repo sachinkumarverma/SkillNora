@@ -7,6 +7,7 @@ import { coursesService } from '@/services/coursesService'
 import apiClient from '@/lib/apiClient'
 // keep for auth
 import { useEffect } from 'react'
+import Loader from '@/components/ui/Loader'
 import Confetti from 'react-confetti'
 import { useWindowSize } from 'react-use'
 
@@ -76,6 +77,7 @@ export default function InstructorCourseBuilder() {
     const [currentUser, setCurrentUser] = useState<any>(null)
     const [currentUserRole, setCurrentUserRole] = useState<string>('instructor')
     const [instructors, setInstructors] = useState<any[]>([])
+    const [isLoadingData, setIsLoadingData] = useState(false)
     
     // Modules
     const [modules, setModules] = useState<any[]>([
@@ -87,30 +89,36 @@ export default function InstructorCourseBuilder() {
     const editCourseId = searchParams?.get('course_id')
 
     useEffect(() => {
-        const fetchUserAndInstructors = async () => {
-            const { data } = await apiClient.get('/api/auth/profile')
-            const user = data.user
-            if (user) {
-                setCurrentUser(user)
-                const isAdmin = user.email === 'sachinverma1489@gmail.com' || user.email === 'admin@skillnora.com'
+        const fetchAllData = async () => {
+            try {
+                // Prepare promises
+                const userPromise = apiClient.get('/api/users/me').then(res => res.data.user).catch(() => null);
+                const coursePromise = editCourseId ? coursesService.getOne(editCourseId as string).catch(() => null) : Promise.resolve(null);
                 
-                try {
-                    const userData = await apiClient.get('/api/users/me').then(res => res.data.user)
-                    const role = isAdmin ? 'admin' : (userData?.role || 'instructor')
-                    setCurrentUserRole(role)
+                // Fetch user and course in parallel
+                const [user, courseRes] = await Promise.all([userPromise, coursePromise]);
+                
+                // Handle User
+                let role = 'instructor';
+                if (user) {
+                    setCurrentUser(user);
+                    const isAdmin = user.email === 'sachinverma1489@gmail.com' || user.email === 'admin@skillnora.com';
+                    role = isAdmin ? 'admin' : (user.role || 'instructor');
+                    setCurrentUserRole(role);
 
                     if (role === 'admin') {
-                        const insts = await apiClient.get('/api/users/instructors').then(res => res.data.instructors)
-                        if (insts) setInstructors(insts)
+                        // Fetch instructors asynchronously (doesn't need to block rendering if course exists)
+                        apiClient.get('/api/users/instructors')
+                            .then(res => {
+                                if (res.data.instructors) setInstructors(res.data.instructors);
+                            })
+                            .catch(e => console.error("Error fetching instructors", e));
                     }
-                } catch (e) {
-                    console.error("Error fetching user data", e);
                 }
-            }
-            if (editCourseId) {
-                try {
-                    const res = await coursesService.getOne(editCourseId as string)
-                    const c = res?.course || res
+
+                // Handle Course
+                if (editCourseId && courseRes) {
+                    const c = courseRes.course || courseRes;
                     if (c) {
                         setCourseData({
                             title: c.title || '',
@@ -126,9 +134,9 @@ export default function InstructorCourseBuilder() {
                             instructor_id: c.instructor_id || 'myself',
                             initial_instructor_name: c.instructor?.full_name || c.instructor?.email,
                             provide_certificate: true,
-                            attachments: c.attachments || []
-                        })
-                        if (c.thumbnail_url) setThumbnailMode('unsplash')
+                            attachments: Array.isArray(c.attachments) ? c.attachments : (typeof c.attachments === 'string' ? (function(){ try { const p = JSON.parse(c.attachments); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
+                        });
+                        if (c.thumbnail_url) setThumbnailMode('unsplash');
                         
                         if (c.lectures && c.lectures.length > 0) {
                             setModules(c.lectures.map((l: any, i: number) => ({
@@ -137,16 +145,22 @@ export default function InstructorCourseBuilder() {
                                 videoMode: l.video_url?.includes('http') ? 'link' : 'upload',
                                 videoUrl: l.video_url || '',
                                 thumbnailMode: l.thumbnail_url ? 'unsplash' : 'upload',
-                                thumbnailUrl: l.thumbnail_url || ''
-                            })))
+                                thumbnailUrl: l.thumbnail_url || '',
+                                mcqs: Array.isArray(l.mcqs) ? l.mcqs : (typeof l.mcqs === 'string' ? (function(){ try { const p = JSON.parse(l.mcqs); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
+                            })));
                         }
                     }
-                } catch (e) {
-                    console.error("Error fetching course", e);
                 }
+            } catch (e) {
+                console.error("Error fetching data", e);
+            } finally {
+                setIsLoadingData(false);
             }
+        };
+        if (editCourseId) {
+            setIsLoadingData(true)
         }
-        fetchUserAndInstructors()
+        fetchAllData()
     }, [editCourseId])
 
     const handlePublish = async (e?: React.FormEvent) => {
@@ -158,7 +172,7 @@ export default function InstructorCourseBuilder() {
         }
         setIsSaving(true)
         try {
-            const { data } = await apiClient.get('/api/auth/profile')
+            const { data } = await apiClient.get('/api/users/me')
             const user = data.user
             if (!user) {
                 alert('Please sign in to publish a course')
@@ -193,20 +207,23 @@ export default function InstructorCourseBuilder() {
                 is_published: true
             }
 
-            let course;
+            let apiResponse;
             if (editCourseId) {
-                course = await coursesService.update(editCourseId as string, coursePayload);
+                apiResponse = await coursesService.update(editCourseId as string, coursePayload);
             } else {
-                course = await coursesService.create(coursePayload);
+                apiResponse = await coursesService.create(coursePayload);
             }
 
-            if (course) {
+            const course = apiResponse?.course || apiResponse;
+
+            if (course && course.id) {
                 const lecturesToInsert = modules.map((mod, index) => ({
                     course_id: course.id,
                     title: mod.title,
                     video_url: mod.videoUrl,
                     thumbnail_url: mod.videoMode === 'link' ? '' : mod.thumbnailUrl,
-                    position: index + 1
+                    position: index + 1,
+                    mcqs: mod.mcqs || []
                 }))
 
                 if (lecturesToInsert.length > 0) {
@@ -216,7 +233,11 @@ export default function InstructorCourseBuilder() {
 
             setShowSuccessModal(true)
             setTimeout(() => {
-                router.push('/admin/courses')
+                if (currentUserRole === 'admin') {
+                    router.push('/admin/courses')
+                } else {
+                    router.push('/instructor')
+                }
             }, 6000)
         } catch (error: any) {
             console.error('Error publishing course:', error)
@@ -244,7 +265,15 @@ export default function InstructorCourseBuilder() {
         const inst = instructors.find(i => i.id === courseData.instructor_id)
         if (inst) return inst.full_name || inst.email
         if ((courseData as any).initial_instructor_name) return (courseData as any).initial_instructor_name
-        return 'Loading...'
+        return 'Assign Instructor'
+    }
+
+    if (isLoadingData) {
+        return (
+            <div className="flex justify-center items-center h-screen w-full">
+                <Loader />
+            </div>
+        )
     }
 
     return (
@@ -721,12 +750,12 @@ export default function InstructorCourseBuilder() {
                 </div>
 
                 {/* Right Column: Pricing & Settings */}
-                <div className="space-y-8">
+                <div className="space-y-8 sticky top-6 self-start">
                     <motion.div 
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm sticky top-24"
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm"
                     >
                         <h2 className="text-xl font-black text-slate-900 dark:text-white mb-6">Pricing</h2>
                         <div className="space-y-5">

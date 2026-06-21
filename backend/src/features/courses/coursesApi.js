@@ -14,5 +14,7 @@ coursesApi.post('/', coursesController.create);
 coursesApi.put('/:id', coursesController.update);
 coursesApi.delete('/:id', coursesController.removeCourse);
 coursesApi.post('/complete', coursesController.complete);
+coursesApi.post('/:id/reviews', coursesController.addReview);
+coursesApi.put('/:id/reviews/:reviewId', coursesController.updateReview);
 
 export { coursesApi };

@@ -40,7 +40,7 @@ app.use((req, res, next) => {
 
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
-app.use('/api/profile', usersApi)
+app.use('/api/users', usersApi)
 app.use('/api/courses', coursesApi)
 app.use('/api/enrollments', enrollmentsApi)
 app.use('/api/upload', uploadApi)
