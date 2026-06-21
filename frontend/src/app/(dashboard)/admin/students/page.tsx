@@ -1,20 +1,31 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-
-const initialStudents = [
-    { id: '1', name: 'Alex Morgan', email: 'alex.m@example.com', enrolled: 4, completed: 2, status: 'Active', joined: 'Jan 15, 2026' },
-    { id: '2', name: 'Jordan Lee', email: 'jordan.lee@example.com', enrolled: 1, completed: 0, status: 'Active', joined: 'Feb 02, 2026' },
-    { id: '3', name: 'Taylor Smith', email: 'taylor.s@example.com', enrolled: 7, completed: 5, status: 'Suspended', joined: 'Dec 10, 2025' },
-    { id: '4', name: 'Casey Jenkins', email: 'casey.j@example.com', enrolled: 2, completed: 1, status: 'Active', joined: 'Mar 22, 2026' },
-    { id: '5', name: 'Riley Brown', email: 'riley.b@example.com', enrolled: 0, completed: 0, status: 'Inactive', joined: 'Apr 05, 2026' },
-]
+import apiClient from '@/lib/apiClient'
+import Loader from '@/components/ui/Loader'
 
 export default function AdminStudentManagement() {
-    const [students, setStudents] = useState(initialStudents)
+    const [students, setStudents] = useState<any[]>([])
     const [search, setSearch] = useState('')
+    const [loading, setLoading] = useState(true)
 
-    const filtered = students.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase()))
+    useEffect(() => {
+        const fetchStudents = async () => {
+            try {
+                const res = await apiClient.get('/api/admin/students')
+                setStudents(res.data?.students || [])
+            } catch (err) {
+                console.error(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchStudents()
+    }, [])
+
+    const filtered = students.filter(s => s.name?.toLowerCase().includes(search.toLowerCase()) || s.email?.toLowerCase().includes(search.toLowerCase()))
+
+    if (loading) return <Loader />
 
     return (
         <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
@@ -74,8 +85,12 @@ export default function AdminStudentManagement() {
                                 <tr key={student.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-                                                {student.name.charAt(0)}
+                                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold uppercase overflow-hidden shrink-0">
+                                                {student.avatar_url ? (
+                                                    <img src={student.avatar_url} alt={student.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    student.name?.charAt(0) || 'S'
+                                                )}
                                             </div>
                                             <div>
                                                 <div className="font-bold text-slate-900 dark:text-white">{student.name}</div>
@@ -97,7 +112,7 @@ export default function AdminStudentManagement() {
                                     <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{student.completed}</td>
                                     <td className="px-6 py-4 text-slate-500">{student.joined}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">View Profile</button>
+                                        <a href={`/admin/students/${student.id}`} className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">View Profile</a>
                                     </td>
                                 </tr>
                             ))}

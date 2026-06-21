@@ -1,19 +1,31 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-
-const initialPayments = [
-    { id: '1', txnId: 'TXN-94821', user: 'Alex Morgan', course: 'AI Engineer Agentic Track', amount: '₹14,999', method: 'Razorpay', status: 'Success', date: 'Jun 17, 2026' },
-    { id: '2', txnId: 'TXN-94822', user: 'Jordan Lee', course: 'Full-Stack Web Bootcamp', amount: '₹9,999', method: 'Razorpay', status: 'Refunded', date: 'Jun 16, 2026' },
-    { id: '3', txnId: 'TXN-94823', user: 'Taylor Smith', course: 'Mastering Figma UI/UX', amount: '₹5,499', method: 'Stripe', status: 'Success', date: 'Jun 16, 2026' },
-    { id: '4', txnId: 'TXN-94824', user: 'Casey Jenkins', course: 'Data Science with Python', amount: '₹11,999', method: 'Razorpay', status: 'Failed', date: 'Jun 15, 2026' },
-]
+import apiClient from '@/lib/apiClient'
+import Loader from '@/components/ui/Loader'
 
 export default function AdminPaymentsPage() {
-    const [payments, setPayments] = useState(initialPayments)
+    const [payments, setPayments] = useState<any[]>([])
     const [search, setSearch] = useState('')
+    const [loading, setLoading] = useState(true)
 
-    const filtered = payments.filter(p => p.txnId.toLowerCase().includes(search.toLowerCase()) || p.user.toLowerCase().includes(search.toLowerCase()))
+    useEffect(() => {
+        const fetchPayments = async () => {
+            try {
+                const res = await apiClient.get('/api/admin/payments')
+                setPayments(res.data?.payments || [])
+            } catch (err) {
+                console.error(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchPayments()
+    }, [])
+
+    const filtered = payments.filter(p => p.transaction_id?.toLowerCase().includes(search.toLowerCase()) || p.user_name?.toLowerCase().includes(search.toLowerCase()))
+
+    if (loading) return <Loader />
 
     return (
         <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
@@ -24,7 +36,7 @@ export default function AdminPaymentsPage() {
                         animate={{ opacity: 1, x: 0 }}
                         className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight"
                     >
-                        Payments Ledger
+                        Transactions & Enrollments
                     </motion.h1>
                     <motion.p 
                         initial={{ opacity: 0, x: -20 }}
@@ -32,7 +44,7 @@ export default function AdminPaymentsPage() {
                         transition={{ delay: 0.1 }}
                         className="text-slate-500 dark:text-slate-400 font-medium mt-2"
                     >
-                        Track revenue, manage refunds, and view Razorpay logs.
+                        Track revenue, monitor student enrollments, and view receipts.
                     </motion.p>
                 </div>
                 <motion.div 
@@ -82,23 +94,23 @@ export default function AdminPaymentsPage() {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                             {filtered.map(p => (
                                 <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                    <td className="px-6 py-4 font-mono font-medium text-slate-600 dark:text-slate-400">{p.txnId}</td>
-                                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{p.user}</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{p.course}</td>
-                                    <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{p.amount}</td>
+                                    <td className="px-6 py-4 font-mono font-medium text-slate-600 dark:text-slate-400">{p.transaction_id || p.id}</td>
+                                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{p.user_name}</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{p.course_title}</td>
+                                    <td className="px-6 py-4 font-black text-slate-900 dark:text-white">Rs. {p.amount}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-max gap-1.5 ${
-                                            p.status === 'Success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 
+                                            p.status === 'created' || p.status === 'paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 
                                             p.status === 'Failed' ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20' : 
                                             'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
                                         }`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${p.status === 'Success' ? 'bg-emerald-500' : p.status === 'Failed' ? 'bg-red-500' : 'bg-amber-500'}`}></span>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${p.status === 'created' || p.status === 'paid' ? 'bg-emerald-500' : p.status === 'Failed' ? 'bg-red-500' : 'bg-amber-500'}`}></span>
                                             {p.status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-slate-500">{p.date}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">Receipt</button>
+                                        <a href={`/admin/payments/${p.id}`} className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">Receipt</a>
                                     </td>
                                 </tr>
                             ))}

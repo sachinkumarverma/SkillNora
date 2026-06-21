@@ -1,18 +1,31 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-
-const initialInstructors = [
-    { id: '1', name: 'Dr. Sarah Chen', email: 'sarah.c@example.com', courses: 4, students: 1245, revenue: '₹4,50,000', status: 'Approved', joined: 'Jan 10, 2025' },
-    { id: '2', name: 'Michael Ross', email: 'michael.r@example.com', courses: 2, students: 890, revenue: '₹2,10,000', status: 'Approved', joined: 'Feb 15, 2025' },
-    { id: '3', name: 'Elena Rodriguez', email: 'elena.r@example.com', courses: 1, students: 0, revenue: '₹0', status: 'Pending', joined: 'Mar 01, 2026' },
-]
+import apiClient from '@/lib/apiClient'
+import Loader from '@/components/ui/Loader'
 
 export default function AdminInstructorManagement() {
-    const [instructors, setInstructors] = useState(initialInstructors)
+    const [instructors, setInstructors] = useState<any[]>([])
     const [search, setSearch] = useState('')
+    const [loading, setLoading] = useState(true)
 
-    const filtered = instructors.filter(i => i.name.toLowerCase().includes(search.toLowerCase()) || i.email.toLowerCase().includes(search.toLowerCase()))
+    useEffect(() => {
+        const fetchInstructors = async () => {
+            try {
+                const res = await apiClient.get('/api/admin/instructors')
+                setInstructors(res.data?.instructors || [])
+            } catch (err) {
+                console.error(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchInstructors()
+    }, [])
+
+    const filtered = instructors.filter(i => i.name?.toLowerCase().includes(search.toLowerCase()) || i.email?.toLowerCase().includes(search.toLowerCase()))
+
+    if (loading) return <Loader />
 
     return (
         <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
@@ -64,7 +77,6 @@ export default function AdminInstructorManagement() {
                                 <th className="px-6 py-4">Courses</th>
                                 <th className="px-6 py-4">Total Students</th>
                                 <th className="px-6 py-4">Revenue</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -72,8 +84,8 @@ export default function AdminInstructorManagement() {
                                 <tr key={instructor.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-                                                {instructor.name.charAt(0)}
+                                            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold uppercase">
+                                                {instructor.name?.charAt(0) || 'I'}
                                             </div>
                                             <div>
                                                 <div className="font-bold text-slate-900 dark:text-white">{instructor.name}</div>
@@ -93,16 +105,6 @@ export default function AdminInstructorManagement() {
                                     <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{instructor.courses}</td>
                                     <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{instructor.students}</td>
                                     <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{instructor.revenue}</td>
-                                    <td className="px-6 py-4 text-right">
-                                        {instructor.status === 'Pending' ? (
-                                            <div className="flex justify-end gap-2">
-                                                <button className="px-3 py-1 bg-emerald-50 text-emerald-600 font-bold rounded-full hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 transition-colors">Approve</button>
-                                                <button className="px-3 py-1 bg-red-50 text-red-600 font-bold rounded-full hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors">Reject</button>
-                                            </div>
-                                        ) : (
-                                            <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">View Details</button>
-                                        )}
-                                    </td>
                                 </tr>
                             ))}
                         </tbody>

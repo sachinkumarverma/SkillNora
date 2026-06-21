@@ -41,7 +41,7 @@ const getCommentById = async (id) => {
 
 const updateReactions = async (id, reactions) => {
   const sql = `UPDATE lecture_comments SET reactions = $1 WHERE id = $2 RETURNING *`;
-  const { rows } = await query(sql, [reactions, id]);
+  const { rows } = await query(sql, [JSON.stringify(reactions), id]);
   return rows[0];
 };
 

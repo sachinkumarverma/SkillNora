@@ -164,30 +164,43 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     const newReactions = { ...reactions };
                     const userId = user?.id;
                     if (userId) {
-                        for (const [existingEmoji, users] of Object.entries(newReactions)) {
+                        for (const [existingEmoji, usersArray] of Object.entries(newReactions)) {
+                            const users = usersArray as string[];
                             if (existingEmoji !== emoji) {
-                                const idx = (users as string[]).indexOf(userId);
+                                const idx = users.indexOf(userId);
                                 if (idx > -1) {
+                                    newReactions[existingEmoji] = [...users];
                                     (newReactions[existingEmoji] as string[]).splice(idx, 1);
                                     if ((newReactions[existingEmoji] as string[]).length === 0) delete newReactions[existingEmoji];
                                 }
                             }
                         }
-                        if (!newReactions[emoji]) newReactions[emoji] = [];
-                        const idx = newReactions[emoji].indexOf(userId);
-                        if (idx > -1) {
-                            newReactions[emoji].splice(idx, 1);
-                            if (newReactions[emoji].length === 0) delete newReactions[emoji];
+                        if (!newReactions[emoji]) {
+                            newReactions[emoji] = [userId];
                         } else {
-                            newReactions[emoji].push(userId);
+                            newReactions[emoji] = [...newReactions[emoji]];
+                            const idx = newReactions[emoji].indexOf(userId);
+                            if (idx > -1) {
+                                newReactions[emoji].splice(idx, 1);
+                                if (newReactions[emoji].length === 0) delete newReactions[emoji];
+                            } else {
+                                newReactions[emoji].push(userId);
+                            }
                         }
                     }
                     return { ...c, reactions: newReactions };
                 }
                 return c;
             }));
+
+            // Send request to backend
+            const res = await commentsService.reactToComment(commentId, emoji);
+            const updatedComment = res?.comment || res;
             
-            await commentsService.reactToComment(commentId, emoji);
+            // Sync state with backend response to ensure accuracy
+            if (updatedComment) {
+                setComments(prev => prev.map(c => c.id === commentId ? { ...c, reactions: updatedComment.reactions } : c));
+            }
         } catch (err) {
             console.error("Failed to react", err);
         }

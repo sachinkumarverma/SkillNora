@@ -60,6 +60,9 @@ app.use('/api/notes', notesApi)
 import { notificationsApi } from './src/features/notifications/notificationsApi.js'
 app.use('/api/notifications', notificationsApi)
 
+import { adminApi } from './src/features/admin/adminApi.js'
+app.use('/api/admin', adminApi)
+
 const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
