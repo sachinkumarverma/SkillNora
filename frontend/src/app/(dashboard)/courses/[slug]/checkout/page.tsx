@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useUser from '@/lib/useUser'
+import Loader from '@/components/ui/Loader'
 import { coursesService } from '@/services/coursesService'
 import { enrollmentsService } from '@/services/enrollmentsService'
 
@@ -68,11 +69,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
         router.push(`/courses/${slug}`);
     };
 
-    if (loading || userLoading) return (
-        <div className="flex h-[60vh] w-full items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
-        </div>
-    )
+    if (loading || userLoading) return <Loader />
 
     if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
 

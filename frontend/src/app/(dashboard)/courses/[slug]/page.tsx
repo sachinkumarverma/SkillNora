@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 
 import useUser from '@/lib/useUser'
+import Loader from '@/components/ui/Loader'
 import { useRouter } from 'next/navigation'
 import { coursesService } from '@/services/coursesService'
 
@@ -66,11 +67,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         return () => { mounted = false }
     }, [slug])
 
-    if (loading) return (
-        <div className="flex h-[60vh] w-full items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
-        </div>
-    )
+    if (loading) return <Loader />
 
     if (!course) return (
         <div className="flex h-[60vh] flex-col items-center justify-center text-center">

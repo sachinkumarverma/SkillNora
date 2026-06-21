@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import apiClient from '@/lib/apiClient'
 import { Toaster, toast } from 'sonner'
 import { authService } from '@/services/authService'
+import Loader from '@/components/ui/Loader'
 
 type Mode = 'signin' | 'signup' | 'magic' | 'reset'
 
@@ -113,12 +114,7 @@ export default function AuthPage() {
     return (
         <main className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
             <Toaster position="top-center" richColors />
-            {loading && (
-                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm transition-all duration-300">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mb-4 shadow-lg"></div>
-                    <p className="text-lg font-bold text-slate-800 dark:text-slate-200 animate-pulse">Authenticating...</p>
-                </div>
-            )}
+            {loading && <Loader fullScreen />}
             <div className="fixed inset-0 pointer-events-none grid-pattern opacity-[0.35]" />
             <div className="relative z-10 w-full grid gap-6 lg:grid-cols-[1fr_0.95fr]">
                 <section className='surface rounded-xl p-6 md:p-8'>

@@ -24,10 +24,17 @@ const updatePublishStatus = async (ids, status) => {
 
 const getAllPublished = async () => {
   const sql = `
-            SELECT id, title, slug, description, price, instructor_id, is_published, created_at, thumbnail_url, category, target_role, primary_skill
-            FROM courses
-            WHERE is_published = true
-            ORDER BY created_at DESC
+            SELECT 
+                c.id, c.title, c.slug, c.description, c.price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
+                u.full_name as instructor_name,
+                COALESCE(AVG(r.rating), 0) as average_rating,
+                COUNT(r.id) as review_count
+            FROM courses c
+            LEFT JOIN users u ON c.instructor_id = u.id
+            LEFT JOIN reviews r ON c.id = r.course_id
+            WHERE c.is_published = true
+            GROUP BY c.id, u.full_name
+            ORDER BY c.created_at DESC
             LIMIT 50
         `;
   const {
@@ -38,7 +45,9 @@ const getAllPublished = async () => {
 
 const getBySlugOrId = async identifier => {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
-  const courseSql = isUuid ? `SELECT c.*, u.full_name as instructor_name FROM courses c LEFT JOIN users u ON c.instructor_id = u.id WHERE c.id = $1 LIMIT 1` : `SELECT c.*, u.full_name as instructor_name FROM courses c LEFT JOIN users u ON c.instructor_id = u.id WHERE c.slug = $1 LIMIT 1`;
+  const courseSql = isUuid 
+    ? `SELECT c.*, u.full_name as instructor_name, COALESCE(AVG(r.rating), 0) as average_rating, COUNT(r.id) as review_count FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.id = $1 GROUP BY c.id, u.full_name LIMIT 1` 
+    : `SELECT c.*, u.full_name as instructor_name, COALESCE(AVG(r.rating), 0) as average_rating, COUNT(r.id) as review_count FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.slug = $1 GROUP BY c.id, u.full_name LIMIT 1`;
   const {
     rows: cRows
   } = await query(courseSql, [identifier]);
@@ -160,10 +169,17 @@ const updateLectures = async (courseId, lectures) => {
 
 const getAll = async () => {
   const sql = `
-            SELECT id, title, slug, description, price, instructor_id, is_published, created_at, thumbnail_url, category, target_role, primary_skill
-            FROM courses
-            WHERE is_published = true
-            ORDER BY created_at DESC
+            SELECT 
+                c.id, c.title, c.slug, c.description, c.price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
+                u.full_name as instructor_name,
+                COALESCE(AVG(r.rating), 0) as average_rating,
+                COUNT(r.id) as review_count
+            FROM courses c
+            LEFT JOIN users u ON c.instructor_id = u.id
+            LEFT JOIN reviews r ON c.id = r.course_id
+            WHERE c.is_published = true
+            GROUP BY c.id, u.full_name
+            ORDER BY c.created_at DESC
             LIMIT 50
         `;
   const {

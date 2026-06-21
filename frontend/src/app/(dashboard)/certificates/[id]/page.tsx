@@ -2,14 +2,16 @@
 import React, { useEffect, useState, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useUser from '@/lib/useUser'
+import Loader from '@/components/ui/Loader'
 
 export default function CertificateViewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
-    const { user } = useUser()
+    const { user, loading: userLoading } = useUser()
     const searchParams = useSearchParams()
     const router = useRouter()
     const [cert, setCert] = useState<any | null>(null)
     const [copied, setCopied] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const encodedData = searchParams.get('data')
@@ -17,22 +19,29 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
             try {
                 const decoded = JSON.parse(atob(encodedData))
                 setCert(decoded)
+                setLoading(false)
                 return
             } catch (e) { }
         }
+
+        if (userLoading) return;
 
         const fetchCert = async () => {
             if (user) {
                 try {
                     const certModule = await import('@/services/certificatesService')
-                    const certs = await certModule.certificatesService.getUserCertificates()
+                    const response = await certModule.certificatesService.getMyCertificates()
+                    const certs = Array.isArray(response) ? response : response.certificates || []
                     const found = certs.find((c: any) => c.id === id || c.course_id === id)
-                    if (found) setCert(found)
+                    if (found) {
+                        setCert(found)
+                    }
                 } catch (e) {}
             }
+            setLoading(false)
         }
         fetchCert()
-    }, [id, searchParams])
+    }, [id, searchParams, user, userLoading])
 
     const handlePrint = () => {
         window.print()
@@ -45,6 +54,10 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
         navigator.clipboard.writeText(url)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
+    }
+
+    if (loading) {
+        return <Loader />
     }
 
     if (!cert) {

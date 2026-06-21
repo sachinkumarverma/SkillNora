@@ -2,6 +2,8 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import apiClient from '@/lib/apiClient'
+import Loader from '@/components/ui/Loader'
 
 export default function EnrolledPage() {
     const router = useRouter()
@@ -12,24 +14,22 @@ export default function EnrolledPage() {
 
     React.useEffect(() => {
         let active = true
-        import('@/lib/apiClient').then(({ default: apiClient }) => {
-            Promise.all([
-                apiClient.get('/api/courses').then(r => r.data),
-                apiClient.get('/api/enrollments/my').then(r => r.data).catch(() => ({ enrolledIds: [] }))
-            ]).then(([coursesData, enrollData]) => {
-                if (!active) return
-                const allCourses = Array.isArray(coursesData) ? coursesData : coursesData.courses || coursesData.data || []
-                setCourses(allCourses)
-                setEnrolledIds(enrollData?.enrolledIds || [])
-                setLoading(false)
-            }).catch(console.error)
-        })
+        Promise.all([
+            apiClient.get('/api/courses').then(r => r.data).catch(e => { console.error(e); return { courses: [] }; }),
+            apiClient.get('/api/enrollments/user').then(r => r.data).catch(() => ({ enrolledIds: [] }))
+        ]).then(([coursesData, enrollData]) => {
+            if (!active) return
+            const allCourses = Array.isArray(coursesData) ? coursesData : coursesData.courses || coursesData.data || []
+            setCourses(allCourses)
+            setEnrolledIds(enrollData?.enrolledIds || [])
+            setLoading(false)
+        }).catch(console.error)
         return () => { active = false }
     }, [])
 
-    const enrolledCourses = courses.filter(c => enrolledIds.includes(c.id))
+    if (loading) return <Loader />
 
-    if (loading) return <div className="p-8 text-center">Loading...</div>
+    const enrolledCourses = courses.filter(c => enrolledIds.includes(c.id))
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
@@ -65,7 +65,7 @@ export default function EnrolledPage() {
                             >
                                 <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 mb-3">
                                     <img
-                                        src={course.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop'}
+                                        src={course.thumbnail_url || course.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop'}
                                         alt={course.title}
                                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                     />
@@ -82,13 +82,19 @@ export default function EnrolledPage() {
 
                                 <div className="mt-auto flex items-end justify-between">
                                     <div>
-                                        <div className="flex items-center gap-1.5 mb-2 text-xs font-bold">
-                                            <span className="text-amber-600 dark:text-amber-500">{course.rating || '4.5'}</span>
-                                            <div className="flex text-amber-500">
-                                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                        {course.rating ? (
+                                            <div className="flex items-center gap-1.5 mb-2 text-xs font-bold">
+                                                <span className="text-amber-600 dark:text-amber-500">{Number(course.rating).toFixed(1)}</span>
+                                                <div className="flex text-amber-500">
+                                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                                </div>
+                                                <span className="text-slate-400 dark:text-slate-500 font-medium">({course.reviews_count || course.reviews || 0})</span>
                                             </div>
-                                            <span className="text-slate-400 dark:text-slate-500 font-medium">({course.reviews || '1,234'})</span>
-                                        </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5 mb-2 text-xs font-bold">
+                                                <span className="text-slate-400">No rating</span>
+                                            </div>
+                                        )}
                                         <div className="font-black text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-1">
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                             Enrolled

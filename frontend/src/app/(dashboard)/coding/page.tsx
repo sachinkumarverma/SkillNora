@@ -1,5 +1,6 @@
 "use client"
 import React, { useState } from 'react'
+import Loader from '@/components/ui/Loader'
 
 export default function CodingPlayground() {
     const [language, setLanguage] = useState('python')
@@ -31,8 +32,7 @@ export default function CodingPlayground() {
            <div className="flex-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-900 overflow-hidden shadow-xl relative">
                {!isLoaded && (
                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-                       <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-600 dark:border-t-blue-500 mb-4"></div>
-                       <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest animate-pulse">Initializing IDE...</p>
+                       <Loader />
                    </div>
                )}
                <iframe 

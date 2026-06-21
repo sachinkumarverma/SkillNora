@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import useUser from '@/lib/useUser'
+import apiClient from '@/lib/apiClient'
 
 
 import CourseCarousel from '@/components/CourseCarousel'
@@ -17,19 +18,17 @@ export default function DashboardPage() {
 
     useEffect(() => {
         let active = true
-        import('@/lib/apiClient').then(({ default: apiClient }) => {
-            Promise.all([
-                apiClient.get('/api/courses').then(r => r.data),
-                apiClient.get('/api/enrollments/my').then(r => r.data).catch(() => ({ enrolledIds: [] }))
-            ]).then(([coursesData, enrollData]) => {
-                if (!active) return
-                setCourses(Array.isArray(coursesData) ? coursesData : coursesData.courses || coursesData.data || [])
-                setEnrolledIds(enrollData?.enrolledIds || [])
-            }).catch(() => {
-                if (active) setCourses([])
-            }).finally(() => {
-                if (active) setLoadingCourses(false)
-            })
+        Promise.all([
+            apiClient.get('/api/courses').then(r => r.data).catch(e => { console.error(e); return { courses: [] }; }),
+            apiClient.get('/api/enrollments/user').then(r => r.data).catch(() => ({ enrolledIds: [] }))
+        ]).then(([coursesData, enrollData]) => {
+            if (!active) return
+            setCourses(Array.isArray(coursesData) ? coursesData : coursesData.courses || coursesData.data || [])
+            setEnrolledIds(enrollData?.enrolledIds || [])
+        }).catch(() => {
+            if (active) setCourses([])
+        }).finally(() => {
+            if (active) setLoadingCourses(false)
         })
         return () => { active = false }
     }, [])
@@ -100,14 +99,31 @@ export default function DashboardPage() {
                         </section>
 
                         {/* Continue Watching */}
-                        <section>
+                        {loadingCourses ? (
+                            <section className="animate-pulse">
+                                <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex gap-4">
+                                            <div className="w-24 h-24 shrink-0 rounded-xl bg-slate-200 dark:bg-slate-800"></div>
+                                            <div className="flex-1 flex flex-col justify-center space-y-3">
+                                                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                                                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                                                <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full w-full mt-2"></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        ) : (
+                            <section>
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Continue Watching</h2>
                             {enrolledCourses.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {enrolledCourses.slice(0, 3).map((course, idx) => (
                                         <div key={idx} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
                                             <div className="w-24 h-24 shrink-0 rounded-xl bg-slate-100 overflow-hidden relative">
-                                                <img src={course.image_url || course.image || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover" />
+                                                <img src={course.thumbnail_url || course.image_url || course.image || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                                     <svg className="w-8 h-8 text-white opacity-80" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                                                 </div>
@@ -129,11 +145,42 @@ export default function DashboardPage() {
                                 </div>
                             )}
                         </section>
+                        )}
                     </div>
                 )}
 
                 {/* Carousels Section */}
-                <div className="space-y-4">
+                {loadingCourses ? (
+                    <div className="space-y-16 animate-pulse">
+                        {[1, 2].map(section => (
+                            <div key={section} className="space-y-4">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    <div className="flex gap-2">
+                                        <div className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-800"></div>
+                                        <div className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-800"></div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 overflow-hidden">
+                                    {[1, 2, 3, 4].map(card => (
+                                        <div key={card} className="min-w-[280px] md:min-w-[320px] rounded-[1.25rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+                                            <div className="aspect-[16/10] bg-slate-200 dark:bg-slate-800"></div>
+                                            <div className="p-5 space-y-3">
+                                                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                                                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                                                <div className="pt-4 flex justify-between items-center">
+                                                    <div className="h-6 w-20 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                                    <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
                     <CourseCarousel
                         title="New and popular"
                         courses={displayCourses.slice(0, 8)}
@@ -149,6 +196,7 @@ export default function DashboardPage() {
                         courses={displayCourses.filter(c => c.category === 'Web Development' || c.category === 'Python')}
                     />
                 </div>
+                )}
 
                 {/* Features Links */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic'
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
 import { coursesService } from '@/services/coursesService'
+import Loader from '@/components/ui/Loader'
 import { commentsService } from '@/services/commentsService'
 import Link from 'next/link'
 import apiClient from '@/lib/apiClient'
@@ -22,6 +23,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, totalLectures: number } | null>(null)
     const [noteText, setNoteText] = useState("")
     const [noteSaved, setNoteSaved] = useState(false)
+    const [isSavingNote, setIsSavingNote] = useState(false)
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
     const [isEnrolled, setIsEnrolled] = useState(false)
     const [attachments, setAttachments] = useState<{ title: string, url: string }[]>([])
     const [showQuiz, setShowQuiz] = useState(false)
@@ -31,10 +34,15 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     // Comments State
     const [comments, setComments] = useState<any[]>([])
     const [newComment, setNewComment] = useState("")
+    const [replyText, setReplyText] = useState("")
     const [loadingComments, setLoadingComments] = useState(true)
     const [isPostingComment, setIsPostingComment] = useState(false)
     const [imageFile, setImageFile] = useState<File | null>(null)
+    const [replyImageFile, setReplyImageFile] = useState<File | null>(null)
     const [replyingTo, setReplyingTo] = useState<any | null>(null)
+    const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null)
+
+    const COMMON_EMOJIS = ['😀','😂','🥰','😎','🤔','🙌','👍','❤️','🔥','🎉','😢','👏'];
 
     useEffect(() => {
         if (!slug || !id) return
@@ -61,20 +69,45 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         }
     }
 
-    const handlePostComment = async () => {
-        if ((!newComment.trim() && !imageFile) || !user) return
+    const handlePostComment = async (isReply: boolean = false) => {
+        const textToPost = isReply ? replyText : newComment;
+        const fileToPost = isReply ? replyImageFile : imageFile;
+        const parentId = isReply ? replyingTo?.id : null;
+
+        if ((!textToPost.trim() && !fileToPost) || !user) return
+        if (isReply && !parentId) return;
+
         setIsPostingComment(true)
         try {
             let uploadedImageUrl = null;
-            if (imageFile) {
-                const fileExt = imageFile.name.split('.').pop()
+            if (fileToPost) {
+                const fileExt = fileToPost.name.split('.').pop()
                 const fileName = `comments/${user.id}-${Math.random()}.${fileExt}`
                 const { data } = await apiClient.post('/api/upload/url', {
                     bucket: 'course-thumbnails',
                     filePath: fileName
                 })
-                if (data.uploadUrl) {
-                    await fetch(data.uploadUrl, { method: 'PUT', body: imageFile, headers: { 'Content-Type': imageFile.type } })
+                if (data.uploadUrl && data.token) {
+                    const supabaseModule = await import('@/lib/supabaseClient')
+                    const supabase = supabaseModule.default
+                    
+                    const { error: uploadError } = await supabase.storage
+                        .from('course-thumbnails')
+                        .uploadToSignedUrl(fileName, data.token, fileToPost)
+                        
+                    if (uploadError) {
+                        alert('Upload failed: ' + uploadError.message)
+                        throw new Error('Failed to upload image: ' + uploadError.message)
+                    }
+                    uploadedImageUrl = data.publicUrl
+                } else if (data.uploadUrl) {
+                    // Fallback for direct upload URL if token isn't provided (e.g. S3 presigned URL)
+                    const res = await fetch(data.uploadUrl, { 
+                        method: 'PUT', 
+                        body: fileToPost, 
+                        headers: { 'Content-Type': fileToPost.type } 
+                    })
+                    if (!res.ok) throw new Error('Failed to upload image')
                     uploadedImageUrl = data.publicUrl
                 }
             }
@@ -82,9 +115,9 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             const added = await commentsService.addComment({
                 course_slug: slug,
                 lecture_id: id,
-                text: newComment,
+                text: textToPost,
                 image_url: uploadedImageUrl,
-                parent_id: replyingTo?.id || null,
+                parent_id: parentId,
                 user_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
                 role: user?.user_metadata?.role || 'student'
             })
@@ -93,12 +126,19 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             } else if (added) {
                 setComments([...comments, added])
             }
-            setNewComment("")
-            setImageFile(null)
-            setReplyingTo(null)
-        } catch (err) {
+            if (isReply) {
+                setReplyText("")
+                setReplyImageFile(null)
+                setReplyingTo(null)
+            } else {
+                setNewComment("")
+                setImageFile(null)
+            }
+            setShowEmojiPicker(null)
+        } catch (err: any) {
             console.error("Failed to post comment", err)
-            alert("Failed to post comment. Please try again.")
+            const backendError = err.response?.data?.error || err.response?.data?.message
+            alert("Failed to post comment. " + (backendError || err.message || 'Please try again.'))
         } finally {
             setIsPostingComment(false)
         }
@@ -115,6 +155,65 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         }
     }
 
+    const handleReact = async (commentId: string, emoji: string) => {
+        try {
+            // Optimistic update
+            setComments(prev => prev.map(c => {
+                if (c.id === commentId) {
+                    const reactions = typeof c.reactions === 'string' ? JSON.parse(c.reactions) : (c.reactions || {});
+                    const newReactions = { ...reactions };
+                    const userId = user?.id;
+                    if (userId) {
+                        for (const [existingEmoji, users] of Object.entries(newReactions)) {
+                            if (existingEmoji !== emoji) {
+                                const idx = (users as string[]).indexOf(userId);
+                                if (idx > -1) {
+                                    (newReactions[existingEmoji] as string[]).splice(idx, 1);
+                                    if ((newReactions[existingEmoji] as string[]).length === 0) delete newReactions[existingEmoji];
+                                }
+                            }
+                        }
+                        if (!newReactions[emoji]) newReactions[emoji] = [];
+                        const idx = newReactions[emoji].indexOf(userId);
+                        if (idx > -1) {
+                            newReactions[emoji].splice(idx, 1);
+                            if (newReactions[emoji].length === 0) delete newReactions[emoji];
+                        } else {
+                            newReactions[emoji].push(userId);
+                        }
+                    }
+                    return { ...c, reactions: newReactions };
+                }
+                return c;
+            }));
+            
+            await commentsService.reactToComment(commentId, emoji);
+        } catch (err) {
+            console.error("Failed to react", err);
+        }
+    }
+
+    const renderReactionsInline = (comment: any) => {
+        const reactions = typeof comment.reactions === 'string' ? JSON.parse(comment.reactions) : (comment.reactions || {});
+        const entries = Object.entries(reactions) as [string, string[]][];
+        if (entries.length === 0) return null;
+        
+        return entries.map(([emoji, users]) => {
+            if (users.length === 0) return null;
+            const hasReacted = user && users.includes(user.id);
+            return (
+                <button 
+                    key={emoji} 
+                    onClick={() => handleReact(comment.id, emoji)}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-bold transition-colors ${hasReacted ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-transparent hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                >
+                    <span>{emoji}</span>
+                    <span>{users.length}</span>
+                </button>
+            )
+        })
+    }
+
 
 
     useEffect(() => {
@@ -126,8 +225,9 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             if (mounted) {
                 if (course) {
                     setCourseInfo({ id: course.id, title: course.title, slug: course.slug, totalLectures: course.lectures?.length || 1 })
-                    const lec = course.lectures?.find((l: any) => String(l.id) === String(id))
-                    if (lec) setLecture(lec)
+                    const lecIndex = course.lectures?.findIndex((l: any) => String(l.id) === String(id))
+                    const lec = course.lectures?.[lecIndex]
+                    if (lec) setLecture({ ...lec, index: lecIndex !== -1 ? lecIndex + 1 : 1 })
                     
                     if (course.isEnrolled) {
                         setIsEnrolled(true)
@@ -163,10 +263,12 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const saveNote = async () => {
         if (!courseInfo || !lecture) return
         if (user) {
+            setIsSavingNote(true)
             const notesModule = await import('@/services/notesService')
             await notesModule.notesService.saveNote(courseInfo.id, lecture.id, noteText)
             setNoteSaved(true)
             setTimeout(() => setNoteSaved(false), 3000)
+            setTimeout(() => setIsSavingNote(false), 200)
         } else {
             alert('Please sign in to save notes')
         }
@@ -183,8 +285,9 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         const loadCert = async () => {
             if (user) {
                 const certModule = await import('@/services/certificatesService')
-                const certs = await certModule.certificatesService.getUserCertificates()
-                if (certs.find((c: any) => c.course_id === courseInfo.id)) {
+                const certs = await certModule.certificatesService.getMyCertificates()
+                const certList = Array.isArray(certs) ? certs : (certs.certificates || [])
+                if (certList.find((c: any) => c.course_id === courseInfo.id)) {
                     setCertUnlocked(true)
                 }
             }
@@ -214,11 +317,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         }
     }
 
-    if (loading) return (
-        <div className="flex h-[60vh] w-full items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
-        </div>
-    )
+    if (loading) return <Loader />
 
     if (!lecture) return (
         <div className="flex h-[60vh] flex-col items-center justify-center text-center">
@@ -236,7 +335,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2 text-sm text-slate-500">
-                                <span className="font-bold text-blue-600">Lecture {id}</span>
+                                <span className="font-bold text-blue-600">Lecture {lecture.index || 1}</span>
                                 <span>•</span>
                                 <span>Video Lecture</span>
                             </div>
@@ -410,7 +509,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                         <div className="mt-4 flex justify-end">
                             <button
                                 onClick={saveNote}
-                                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center gap-2"
+                                disabled={isSavingNote}
+                                className={`text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-sm flex items-center gap-2 transform active:scale-95 ${isSavingNote ? 'bg-amber-600 opacity-70 cursor-wait' : 'bg-amber-500 hover:bg-amber-600'}`}
                             >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                                 Save Notes
@@ -421,40 +521,45 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     {/* Comments Section */}
                     <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                            <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.92 2 10.75c0 2.76 1.48 5.21 3.76 6.8-.29 1.48-1.12 3.06-1.17 3.16-.13.25-.09.56.09.77.19.22.48.31.76.24 3.16-.76 5.51-2.12 6.55-2.76.66.07 1.33.11 2.01.11 5.52 0 10-3.92 10-8.75S17.52 2 12 2zm0 15.5c-.75 0-1.5-.06-2.22-.17-.23-.03-.46.02-.66.13-1.07.62-3.19 1.76-5.84 2.29.53-1.28 1.13-2.92 1.34-4.2.06-.33-.04-.66-.27-.89C2.48 13.3 1.5 11.23 1.5 9.25 1.5 5.25 6.2 2 12 2s10.5 3.25 10.5 7.25S17.8 17.5 12 17.5z"/></svg>
+                            <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
                             Q&A Discussions
                         </h2>
                         
-                        {(!replyingTo || !replyingTo.id) && (
-                            <div className="border border-slate-200 dark:border-slate-800 rounded-xl mb-8 overflow-hidden bg-white dark:bg-slate-900">
-                                <textarea 
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    placeholder="Ask a question or share a thought..."
-                                    className="w-full p-4 bg-transparent text-sm outline-none resize-y min-h-[100px] text-slate-800 dark:text-slate-200 placeholder-slate-400"
-                                ></textarea>
-                                {imageFile && (
-                                    <div className="p-4 border-t border-slate-100 dark:border-slate-800 relative">
-                                        <img src={URL.createObjectURL(imageFile)} alt="Preview" className="max-w-[200px] max-h-[200px] rounded-lg object-contain border border-slate-200 dark:border-slate-700" />
-                                        <button onClick={() => setImageFile(null)} className="absolute top-2 left-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-md text-sm font-bold z-10 transition-colors">×</button>
+                        <div className="border border-slate-200 dark:border-slate-800 rounded-xl mb-8 overflow-hidden bg-white dark:bg-slate-900">
+                            <textarea 
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Ask a question or share a thought..."
+                                className="w-full p-4 bg-transparent text-sm outline-none resize-y min-h-[100px] text-slate-800 dark:text-slate-200 placeholder-slate-400"
+                            ></textarea>
+                            {imageFile && (
+                                <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 relative inline-block">
+                                    <div className="relative inline-block cursor-pointer group" onClick={() => setPreviewImageUrl(URL.createObjectURL(imageFile))}>
+                                        <img src={URL.createObjectURL(imageFile)} alt="Preview" className="max-w-[200px] max-h-[200px] rounded-lg object-contain border border-slate-200 dark:border-slate-700 group-hover:opacity-90 transition-opacity" />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                                            <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                                        </div>
                                     </div>
-                                )}
-                                <div className="border-t border-slate-100 dark:border-slate-800 p-3 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
-                                    <label className="flex items-center gap-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium px-2 py-1 rounded cursor-pointer transition-colors">
+                                    <button onClick={(e) => { e.stopPropagation(); setImageFile(null) }} className="absolute top-1 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-md text-sm font-bold z-10 transition-colors">×</button>
+                                </div>
+                            )}
+                            <div className="border-t border-slate-100 dark:border-slate-800 px-3 py-2 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                                <div className="flex items-center gap-2">
+                                    <label className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium px-2 py-1 rounded cursor-pointer transition-colors">
                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                         Add Image
                                         <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
                                     </label>
-                                    <button 
-                                        onClick={handlePostComment}
-                                        disabled={(!newComment.trim() && !imageFile) || isPostingComment}
-                                        className="px-6 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm shadow-sm"
-                                    >
-                                        {isPostingComment ? 'Posting...' : 'Post'}
-                                    </button>
                                 </div>
+                                <button 
+                                    onClick={() => handlePostComment(false)}
+                                    disabled={(!newComment.trim() && !imageFile) || isPostingComment}
+                                    className="px-6 py-1.5 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm shadow-sm"
+                                >
+                                    {isPostingComment ? 'Posting...' : 'Post'}
+                                </button>
                             </div>
-                        )}
+                        </div>
 
                         <div className="space-y-6">
                             {loadingComments ? (
@@ -493,16 +598,37 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             </div>
                                             <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{comment.text}</p>
                                             {comment.image_url && (
-                                                <div className="mt-3 max-w-sm rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                                                    <img src={comment.image_url} alt="Attachment" className="w-full h-auto" />
+                                                <div className="mt-3 max-w-sm rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer group relative" onClick={() => setPreviewImageUrl(comment.image_url)}>
+                                                    <img src={comment.image_url} alt="Attachment" className="w-full h-auto group-hover:opacity-90 transition-opacity" />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center pointer-events-none">
+                                                        <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                                                    </div>
                                                 </div>
                                             )}
-                                            <div className="flex items-center justify-between mt-2">
-                                                <div className="flex items-center gap-4">
-                                                    <button onClick={() => setReplyingTo(comment)} className="text-xs text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-colors flex items-center gap-1">
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                                            <div className="flex items-center justify-between mt-2 group/react-bar">
+                                                <div className="flex items-center gap-1">
+                                                    <button onClick={() => setReplyingTo(comment)} className="text-sm text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-colors flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
                                                         Reply
                                                     </button>
+                                                    
+                                                    {renderReactionsInline(comment)}
+
+                                                    <div className="relative group/react-btn">
+                                                        <button className="text-sm text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-colors flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 5v4m-2-2h4" />
+                                                            </svg>
+                                                        </button>
+                                                        <div className="absolute bottom-full left-0 mb-2 opacity-0 invisible group-hover/react-btn:opacity-100 group-hover/react-btn:visible transition-all bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-full px-2 py-1 flex gap-1 z-20">
+                                                            {COMMON_EMOJIS.slice(0, 6).map(emoji => (
+                                                                <button key={emoji} onClick={() => handleReact(comment.id, emoji)} className="hover:scale-125 rounded-full w-8 h-8 flex items-center justify-center transition-transform text-lg">
+                                                                    {emoji}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -515,26 +641,36 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                         </button>
                                                     </div>
                                                     <textarea 
-                                                        value={newComment}
-                                                        onChange={(e) => setNewComment(e.target.value)}
+                                                        value={replyText}
+                                                        onChange={(e) => setReplyText(e.target.value)}
                                                         placeholder="Write a reply..."
                                                         className="w-full p-3 bg-transparent text-sm outline-none resize-y min-h-[80px] text-slate-800 dark:text-slate-200 placeholder-slate-400"
                                                     ></textarea>
-                                                    {imageFile && (
-                                                        <div className="p-3 border-t border-slate-100 dark:border-slate-800 relative">
-                                                            <img src={URL.createObjectURL(imageFile)} alt="Preview" className="max-w-[150px] max-h-[150px] rounded-lg object-contain border border-slate-200 dark:border-slate-700" />
-                                                            <button onClick={() => setImageFile(null)} className="absolute top-1 left-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600 shadow-md text-xs font-bold z-10 transition-colors">×</button>
+                                                    {replyImageFile && (
+                                                        <div className="px-3 py-2 border-t border-slate-100 dark:border-slate-800 relative inline-block">
+                                                            <div className="relative inline-block cursor-pointer group" onClick={() => setPreviewImageUrl(URL.createObjectURL(replyImageFile))}>
+                                                                <img src={URL.createObjectURL(replyImageFile)} alt="Preview" className="max-w-[150px] max-h-[150px] rounded-lg object-contain border border-slate-200 dark:border-slate-700 group-hover:opacity-90 transition-opacity" />
+                                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                                                                    <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                                                                </div>
+                                                            </div>
+                                                            <button onClick={(e) => { e.stopPropagation(); setReplyImageFile(null) }} className="absolute top-0 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600 shadow-md text-xs font-bold z-10 transition-colors">×</button>
                                                         </div>
                                                     )}
                                                     <div className="border-t border-slate-100 dark:border-slate-800 p-2 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
-                                                        <label className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-medium px-2 py-1 rounded cursor-pointer transition-colors">
-                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                                            Add Image
-                                                            <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-                                                        </label>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <label className="flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-medium px-2 py-1 rounded cursor-pointer transition-colors">
+                                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                                Add Image
+                                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                                                    const f = e.target.files?.[0];
+                                                                    if(f) setReplyImageFile(f);
+                                                                }} />
+                                                            </label>
+                                                        </div>
                                                         <button 
-                                                            onClick={handlePostComment}
-                                                            disabled={(!newComment.trim() && !imageFile) || isPostingComment}
+                                                            onClick={() => handlePostComment(true)}
+                                                            disabled={(!replyText.trim() && !replyImageFile) || isPostingComment}
                                                             className="px-4 py-1.5 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors text-xs shadow-sm"
                                                         >
                                                             {isPostingComment ? 'Posting...' : 'Reply'}
@@ -556,7 +692,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="font-bold text-slate-900 dark:text-white text-sm">{user?.id === reply.user_id ? 'You' : reply.user_name}</span>
                                                                         {reply.role === 'instructor' && <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Instructor</span>}
-                                                                        <span className="text-xs text-slate-400 font-medium">{new Date(reply.created_at).toLocaleDateString()}</span>
+                                                                        <span className="text-xs text-slate-400 font-medium">{new Date(reply.created_at).toLocaleDateString()} {new Date(reply.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                                                     </div>
                                                                     {user?.id === reply.user_id && (
                                                                         <button onClick={() => handleDeleteComment(reply.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete Reply">
@@ -566,10 +702,34 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                                 </div>
                                                                 <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{reply.text}</p>
                                                                 {reply.image_url && (
-                                                                    <div className="mt-3 max-w-sm rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                                                                        <img src={reply.image_url} alt="Attachment" className="w-full h-auto" />
+                                                                    <div className="mt-3 max-w-sm rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer group relative" onClick={() => setPreviewImageUrl(reply.image_url)}>
+                                                                        <img src={reply.image_url} alt="Attachment" className="w-full h-auto group-hover:opacity-90 transition-opacity" />
+                                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center pointer-events-none">
+                                                                            <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                                                                        </div>
                                                                     </div>
                                                                 )}
+                                                                <div className="flex items-center justify-between mt-2 group/react-bar-reply">
+                                                                    <div className="flex items-center gap-1">
+                                                                        {renderReactionsInline(reply)}
+
+                                                                        <div className="relative group/react-btn-reply">
+                                                                            <button className="text-sm text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-colors flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                                                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 5v4m-2-2h4" />
+                                                                                </svg>
+                                                                            </button>
+                                                                            <div className="absolute bottom-full left-0 mb-2 opacity-0 invisible group-hover/react-btn-reply:opacity-100 group-hover/react-btn-reply:visible transition-all bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-full px-2 py-1 flex gap-1 z-20">
+                                                                                {COMMON_EMOJIS.slice(0, 6).map(emoji => (
+                                                                                    <button key={emoji} onClick={() => handleReact(reply.id, emoji)} className="hover:scale-125 rounded-full w-8 h-8 flex items-center justify-center transition-transform text-lg">
+                                                                                        {emoji}
+                                                                                    </button>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -613,6 +773,15 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     </div>
                 </aside>
             </div>
+            
+            {previewImageUrl && (
+                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center backdrop-blur-sm p-4 sm:p-8 cursor-pointer" onClick={() => setPreviewImageUrl(null)}>
+                    <button className="absolute top-6 right-6 text-white hover:text-red-500 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all" onClick={(e) => { e.stopPropagation(); setPreviewImageUrl(null); }}>
+                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                    <img src={previewImageUrl} alt="Full Preview" className="max-w-full max-h-full object-contain shadow-2xl rounded-lg cursor-default" onClick={(e) => e.stopPropagation()} />
+                </div>
+            )}
         </div>
     )
 }

@@ -18,7 +18,7 @@ const createEnrollment = async (req, res) => {
     });
 
     // Allow force enroll from checkout flow (bypassing free check for now)
-    await enrollmentsService.forceEnroll(userData.user.id, req.body.course_id);
+    await enrollmentsService.forceCreateEnrollment(userData.user.id, req.body.course_id);
 
     try {
       // Simulate Razorpay order insertion to update statistics
@@ -62,7 +62,7 @@ const getUserEnrollments = async (req, res) => {
     if (!userData.user) return res.status(401).json({
       error: 'Invalid token'
     });
-    const ids = await enrollmentsService.getMyEnrollments(userData.user.id);
+    const ids = await enrollmentsService.getUserEnrollmentsList(userData.user.id);
     res.json({
       enrolledIds: ids
     });

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useUser from '../../../lib/useUser'
 import { certificatesService } from '@/services/certificatesService'
+import Loader from '@/components/ui/Loader'
 
 export default function CertificatesPage() {
     const { user } = useUser()
@@ -25,11 +26,7 @@ export default function CertificatesPage() {
     }, [user])
 
     if (loading && user) {
-        return (
-            <div className="flex h-[60vh] w-full items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
-            </div>
-        )
+        return <Loader />
     }
 
     return (

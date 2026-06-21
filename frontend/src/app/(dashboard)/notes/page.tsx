@@ -4,10 +4,12 @@ import Link from 'next/link'
 
 import { notesService } from '@/services/notesService'
 import useUser from '@/lib/useUser'
+import Loader from '@/components/ui/Loader'
 
 export default function NotesPage() {
     const [notes, setNotes] = useState<any[]>([])
-    const { user } = useUser()
+    const { user, loading: userLoading } = useUser()
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const loadNotes = async () => {
@@ -17,9 +19,14 @@ export default function NotesPage() {
                 stored.sort((a: any, b: any) => new Date(b.created_at || b.updatedAt).getTime() - new Date(a.created_at || a.updatedAt).getTime())
             }
             setNotes(stored)
+            setLoading(false)
         }
         loadNotes()
-    }, [user])
+    }, [user, userLoading])
+
+    if (loading || userLoading) {
+        return <Loader />
+    }
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full">

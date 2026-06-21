@@ -103,8 +103,17 @@ export default function SettingsPage() {
                 filePath
             })
             
-            if (data.uploadUrl) {
-                // Upload file directly using the signed URL
+            if (data.uploadUrl && data.token) {
+                const supabaseModule = await import('@/lib/supabaseClient')
+                const supabase = supabaseModule.default
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('public')
+                    .uploadToSignedUrl(filePath, data.token, file)
+                    
+                if (uploadError) throw new Error('Failed to upload file to storage: ' + uploadError.message)
+            } else if (data.uploadUrl) {
+                // Fallback for direct upload URL
                 const res = await fetch(data.uploadUrl, {
                     method: 'PUT',
                     body: file,

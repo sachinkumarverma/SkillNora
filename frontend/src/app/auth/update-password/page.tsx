@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
 import { authService } from '@/services/authService'
+import Loader from '@/components/ui/Loader'
 
 export default function UpdatePasswordPage() {
     const [password, setPassword] = useState('')
@@ -34,12 +35,7 @@ export default function UpdatePasswordPage() {
     return (
         <div className='mx-auto max-w-xl surface rounded-xl p-6 md:p-8 mt-24 relative'>
             <Toaster position="top-center" richColors />
-            {loading && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm rounded-xl transition-all duration-300">
-                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mb-4 shadow-lg"></div>
-                    <p className="font-bold text-slate-800 dark:text-slate-200 animate-pulse">Updating...</p>
-                </div>
-            )}
+            {loading && <Loader fullScreen />}
             <h1 className='text-3xl font-black text-slate-950 dark:text-white'>Set a new password</h1>
             <p className='mt-2 text-sm muted'>Use the link from your reset email to come here, then create a new password.</p>
             <form className='mt-6 space-y-4' onSubmit={handleSubmit}>

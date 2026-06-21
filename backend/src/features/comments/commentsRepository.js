@@ -39,9 +39,16 @@ const getCommentById = async (id) => {
   return rows[0];
 };
 
+const updateReactions = async (id, reactions) => {
+  const sql = `UPDATE lecture_comments SET reactions = $1 WHERE id = $2 RETURNING *`;
+  const { rows } = await query(sql, [reactions, id]);
+  return rows[0];
+};
+
 export const commentsRepository = {
   getCommentsByLecture,
   insertComment,
   deleteComment,
-  getCommentById
+  getCommentById,
+  updateReactions
 };

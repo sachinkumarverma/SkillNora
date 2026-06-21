@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import useUser from '@/lib/useUser'
 import { authService } from '@/services/authService'
 import AskieBot from '@/components/AskieBot'
+import Loader from '@/components/ui/Loader'
 
 function getRole(user: any) {
     if (user?.email === 'sachinverma1489@gmail.com') return 'admin'
@@ -39,7 +40,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const parts = pathname?.split('/').filter(Boolean) || []
         if (parts.length === 0 || parts[0] === 'dashboard') return [{ label: 'Dashboard' }]
         const crumbs: {label: string, href?: string}[] = [{ label: title, href: `/${parts[0]}` }]
-        if (parts.length > 1) crumbs.push({ label: parts[parts.length - 1] })
+        if (parts.length > 1) {
+            let lastPart = parts[parts.length - 1]
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastPart)
+            if (isUUID && parts.length > 2) {
+                lastPart = parts[1] // Use the slug
+            }
+            crumbs.push({ label: lastPart.replace(/-/g, ' ') })
+        }
         return crumbs
     }, [pathname, title])
 
@@ -158,14 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-    if (loading || isLoggingOut) return (
-        <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mb-4 shadow-lg"></div>
-            <p className="text-lg font-bold text-slate-800 dark:text-slate-200 animate-pulse">
-                {isLoggingOut ? 'Signing you out safely...' : 'Loading your dashboard...'}
-            </p>
-        </div>
-    )
+    if (loading || isLoggingOut) return <Loader fullScreen />
 
     async function signOut() {
         setDropdownOpen(false)
@@ -194,7 +195,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             ['/wishlist', 'Wishlist', 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'], 
             ['/certificates', 'Certificates', 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'], 
             ['/settings', 'Account Details', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
-            ['https://cvpilot.vercel.app/', 'Create Resume', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z']
+            ['https://cv-pilot-ai.vercel.app/', 'Create Resume', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z']
         ],
         instructor: [
             ['/instructor', 'Instructor Studio', 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'], 
@@ -262,7 +263,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div className="flex items-center gap-3 relative z-10">
                             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 ring-2 ring-white dark:bg-slate-700 dark:ring-slate-900 overflow-hidden shadow-sm">
                                 {avatarUrl ? <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" /> : <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{initials}</span>}
-                                <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 dark:border-slate-900"></div>
                             </div>
                             {sidebarOpen && (
                                 <div className="min-w-0 overflow-hidden">

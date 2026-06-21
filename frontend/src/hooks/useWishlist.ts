@@ -37,10 +37,25 @@ export function useWishlist() {
             router.push('/auth')
             return
         }
-        if (wishlist.includes(courseId)) {
-            await wishlistService.removeFromWishlist(courseId)
-        } else {
-            await wishlistService.addToWishlist(courseId)
+
+        const isCurrentlyWishlisted = wishlist.includes(courseId)
+
+        // Optimistic update
+        setWishlist(prev => 
+            isCurrentlyWishlisted 
+                ? prev.filter(id => id !== courseId)
+                : [...prev, courseId]
+        )
+
+        try {
+            if (isCurrentlyWishlisted) {
+                await wishlistService.removeFromWishlist(courseId)
+            } else {
+                await wishlistService.addToWishlist(courseId)
+            }
+        } catch (error) {
+            // Revert on error
+            setWishlist([...wishlist])
         }
     }
 

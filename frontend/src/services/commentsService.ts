@@ -12,8 +12,13 @@ const deleteComment = async (id: string) => {
     return (await apiClient.delete(`/api/comments/${id}`)).data;
 };
 
+const reactToComment = async (id: string, emoji: string) => {
+    return (await apiClient.post(`/api/comments/${id}/react`, { emoji })).data;
+};
+
 export const commentsService = {
     getComments,
     addComment,
-    deleteComment
+    deleteComment,
+    reactToComment
 };

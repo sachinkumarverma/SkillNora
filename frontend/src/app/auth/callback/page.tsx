@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/services/authService'
+import Loader from '@/components/ui/Loader'
 
 export default function AuthCallback() {
     const router = useRouter()
@@ -29,11 +30,6 @@ export default function AuthCallback() {
     }, [router])
     
     return (
-        <div className="flex h-[70vh] w-full items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                <div className="text-sm font-medium text-slate-500 uppercase tracking-widest">Authenticating</div>
-            </div>
-        </div>
+        <Loader fullScreen />
     )
 }

@@ -84,8 +84,60 @@ const deleteComment = async (req, res) => {
   }
 };
 
+const reactToComment = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const { data: userData } = await supabaseServer.auth.getUser(token);
+    if (!userData.user) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const { emoji } = req.body;
+    if (!emoji) return res.status(400).json({ error: 'Emoji is required' });
+
+    const comment = await commentsRepository.getCommentById(req.params.id);
+    if (!comment) return res.status(404).json({ error: 'Comment not found' });
+
+    let reactions = typeof comment.reactions === 'string' ? JSON.parse(comment.reactions) : (comment.reactions || {});
+    const userId = userData.user.id;
+    
+    // First, remove this user's reaction from any other emojis (to enforce single reaction)
+    for (const [existingEmoji, users] of Object.entries(reactions)) {
+        if (existingEmoji !== emoji) {
+            const idx = users.indexOf(userId);
+            if (idx > -1) {
+                users.splice(idx, 1);
+                if (users.length === 0) delete reactions[existingEmoji];
+            }
+        }
+    }
+
+    if (!reactions[emoji]) {
+      reactions[emoji] = [];
+    }
+
+    const userIndex = reactions[emoji].indexOf(userId);
+
+    if (userIndex > -1) {
+      // Remove reaction if already reacted with the SAME emoji (toggle off)
+      reactions[emoji].splice(userIndex, 1);
+      if (reactions[emoji].length === 0) {
+        delete reactions[emoji];
+      }
+    } else {
+      // Add reaction
+      reactions[emoji].push(userId);
+    }
+
+    const updatedComment = await commentsRepository.updateReactions(req.params.id, reactions);
+
+    res.json({ comment: updatedComment });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const commentsController = {
   getComments,
   postComment,
-  deleteComment
+  deleteComment,
+  reactToComment
 };

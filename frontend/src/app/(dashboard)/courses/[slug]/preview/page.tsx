@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { coursesService } from '@/services/coursesService'
+import Loader from '@/components/ui/Loader'
 
 export default function PreviewPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
@@ -33,11 +34,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
         return () => { mounted = false }
     }, [slug])
 
-    if (loading) return (
-        <div className="flex h-[60vh] w-full items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
-        </div>
-    )
+    if (loading) return <Loader />
 
     if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
 
