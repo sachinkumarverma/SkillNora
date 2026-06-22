@@ -1,13 +1,17 @@
 "use client"
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
+import Pagination from '@/components/ui/Pagination'
 
 export default function AdminInstructorManagement() {
     const [instructors, setInstructors] = useState<any[]>([])
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
 
     useEffect(() => {
         const fetchInstructors = async () => {
@@ -77,10 +81,11 @@ export default function AdminInstructorManagement() {
                                 <th className="px-6 py-4">Courses</th>
                                 <th className="px-6 py-4">Total Students</th>
                                 <th className="px-6 py-4">Revenue</th>
+                                <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                            {filtered.map(instructor => (
+                            {filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(instructor => (
                                 <tr key={instructor.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
@@ -105,11 +110,22 @@ export default function AdminInstructorManagement() {
                                     <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{instructor.courses}</td>
                                     <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{instructor.students}</td>
                                     <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{instructor.revenue}</td>
+                                    <td className="px-6 py-4 text-right">
+                                        <Link href={`/admin/instructors/${instructor.id}`} className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">View Profile</Link>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination 
+                    currentPage={currentPage}
+                    totalItems={filtered.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                />
             </motion.div>
         </div>
     )

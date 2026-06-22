@@ -5,13 +5,16 @@ const listAdmin = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({
-      error: 'Unauthorized'
+      error: 'Unauthorized: Missing token in headers'
     });
     const {
-      data: userData
+      data: userData, error
     } = await supabaseServer.auth.getUser(token);
+    if (error) {
+        return res.status(401).json({ error: 'Unauthorized: Auth Error', details: error.message });
+    }
     if (!userData?.user) return res.status(401).json({
-      error: 'Unauthorized'
+      error: 'Unauthorized: User not found from token'
     });
     const courses = await coursesService.listAdminCourses(userData.user.id);
     res.json({

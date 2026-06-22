@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 
-dotenv.config({ path: '../.env', override: true })
+dotenv.config({ path: './.env', override: true })
 
 import { usersApi } from './src/features/users/usersApi.js'
 import { coursesApi } from './src/features/courses/coursesApi.js'
@@ -63,7 +63,18 @@ app.use('/api/notifications', notificationsApi)
 import { adminApi } from './src/features/admin/adminApi.js'
 app.use('/api/admin', adminApi)
 
+import { supportApi } from './src/features/support/supportApi.js'
+app.use('/api/support', supportApi)
+
+import { runMigrations } from './src/config/migrate.js'
+
 const PORT = process.env.PORT || 4000
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
+
+runMigrations().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`)
+    })
+}).catch(err => {
+    console.error("Migration failed, server not started.", err)
+    process.exit(1)
 })

@@ -11,5 +11,6 @@ router.get('/instructors', adminController.getInstructors);
 router.get('/reviews', adminController.getReviews);
 router.get('/notifications', adminController.getNotifications);
 router.get('/categories', adminController.getCategories);
+router.get('/audit-logs', adminController.getAuditLogs);
 
 export { router as adminApi };

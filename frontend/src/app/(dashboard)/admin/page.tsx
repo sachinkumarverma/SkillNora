@@ -262,7 +262,7 @@ export default function AdminOverviewPage() {
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                                 {courses.length === 0 ? (
                                     <tr><td colSpan={5} className="text-center py-8 text-slate-500">No courses found</td></tr>
-                                ) : courses.map((c: any) => (
+                                ) : courses.slice(0, 5).map((c: any) => (
                                     <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                         <td className="px-6 py-4 font-bold text-slate-900 dark:text-white max-w-[260px] truncate">{c.title}</td>
                                         <td className="px-6 py-4 text-slate-500">{c.category || 'Artificial Intelligence'}</td>

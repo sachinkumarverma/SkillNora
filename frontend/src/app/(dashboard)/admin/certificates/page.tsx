@@ -3,11 +3,14 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
+import Pagination from '@/components/ui/Pagination'
 
 export default function AdminCertificatesPage() {
     const [certificates, setCertificates] = useState<any[]>([])
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
 
     useEffect(() => {
         const fetchCertificates = async () => {
@@ -81,7 +84,7 @@ export default function AdminCertificatesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                            {filtered.map(c => (
+                            {filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(c => (
                                 <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{c.user_name}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{c.course_title}</td>
@@ -91,6 +94,14 @@ export default function AdminCertificatesPage() {
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination 
+                    currentPage={currentPage}
+                    totalItems={filtered.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                />
             </motion.div>
         </div>
     )

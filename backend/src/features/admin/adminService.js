@@ -8,6 +8,7 @@ const getInstructors = async () => adminRepository.getInstructors();
 const getReviews = async () => adminRepository.getReviews();
 const getNotifications = async () => adminRepository.getNotifications();
 const getCategories = async () => adminRepository.getCategories();
+const getAuditLogs = async () => adminRepository.getAuditLogs();
 
 export const adminService = {
     getStudents,
@@ -17,5 +18,6 @@ export const adminService = {
     getInstructors,
     getReviews,
     getNotifications,
-    getCategories
+    getCategories,
+    getAuditLogs
 };

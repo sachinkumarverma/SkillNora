@@ -1,16 +1,32 @@
 "use client"
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-
-const logs = [
-    { id: 1, action: 'Course Published', user: 'admin@skillnora.com', details: 'Published course "AI Engineer Agentic Track"', time: '10 mins ago', type: 'success' },
-    { id: 2, action: 'User Suspended', user: 'admin@skillnora.com', details: 'Suspended user taylor.s@example.com (Violation of Terms)', time: '1 hour ago', type: 'danger' },
-    { id: 3, action: 'Role Changed', user: 'system', details: 'Granted admin rights to sachinverma1489@gmail.com', time: '2 hours ago', type: 'warning' },
-    { id: 4, action: 'Payment Processed', user: 'system', details: 'Webhook received for TXN-94821', time: '5 hours ago', type: 'info' },
-    { id: 5, action: 'Admin Login', user: 'admin@skillnora.com', details: 'Successful login from IP 192.168.1.1', time: '1 day ago', type: 'success' },
-]
+import apiClient from '@/lib/apiClient'
+import Loader from '@/components/ui/Loader'
+import Pagination from '@/components/ui/Pagination'
 
 export default function AdminAuditLogsPage() {
+    const [logs, setLogs] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
+
+    useEffect(() => {
+        apiClient.get('/api/admin/audit-logs')
+            .then(res => setLogs(res.data?.logs || []))
+            .catch(console.error)
+            .finally(() => setLoading(false))
+    }, [])
+
+    const filtered = logs.filter(log => 
+        log.action?.toLowerCase().includes(search.toLowerCase()) || 
+        log.user?.toLowerCase().includes(search.toLowerCase()) ||
+        log.details?.toLowerCase().includes(search.toLowerCase())
+    )
+
+    if (loading) return <Loader />
+
     return (
         <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -37,29 +53,73 @@ export default function AdminAuditLogsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
+                className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
             >
-                <div className="relative border-l-2 border-slate-200 dark:border-slate-700 ml-3 md:ml-6 space-y-8">
-                    {logs.map((log, index) => (
-                        <div key={log.id} className="relative pl-6 md:pl-8">
-                            <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 ${
-                                log.type === 'success' ? 'bg-emerald-500' :
-                                log.type === 'danger' ? 'bg-red-500' :
-                                log.type === 'warning' ? 'bg-amber-500' :
-                                'bg-blue-500'
-                            }`}></div>
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-1">
-                                <h3 className="font-bold text-slate-900 dark:text-white">{log.action}</h3>
-                                <span className="text-xs font-bold text-slate-400">{log.time}</span>
-                            </div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{log.details}</p>
-                            <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                {log.user}
-                            </div>
-                        </div>
-                    ))}
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40">
+                    <div className="relative w-full max-w-md">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <input 
+                            type="text" 
+                            placeholder="Search logs by action, user or details..." 
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-full py-2 pl-10 pr-4 text-sm font-medium outline-none transition-all"
+                        />
+                    </div>
                 </div>
+
+                <div className="overflow-x-auto min-h-[300px]">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th className="px-6 py-4">Action</th>
+                                <th className="px-6 py-4">User</th>
+                                <th className="px-6 py-4">Details</th>
+                                <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                            {filtered.length === 0 ? (
+                                <tr><td colSpan={5} className="text-center py-8 text-slate-500">No audit logs found</td></tr>
+                            ) : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((log, index) => (
+                                <tr key={log.id || index} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{log.action}</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                        {log.user}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-500 truncate max-w-xs">{log.details}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-max gap-1.5 ${
+                                            log.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 
+                                            log.type === 'danger' ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20' : 
+                                            log.type === 'warning' ? 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' : 
+                                            'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20'
+                                        }`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${
+                                                log.type === 'success' ? 'bg-emerald-500' :
+                                                log.type === 'danger' ? 'bg-red-500' :
+                                                log.type === 'warning' ? 'bg-amber-500' :
+                                                'bg-blue-500'
+                                            }`}></span>
+                                            {log.type === 'success' ? 'Success' : log.type === 'danger' ? 'Danger' : log.type === 'warning' ? 'Warning' : 'Info'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-500 text-xs font-bold">{log.time}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <Pagination 
+                    currentPage={currentPage}
+                    totalItems={filtered.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                />
             </motion.div>
         </div>
     )

@@ -6,6 +6,7 @@ import { coursesService } from '@/services/coursesService'
 import apiClient from '@/lib/apiClient'
 import ConfirmDeleteModal from '@/components/views/ConfirmDeleteModal'
 import AdminCourseTable from '@/components/views/AdminCourseTable'
+import Pagination from '@/components/ui/Pagination'
 
 const CustomDropdown = ({ value, options, onChange }: { value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -48,10 +49,13 @@ const CustomDropdown = ({ value, options, onChange }: { value: string, options: 
 export default function AdminCourseManagement() {
     const [courses, setCourses] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [errorMsg, setErrorMsg] = useState<string | null>(null)
     const [search, setSearch] = useState('')
     const [selectedCourses, setSelectedCourses] = useState<string[]>([])
     const [filterStatus, setFilterStatus] = useState('All')
     const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -73,10 +77,17 @@ export default function AdminCourseManagement() {
                     }))
                     setCourses(mapped)
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Failed to fetch courses", err);
+                if (err.response) {
+                    const msg = err.response.data?.error || err.response.data?.details || err.message;
+                    setErrorMsg(`Backend Error (${err.response.status}): ${msg}`);
+                } else {
+                    setErrorMsg(`Network/Unknown Error: ${err.message}`);
+                }
+            } finally {
+                setLoading(false)
             }
-            setLoading(false)
         }
         fetchCourses()
     }, [])
@@ -226,6 +237,12 @@ export default function AdminCourseManagement() {
                 </motion.div>
             </header>
 
+            {errorMsg && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-xl font-medium">
+                    {errorMsg}
+                </div>
+            )}
+
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -272,7 +289,7 @@ export default function AdminCourseManagement() {
                 {/* Data Table */}
                 <AdminCourseTable
                     loading={loading}
-                    filteredCourses={filteredCourses}
+                    filteredCourses={filteredCourses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
                     selectedCourses={selectedCourses}
                     toggleSelect={toggleSelect}
                     toggleSelectAll={toggleSelectAll}
@@ -282,14 +299,13 @@ export default function AdminCourseManagement() {
                 />
 
                 {/* Pagination */}
-                <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm font-bold text-slate-500">
-                    <div>Showing 1 to {filteredCourses.length} of {filteredCourses.length} entries</div>
-                    <div className="flex items-center gap-2">
-                        <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50" disabled>Previous</button>
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">1</button>
-                        <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50" disabled>Next</button>
-                    </div>
-                </div>
+                <Pagination 
+                    currentPage={currentPage}
+                    totalItems={filteredCourses.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                />
             </motion.div>
         </div>
     )

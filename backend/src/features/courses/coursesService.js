@@ -2,19 +2,31 @@ import { coursesRepository } from './coursesRepository.js';
 
 const listAdminCourses = async userId => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'admin') throw new Error('Forbidden');
-  return await coursesRepository.getAllAdmin();
+  if (role !== 'admin' && role !== 'instructor') throw new Error('Forbidden');
+  return await coursesRepository.getAllAdmin(role === 'instructor' ? userId : null);
 };
 
 const bulkPublish = async (userId, ids, status) => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'admin') throw new Error('Forbidden');
+  if (role !== 'admin') {
+      if (role !== 'instructor') throw new Error('Forbidden');
+      for (const id of ids) {
+          const instructorId = await coursesRepository.checkInstructor(id);
+          if (instructorId !== userId) throw new Error('Forbidden');
+      }
+  }
   return await coursesRepository.updatePublishStatus(ids, status);
 };
 
 const bulkDelete = async (userId, ids) => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'admin') throw new Error('Forbidden');
+  if (role !== 'admin') {
+      if (role !== 'instructor') throw new Error('Forbidden');
+      for (const id of ids) {
+          const instructorId = await coursesRepository.checkInstructor(id);
+          if (instructorId !== userId) throw new Error('Forbidden');
+      }
+  }
   return await coursesRepository.deleteMultiple(ids);
 };
 

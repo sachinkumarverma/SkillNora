@@ -77,6 +77,16 @@ const getCategories = async (req, res) => {
     }
 };
 
+const getAuditLogs = async (req, res) => {
+    try {
+        const logs = await adminService.getAuditLogs();
+        res.json({ logs });
+    } catch (err) {
+        logger.error('Error in getAuditLogs:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 export const adminController = {
     getStudents,
     getPayments,
@@ -85,5 +95,6 @@ export const adminController = {
     getInstructors,
     getReviews,
     getNotifications,
-    getCategories
+    getCategories,
+    getAuditLogs
 };

@@ -1,5 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
+import Loader from '@/components/ui/Loader'
 
 interface AdminCourseTableProps {
     loading: boolean;
@@ -45,7 +46,11 @@ export default function AdminCourseTable({
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                     {loading ? (
                         <tr>
-                            <td colSpan={6} className="px-6 py-12 text-center text-slate-500">Loading courses...</td>
+                            <td colSpan={6} className="px-6 py-12">
+                                <div className="flex justify-center w-full min-h-[200px] items-center">
+                                    <Loader />
+                                </div>
+                            </td>
                         </tr>
                     ) : filteredCourses.length === 0 ? (
                         <tr>

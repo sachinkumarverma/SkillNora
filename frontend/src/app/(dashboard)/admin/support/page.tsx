@@ -1,21 +1,54 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import { motion } from 'framer-motion'
+import Pagination from '@/components/ui/Pagination'
 
-const initialTickets = [
-    { id: '1', subject: 'Cannot access AI Course videos', user: 'jordan.lee@example.com', priority: 'High', status: 'Open', created: '2 hours ago' },
-    { id: '2', subject: 'Refund request for Figma Bootcamp', user: 'taylor.s@example.com', priority: 'Medium', status: 'In Progress', created: '5 hours ago' },
-    { id: '3', subject: 'How to download my certificate?', user: 'alex.m@example.com', priority: 'Low', status: 'Closed', created: '1 day ago' },
-    { id: '4', subject: 'Instructor payout not received', user: 'sarah.c@example.com', priority: 'High', status: 'Open', created: '2 days ago' },
-]
+import apiClient from '@/lib/apiClient'
+import Loader from '@/components/ui/Loader'
 
 export default function AdminSupportPage() {
-    const [tickets, setTickets] = useState(initialTickets)
+    const [tickets, setTickets] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
+    
+    // Modal State
+    const [resolvingTicketId, setResolvingTicketId] = useState<string | null>(null)
+    const [resolveMessage, setResolveMessage] = useState('')
+    const [isResolving, setIsResolving] = useState(false)
 
-    const filtered = tickets.filter(t => t.subject.toLowerCase().includes(search.toLowerCase()) || t.user.toLowerCase().includes(search.toLowerCase()))
+    useEffect(() => {
+        apiClient.get('/api/support/admin/all')
+            .then(res => setTickets(res.data?.tickets || []))
+            .catch(console.error)
+            .finally(() => setLoading(false))
+    }, [])
+
+    const submitResolution = async () => {
+        if (!resolvingTicketId || !resolveMessage.trim()) return;
+        setIsResolving(true);
+        try {
+            await apiClient.post(`/api/support/admin/${resolvingTicketId}/resolve`, { adminMessage: resolveMessage })
+            setTickets(tickets.map(t => t.id === resolvingTicketId ? { ...t, status: 'Closed' } : t))
+            setResolvingTicketId(null);
+            setResolveMessage('');
+            toast.success("Ticket resolved and email sent!")
+        } catch (error) {
+            console.error('Failed to resolve ticket:', error)
+            toast.error('Failed to resolve ticket')
+        } finally {
+            setIsResolving(false);
+        }
+    }
+
+    const filtered = tickets.filter(t => t.subject?.toLowerCase().includes(search.toLowerCase()) || t.user?.toLowerCase().includes(search.toLowerCase()))
+
+    if (loading) return <Loader />
 
     return (
+        <>
         <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
@@ -68,11 +101,13 @@ export default function AdminSupportPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                            {filtered.map(t => (
+                            {filtered.length === 0 ? (
+                                <tr><td colSpan={5} className="text-center py-8 text-slate-500">No support tickets found</td></tr>
+                            ) : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(t => (
                                 <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-bold text-slate-900 dark:text-white">{t.subject}</div>
-                                        <div className="text-xs text-slate-500">{t.user}</div>
+                                        <div className="font-bold text-slate-900 dark:text-white max-w-sm truncate" title={t.subject}>{t.subject}</div>
+                                        <div className="text-xs text-slate-500">{t.user || t.email}</div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded text-xs font-bold ${
@@ -95,14 +130,71 @@ export default function AdminSupportPage() {
                                     </td>
                                     <td className="px-6 py-4 text-slate-500">{t.created}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">Resolve</button>
+                                        {t.status !== 'Closed' && (
+                                            <button onClick={() => setResolvingTicketId(t.id)} className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">Resolve</button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination 
+                    currentPage={currentPage}
+                    totalItems={filtered.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                />
             </motion.div>
         </div>
+
+            {/* Resolve Modal */}
+            {resolvingTicketId && (
+                <div className="fixed top-16 left-0 right-0 bottom-0 z-[15] bg-slate-900/60 backdrop-blur-sm">
+                    <div className="flex w-full h-full items-center justify-center p-4 md:pl-64">
+                        <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 -mt-10"
+                    >
+                        <h2 className="text-2xl font-bold mb-2">Resolve Ticket</h2>
+                        <p className="text-slate-500 mb-6 text-sm">Enter your resolution message below. This will be securely emailed directly to the user.</p>
+                        
+                        <textarea
+                            value={resolveMessage}
+                            onChange={(e) => setResolveMessage(e.target.value)}
+                            rows={5}
+                            placeholder="Type your response here..."
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 outline-none focus:border-blue-500 resize-none mb-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full"
+                        ></textarea>
+                        
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                onClick={() => { setResolvingTicketId(null); setResolveMessage(''); }}
+                                disabled={isResolving}
+                                className="px-5 py-2.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={submitResolution}
+                                disabled={isResolving || !resolveMessage.trim()}
+                                className="px-5 py-2.5 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isResolving ? (
+                                    <>
+                                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Sending...
+                                    </>
+                                ) : 'Resolve'}
+                            </button>
+                        </div>
+                    </motion.div>
+                    </div>
+                </div>
+            )}
+        </>
     )
 }

@@ -97,8 +97,10 @@ const getInstructors = async () => {
             u.created_at as joined,
             (SELECT COUNT(*) FROM courses WHERE instructor_id = u.id) as courses,
             (SELECT COUNT(DISTINCT e.user_id) FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE c.instructor_id = u.id) as students,
-            (SELECT COALESCE(SUM(amount), 0) FROM orders o JOIN courses c ON o.course_id = c.id WHERE c.instructor_id = u.id AND o.status IN ('created', 'paid')) as revenue
+            (SELECT COALESCE(SUM(amount), 0) FROM orders o JOIN courses c ON o.course_id = c.id WHERE c.instructor_id = u.id AND o.status IN ('created', 'paid')) as revenue,
+            COALESCE(au.raw_user_meta_data->>'avatar_url', au.raw_user_meta_data->>'picture', au.raw_user_meta_data->>'photoURL') as avatar_url
         FROM users u
+        LEFT JOIN auth.users au ON u.id = au.id
         WHERE u.role = 'instructor'
         ORDER BY u.created_at DESC
     `;
@@ -142,6 +144,7 @@ const getNotifications = async () => {
         SELECT n.*, u.full_name as user_name 
         FROM notifications n
         LEFT JOIN users u ON n.user_id = u.id
+        WHERE n.type NOT IN ('new_comment', 'comment_reply')
         ORDER BY n.created_at DESC
         LIMIT 100
     `;
@@ -177,6 +180,100 @@ const getCategories = async () => {
     }));
 };
 
+const getAuditLogs = async () => {
+    const sql = `
+        (
+            SELECT 'Payment Processed' as action,
+                   'system' as user_email,
+                   'Order received for TXN-' || razorpay_order_id as details,
+                   created_at,
+                   'info' as type
+            FROM orders
+            WHERE status = 'paid'
+            ORDER BY created_at DESC LIMIT 15
+        )
+        UNION ALL
+        (
+            SELECT 'Course Published' as action,
+                   'system' as user_email,
+                   'Published course "' || title || '"' as details,
+                   created_at,
+                   'success' as type
+            FROM courses
+            WHERE is_published = true
+            ORDER BY created_at DESC LIMIT 15
+        )
+        UNION ALL
+        (
+            SELECT 'User Registered' as action,
+                   email as user_email,
+                   'New ' || role || ' registered' as details,
+                   created_at,
+                   'info' as type
+            FROM users
+            ORDER BY created_at DESC LIMIT 15
+        )
+        UNION ALL
+        (
+            SELECT 'Certificate Issued' as action,
+                   'system' as user_email,
+                   'Certificate issued for course ID ' || substring(course_id::text, 1, 8) as details,
+                   issued_at as created_at,
+                   'success' as type
+            FROM certificates
+            ORDER BY issued_at DESC LIMIT 15
+        )
+        UNION ALL
+        (
+            SELECT 'Support Ticket' as action,
+                   email as user_email,
+                   'Ticket created: "' || subject || '"' as details,
+                   created_at,
+                   'warning' as type
+            FROM support_tickets
+            ORDER BY created_at DESC LIMIT 15
+        )
+        UNION ALL
+        (
+            SELECT 'Review Posted' as action,
+                   'system' as user_email,
+                   'New ' || rating || ' star review' as details,
+                   created_at,
+                   'info' as type
+            FROM reviews
+            ORDER BY created_at DESC LIMIT 15
+        )
+        ORDER BY created_at DESC
+        LIMIT 60
+    `;
+    const { rows } = await query(sql);
+    
+    // timeAgo helper
+    const timeAgo = (date) => {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " years ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " mins ago";
+        return Math.floor(seconds) + " seconds ago";
+    };
+
+    return rows.map((r, i) => ({
+        id: i + 1,
+        action: r.action,
+        user: r.user_email,
+        details: r.details,
+        time: timeAgo(new Date(r.created_at)),
+        type: r.type
+    }));
+};
+
 export const adminRepository = {
     getStudents,
     getPayments,
@@ -185,5 +282,6 @@ export const adminRepository = {
     getInstructors,
     getReviews,
     getNotifications,
-    getCategories
+    getCategories,
+    getAuditLogs
 };

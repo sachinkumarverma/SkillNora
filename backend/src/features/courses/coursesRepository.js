@@ -1,6 +1,12 @@
 import { query } from '../../config/db.js';
 
-const getAllAdmin = async () => {
+const getAllAdmin = async (instructorId = null) => {
+  const params = [];
+  let whereClause = '';
+  if (instructorId) {
+      whereClause = 'WHERE c.instructor_id = $1';
+      params.push(instructorId);
+  }
   const sql = `
     SELECT 
       c.*, 
@@ -9,11 +15,12 @@ const getAllAdmin = async () => {
       (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enrollment_count
     FROM courses c 
     LEFT JOIN users u ON c.instructor_id = u.id 
+    ${whereClause}
     ORDER BY created_at DESC
   `;
   const {
     rows
-  } = await query(sql);
+  } = await query(sql, params);
   return rows.map(r => ({
     ...r,
     instructor: {

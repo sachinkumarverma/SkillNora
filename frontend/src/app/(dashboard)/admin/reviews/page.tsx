@@ -3,12 +3,15 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
+import Pagination from '@/components/ui/Pagination'
 
 export default function AdminReviewManagement() {
     const [reviews, setReviews] = useState<any[]>([])
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
     const [selectedReview, setSelectedReview] = useState<any | null>(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
 
     useEffect(() => {
         const fetchReviews = async () => {
@@ -84,7 +87,7 @@ export default function AdminReviewManagement() {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                             {filtered.length === 0 ? (
                                 <tr><td colSpan={5} className="text-center py-8 text-slate-500">No reviews found</td></tr>
-                            ) : filtered.map(r => (
+                            ) : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(r => (
                                 <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{r.user_name}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{r.course_title}</td>
@@ -108,13 +111,21 @@ export default function AdminReviewManagement() {
                         </tbody>
                     </table>
                 </div>
+                
+                <Pagination 
+                    currentPage={currentPage}
+                    totalItems={filtered.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                />
             </motion.div>
         </div>
 
             {/* Review Modal */}
             {selectedReview && (
-                <div className="absolute inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm">
-                    <div className="sticky top-0 h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+                <div className="fixed top-16 left-0 right-0 bottom-0 z-[15] bg-slate-900/60 backdrop-blur-sm">
+                    <div className="flex w-full h-full items-center justify-center p-4 md:pl-64">
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
