@@ -5,9 +5,9 @@ const getSummary = async (req, res) => {
     if (!req.body.text) return res.status(400).json({
       error: 'text required'
     });
-    const key = process.env.OPENAI_API_KEY;
+    const key = process.env.GROQ_API_KEY;
     if (!key) return res.status(500).json({
-      error: 'OPENAI_API_KEY not configured'
+      error: 'GROQ_API_KEY not configured'
     });
     const data = await aiService.summarize(req.body.text, key);
     res.json({
@@ -22,7 +22,7 @@ const getSummary = async (req, res) => {
 
 const getChat = async (req, res) => {
   try {
-    const key = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
+    const key = process.env.GROQ_API_KEY;
     if (!key) return res.json({
       reply: "I'm currently running in offline mock mode because the API key is not set."
     });

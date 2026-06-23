@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 const summarize = async (text, key) => {
   const body = {
-    model: 'gpt-4o-mini',
+    model: 'llama-3.1-8b-instant',
     messages: [{
       role: 'system',
       content: 'You are a helpful assistant that summarizes text concisely.'
@@ -13,7 +13,7 @@ const summarize = async (text, key) => {
     max_tokens: 250,
     temperature: 0.2
   };
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

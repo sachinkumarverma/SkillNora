@@ -55,7 +55,7 @@ Next steps (recommended)
 Razorpay & AI provider notes
 
 - This starter uses Razorpay for payments per your request. You should create a Razorpay account and obtain `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` and add them to your `.env` and deployment secrets.
-- For AI features, instead of OpenAI (paid), you can use Hugging Face Inference API (has free tier and hosted models). Add `HUGGINGFACE_API_KEY` to your env and use the inference endpoints for summaries and quiz generation. Alternatively self-host a model or use another provider.
+- For AI features, this project uses Groq (specifically the lightning-fast LLaMA models). Add `GROQ_API_KEY` to your backend env to enable AI summaries and chat.
 
 Running DB setup locally
 
@@ -81,7 +81,7 @@ Environment variables to set (example names):
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
 - `RAZORPAY_KEY_ID`
 - `RAZORPAY_KEY_SECRET`
-- `HUGGINGFACE_API_KEY` (or other AI provider)
+- `GROQ_API_KEY`
 
 
 Supabase setup notes
