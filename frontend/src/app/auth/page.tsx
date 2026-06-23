@@ -38,6 +38,8 @@ export default function AuthPage() {
 
         setLoading(true)
 
+        let isSuccessRedirect = false;
+
         try {
             if (mode === 'signup') {
                 const { data, error } = await authService.signUp(email, password, isInstructor ? 'instructor' : 'student')
@@ -69,7 +71,7 @@ export default function AuthPage() {
                         toast.error(error.message)
                     }
                 } else {
-                    toast.success('Signed in successfully!')
+                    isSuccessRedirect = true;
                     router.push('/dashboard')
                 }
             } else if (mode === 'magic') {
@@ -90,7 +92,9 @@ export default function AuthPage() {
         } catch (error: any) {
             toast.error(error.message || 'An unexpected error occurred.')
         } finally {
-            setLoading(false)
+            if (!isSuccessRedirect) {
+                setLoading(false)
+            }
         }
     }
 

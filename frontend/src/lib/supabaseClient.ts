@@ -1,14 +1,14 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Guard creation: avoid calling createClient with empty values (which throws at runtime)
-let supabase: SupabaseClient | any = null
+// Guard creation: avoid calling createBrowserClient with empty values (which throws at runtime)
+let supabase: any = null
 
 if (url && anonKey) {
-    // Normal case: env is provided (browser or server)
-    supabase = createClient(url, anonKey)
+    // Normal case: env is provided (browser)
+    supabase = createBrowserClient(url, anonKey)
 } else {
     // Graceful stub for development when env vars are missing.
     // This prevents Next from crashing with "supabaseUrl is required." and gives
@@ -21,6 +21,7 @@ if (url && anonKey) {
             signUp: async () => ({ error: missingErr }),
             signInWithOAuth: async () => ({ error: missingErr }),
             signOut: async () => ({ error: missingErr }),
+            getSession: async () => ({ data: { session: null }, error: missingErr })
         },
         from: () => ({ select: async () => ({ data: null, error: missingErr }) }),
         rpc: async () => ({ data: null, error: missingErr }),
