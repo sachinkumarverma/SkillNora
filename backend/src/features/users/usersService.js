@@ -24,11 +24,16 @@ const logout = async (token) => {
     return await usersRepository.logout(token);
 };
 
+const sendPromotionalEmail = async (data) => {
+    return await usersRepository.sendPromotionalEmail(data);
+};
+
 export const usersService = {
   getProfile,
   getInstructors,
   syncUser,
   updateProfile,
   updatePassword,
-  logout
+  logout,
+  sendPromotionalEmail
 };

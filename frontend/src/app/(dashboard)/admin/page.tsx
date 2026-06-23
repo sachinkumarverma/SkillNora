@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import {
     BarChart,
     Bar,
@@ -198,7 +199,7 @@ export default function AdminOverviewPage() {
                 >
                     <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-blue-50/50 dark:bg-blue-900/10">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Recent Transactions</h2>
-                        <a href="/admin/payments" className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors">View All</a>
+                        <Link href="/admin/payments" className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors">View All</Link>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">

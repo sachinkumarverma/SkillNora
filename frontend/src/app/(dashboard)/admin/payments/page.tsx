@@ -31,6 +31,34 @@ export default function AdminPaymentsPage() {
 
     const filtered = payments.filter(p => p.transaction_id?.toLowerCase().includes(search.toLowerCase()) || p.user_name?.toLowerCase().includes(search.toLowerCase()))
 
+    const exportToCSV = () => {
+        if (!payments.length) return;
+        
+        const headers = ['Transaction ID', 'User', 'Course', 'Amount', 'Status', 'Date'];
+        const csvRows = [
+            headers.join(','),
+            ...filtered.map(p => [
+                `"${p.transaction_id || p.id}"`,
+                `"${(p.user_name || '').replace(/"/g, '""')}"`,
+                `"${(p.course_title || '').replace(/"/g, '""')}"`,
+                p.amount,
+                p.status,
+                `"${p.date || ''}"`
+            ].join(','))
+        ];
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `transactions_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (loading && payments.length === 0) return <Loader />
 
     return (
@@ -59,7 +87,10 @@ export default function AdminPaymentsPage() {
                     transition={{ delay: 0.2 }}
                     className="flex gap-3"
                 >
-                    <button className="px-5 py-2.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow-sm text-sm hover:opacity-90 transition-opacity">
+                    <button 
+                        onClick={exportToCSV}
+                        className="px-5 py-2.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow-sm text-sm hover:opacity-90 transition-opacity"
+                    >
                         Export CSV
                     </button>
                 </motion.div>

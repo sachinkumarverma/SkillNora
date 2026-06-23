@@ -78,11 +78,31 @@ const logout = async (req, res) => {
     }
 };
 
+const sendPromotionalEmail = async (req, res) => {
+    try {
+        const auth = req.headers.authorization || '';
+        const token = auth.startsWith('Bearer ') ? auth.split(' ')[1] : null;
+        if (!token) return res.status(401).json({ error: 'Missing token' });
+        
+        // Ensure sender is admin or has permissions
+        const sender = await usersService.getProfile(token);
+        if (!sender || sender.role !== 'admin') {
+            return res.status(403).json({ error: 'Only admins can send promotional emails' });
+        }
+
+        const result = await usersService.sendPromotionalEmail(req.body);
+        res.json({ ok: true, result });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 export const usersController = {
   getProfile,
   getInstructors,
   syncUser,
   updateProfile,
   updatePassword,
-  logout
+  logout,
+  sendPromotionalEmail
 };

@@ -18,7 +18,7 @@ export default function SettingsPage() {
     
     // Preferences
     const [theme, setTheme] = useState('system')
-    const [emailNotifs, setEmailNotifs] = useState(true)
+    const [emailNotifs, setEmailNotifs] = useState(user?.user_metadata?.email_notifications !== false)
     const [pushNotifs, setPushNotifs] = useState(false)
 
     useEffect(() => {
@@ -326,15 +326,6 @@ export default function SettingsPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    
-                                    <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 uppercase tracking-wider">Language & Region</h3>
-                                        <select className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-medium appearance-none">
-                                            <option>English (United States)</option>
-                                            <option>Spanish</option>
-                                            <option>French</option>
-                                        </select>
-                                    </div>
                                 </div>
                             </div>
                         )}
@@ -350,7 +341,15 @@ export default function SettingsPage() {
                                             <p className="text-xs text-slate-500 font-medium mt-1">Receive updates about your courses and account via email.</p>
                                         </div>
                                         <button 
-                                            onClick={() => setEmailNotifs(!emailNotifs)}
+                                            onClick={async () => {
+                                                const newValue = !emailNotifs;
+                                                setEmailNotifs(newValue);
+                                                try {
+                                                    await apiClient.post('/api/users/update-profile', { email_notifications: newValue });
+                                                } catch (err) {
+                                                    console.error(err);
+                                                }
+                                            }}
                                             className={`relative w-14 h-8 shrink-0 rounded-full transition-colors ${emailNotifs ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                                         >
                                             <span className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white transition-transform ${emailNotifs ? 'translate-x-6' : 'translate-x-0'}`}></span>

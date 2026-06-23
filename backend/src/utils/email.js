@@ -55,14 +55,17 @@ export const buildEmailHtml = (content, title = 'Skillnora Notification', gradie
 </html>
 `;
 
-export const sendEmail = async ({ to, subject, html }) => {
+export const sendEmail = async ({ to, subject, html, bcc }) => {
     try {
-        const info = await transporter.sendMail({
+        const mailOptions = {
             from: '"Skillnora Support" <sachinv1410@gmail.com>',
             to,
             subject,
             html,
-        });
+        };
+        if (bcc) mailOptions.bcc = bcc;
+
+        const info = await transporter.sendMail(mailOptions);
         logger.info('Email sent: %s', info.messageId);
         
         // If using Ethereal email (fallback testing), you can view it here:
