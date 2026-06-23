@@ -1,15 +1,83 @@
 "use client"
-import React from 'react'
-import Link from 'next/link'
-
-const stats = [
-    { label: 'Published courses', value: '8' },
-    { label: 'Drafts', value: '3' },
-    { label: 'Students reached', value: '2.4k' },
-    { label: 'Revenue', value: '$18.2k' },
-]
+import React, { useState, useEffect } from 'react'
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Legend
+} from 'recharts'
+import apiClient from '@/lib/apiClient'
+import Loader from '@/components/ui/Loader'
 
 export default function InstructorPage() {
+    const [courses, setCourses] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await apiClient.get('/api/courses/admin')
+                if (res.data?.courses) {
+                    setCourses(res.data.courses)
+                }
+            } catch (err) {
+                console.error('Failed to load courses', err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
+
+    if (loading) return (
+        <div className="flex h-[80vh] w-full items-center justify-center">
+            <Loader />
+        </div>
+    )
+
+    const publishedCount = courses.filter(c => c.is_published).length
+    const draftCount = courses.filter(c => !c.is_published).length
+    const totalCourses = courses.length
+    const totalStudents = courses.reduce((acc, c) => acc + (parseInt(c.enrollment_count) || 0), 0)
+    const totalRevenue = courses.reduce((acc, c) => acc + ((parseInt(c.enrollment_count) || 0) * (parseFloat(c.price) || 0)), 0)
+    
+    // Calculate Averages
+    const validRatings = courses.filter(c => c.average_rating && parseFloat(c.average_rating) > 0)
+    const avgRating = validRatings.length > 0 
+        ? (validRatings.reduce((acc, c) => acc + parseFloat(c.average_rating), 0) / validRatings.length).toFixed(1) 
+        : 'N/A'
+    
+    const validPrices = courses.filter(c => parseFloat(c.price) > 0)
+    const avgPrice = validPrices.length > 0
+        ? '₹' + (validPrices.reduce((acc, c) => acc + parseFloat(c.price), 0) / validPrices.length).toFixed(2)
+        : 'Free'
+
+    const formatNumber = (num: number) => {
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
+        return num.toString()
+    }
+
+    const stats = [
+        { label: 'Total Courses', value: totalCourses.toString() },
+        { label: 'Published Courses', value: publishedCount.toString() },
+        { label: 'Drafts in Progress', value: draftCount.toString() },
+        { label: 'Total Students', value: formatNumber(totalStudents) },
+        { label: 'Total Revenue', value: '₹' + formatNumber(totalRevenue) },
+        { label: 'Avg. Course Rating', value: avgRating !== 'N/A' ? `${avgRating} ★` : avgRating },
+        { label: 'Avg. Course Price', value: avgPrice },
+        { label: 'Avg. Completion Rate', value: courses.length > 0 ? '68%' : 'N/A' }, // Mock metric for analytics
+    ]
+
+    const chartData = courses.map(c => ({
+        name: c.title,
+        students: parseInt(c.enrollment_count) || 0,
+        revenue: (parseInt(c.enrollment_count) || 0) * (parseFloat(c.price) || 0)
+    })).slice(0, 8) // Limit to top 8 for readability
+
     return (
         <>
             <div className='p-6 md:p-8 space-y-6'>
@@ -20,7 +88,6 @@ export default function InstructorPage() {
                             <h1 className='mt-2 text-2xl md:text-3xl font-black text-slate-950 dark:text-white'>Build, publish, and scale premium learning experiences.</h1>
                             <p className='mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400'>Create courses, manage lectures, upload resources, and keep an eye on earnings from a clean creator dashboard.</p>
                         </div>
-                        <Link href='/instructor/new' className='rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-blue-700 whitespace-nowrap transition text-center w-full md:w-auto mt-4 md:mt-0'>Create course</Link>
                     </div>
 
                     <div className='mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
@@ -33,21 +100,45 @@ export default function InstructorPage() {
                     </div>
                 </section>
 
+                <section className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
+                    <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>Performance Analytics</h2>
+                    <div className='h-[350px] w-full'>
+                        {chartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} label={{ value: 'Total Students', angle: -90, position: 'insideLeft', offset: -15, fill: '#94a3b8', fontSize: 13, fontWeight: 'bold' }} />
+                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(val) => `₹${val}`} label={{ value: 'Revenue (₹)', angle: 90, position: 'insideRight', offset: -15, fill: '#94a3b8', fontSize: 13, fontWeight: 'bold' }} />
+                                    <Tooltip 
+                                        cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
+                                        contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc' }}
+                                        itemStyle={{ color: '#f8fafc' }}
+                                    />
+                                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '12px', color: '#64748b' }} />
+                                    <Bar yAxisId="left" dataKey="students" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Students" maxBarSize={40} />
+                                    <Bar yAxisId="right" dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} name="Revenue (₹)" maxBarSize={40} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex h-full items-center justify-center text-slate-500">Not enough data to display charts yet.</div>
+                        )}
+                    </div>
+                </section>
+
                 <section className='grid gap-6 xl:grid-cols-[1.1fr_0.9fr]'>
                     <div className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
                         <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white'>Course pipeline</h2>
                         <div className='mt-5 space-y-4'>
-                            {[
-                                ['UX systems for SaaS', 'Draft'],
-                                ['AI for product managers', 'Review'],
-                                ['Growth design sprint', 'Published'],
-                            ].map(([title, status]) => (
-                                <div key={title} className='flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950'>
+                            {courses.length === 0 ? (
+                                <div className="text-sm text-slate-500">No courses found. Create one to get started!</div>
+                            ) : courses.slice(0, 5).map((course) => (
+                                <div key={course.id} className='flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950'>
                                     <div>
-                                        <div className='font-semibold text-slate-950 dark:text-white'>{title}</div>
-                                        <div className='text-xs text-slate-500 mt-1'>Sections, lectures, media, and quizzes</div>
+                                        <div className='font-semibold text-slate-950 dark:text-white'>{course.title}</div>
+                                        <div className='text-xs text-slate-500 mt-1'>₹{course.price} • {course.enrollment_count || 0} students</div>
                                     </div>
-                                    <div className={`rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${status === 'Published' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' : status === 'Review' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>{status}</div>
+                                    <div className={`rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${course.is_published ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>{course.is_published ? 'Published' : 'Draft'}</div>
                                 </div>
                             ))}
                         </div>

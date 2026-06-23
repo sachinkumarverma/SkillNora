@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import apiClient from '@/lib/apiClient'
 
-export default function AdminAIPage() {
+export default function InstructorAIPage() {
     const [activeTab, setActiveTab] = useState('Course Description')
     const [prompt, setPrompt] = useState('')
     const [isGenerating, setIsGenerating] = useState(false)

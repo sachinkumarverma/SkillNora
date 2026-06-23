@@ -5,7 +5,7 @@ import VideoPlayer from '@/components/VideoPlayer'
 import useUser from '@/lib/useUser'
 import dynamic from 'next/dynamic'
 
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
+const ReactPlayer: any = dynamic(() => import('react-player'), { ssr: false })
 import { coursesService } from '@/services/coursesService'
 import Loader from '@/components/ui/Loader'
 import { commentsService } from '@/services/commentsService'
@@ -409,6 +409,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             );
                                         }
 
+                                        const playerConfig: any = { file: { attributes: { poster: lecture.poster_url } } };
                                         return (
                                             <ReactPlayer
                                                 url={url}
@@ -417,7 +418,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                 controls
                                                 playing={!showQuiz}
                                                 onEnded={handleVideoEnd}
-                                                config={{ file: { attributes: { poster: lecture.poster_url } } }}
+                                                config={playerConfig}
                                                 style={{ position: 'absolute', top: 0, left: 0 }}
                                             />
                                         );

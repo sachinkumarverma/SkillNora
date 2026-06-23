@@ -584,7 +584,7 @@ export default function InstructorCourseBuilder() {
                         transition={{ delay: 0.1 }}
                         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 md:p-8 shadow-sm"
                     >
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white">Course Thumbnail</h2>
                             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                                 <button type="button" onClick={() => setThumbnailMode('upload')} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${thumbnailMode === 'upload' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Upload</button>
@@ -610,7 +610,7 @@ export default function InstructorCourseBuilder() {
                         transition={{ delay: 0.2 }}
                         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 md:p-8 shadow-sm"
                     >
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                             <div>
                                 <h2 className="text-xl font-black text-slate-900 dark:text-white">Modules</h2>
                                 <p className="text-sm font-medium text-slate-500 mt-1">Add modules. Each module contains its own video and thumbnail.</p>
@@ -641,7 +641,7 @@ export default function InstructorCourseBuilder() {
                                     <div className="p-5 space-y-6">
                                         {/* Module Video */}
                                         <div>
-                                            <div className="flex items-center justify-between mb-2">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
                                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Module Video</label>
                                                 <div className="flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-1 rounded-md">
                                                     <button type="button" onClick={() => updateModule(mod.id, 'videoMode', 'upload')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${mod.videoMode === 'upload' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Upload</button>
@@ -660,7 +660,7 @@ export default function InstructorCourseBuilder() {
                                         {/* Module Thumbnail (Only show if not YouTube Link) */}
                                         {mod.videoMode === 'upload' ? (
                                             <div>
-                                                <div className="flex items-center justify-between mb-2">
+                                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
                                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Module Thumbnail</label>
                                                     <div className="flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-1 rounded-md">
                                                         <button type="button" onClick={() => updateModule(mod.id, 'thumbnailMode', 'upload')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${mod.thumbnailMode === 'upload' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Upload</button>
@@ -689,7 +689,7 @@ export default function InstructorCourseBuilder() {
 
                                         {/* MCQ Quiz Builder */}
                                         <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                                            <div className="flex items-center justify-between mb-3">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                                                 <div>
                                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Module Quiz (MCQs)</label>
                                                     <p className="text-xs text-slate-500">Add questions to test student knowledge after this module.</p>
@@ -750,7 +750,7 @@ export default function InstructorCourseBuilder() {
                 </div>
 
                 {/* Right Column: Pricing & Settings */}
-                <div className="space-y-8 sticky top-6 self-start">
+                <div className="space-y-8">
                     <motion.div 
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}

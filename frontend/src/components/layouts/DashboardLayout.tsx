@@ -201,6 +201,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         instructor: [
             ['/instructor', 'Instructor Studio', 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'], 
             ['/instructor/courses', 'Course Management', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
+            ['/instructor/ai', 'AI Studio', 'M13 10V3L4 14h7v7l9-11h-7z'],
             ['/settings', 'Account Details', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
             ['/contact', 'Contact Support', 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z']
         ],
@@ -276,7 +277,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="flex flex-1 flex-col overflow-hidden relative z-10 md:z-10 w-full">
             <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 md:px-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80 z-20">
-                <div className="flex items-center gap-2 md:gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                     <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 md:p-0">
                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
@@ -298,7 +299,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                         {/* Mega Menu Explore Dropdown (Moved to left of search) */}
                         {role === 'student' && (
                             <div className="relative group hidden lg:block mr-2">
@@ -445,12 +446,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                         {user ? (
                             <div className="relative" ref={dropdownRef}>
-                                <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3 transition hover:bg-slate-100 sm:flex dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-sm overflow-hidden">
+                                <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-1 sm:pr-3 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-sm overflow-hidden shrink-0">
                                         {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : initials}
                                     </div>
-                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 capitalize">{user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0]}</span>
-                                    <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                    <span className="hidden sm:block text-xs font-semibold text-slate-700 dark:text-slate-300 capitalize">{user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0]}</span>
+                                    <svg className="hidden sm:block h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                 </button>
 
                                 {dropdownOpen && (
@@ -488,7 +489,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 <img src="/logo.png" alt="Skillnora" className="h-6 w-6 object-contain" />
                                 <span className="font-bold text-slate-900 dark:text-white">Skillnora © {new Date().getFullYear()}</span>
                             </div>
-                            <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-slate-500 dark:text-slate-400">
+                            <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 text-sm font-medium text-slate-500 dark:text-slate-400">
                                 <Link href="/pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</Link>
                                 <Link href="/about" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About Us</Link>
                                 <Link href="/contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact</Link>

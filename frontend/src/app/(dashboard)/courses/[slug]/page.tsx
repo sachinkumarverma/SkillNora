@@ -297,7 +297,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             {/* AI Matrix Recommendation */}
                             {isEnrolled && course?.progress?.quizScores && (() => {
                                 const scores = Object.values(course.progress.quizScores);
-                                const avg = scores.length ? scores.reduce((a: any, b: any) => Number(a) + Number(b), 0) / scores.length : 100;
+                                const avg = scores.length ? Number(scores.reduce((a: any, b: any) => Number(a) + Number(b), 0)) / scores.length : 100;
                                 if (avg < 75) {
                                     return (
                                         <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">

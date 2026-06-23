@@ -56,9 +56,6 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                 expiryDate.setFullYear(expiryDate.getFullYear() + 1)
 
                 await enrollmentsService.createEnrollment(course.id)
-                if (error) {
-                    console.error("Enrollment error:", error)
-                }
             }
         } catch (e) {
             console.error(e)

@@ -28,6 +28,12 @@ export default function AdminAuditLogsPage() {
         fetchLogs()
     }, [])
 
+    const [expandedLogId, setExpandedLogId] = useState<string | number | null>(null)
+
+    const toggleExpand = (id: string | number) => {
+        setExpandedLogId(prev => prev === id ? null : id)
+    }
+
     const filtered = logs.filter(log => 
         log.action?.toLowerCase().includes(search.toLowerCase()) || 
         log.user?.toLowerCase().includes(search.toLowerCase()) ||
@@ -91,6 +97,7 @@ export default function AdminAuditLogsPage() {
                     <table className="w-full text-left text-sm whitespace-nowrap">
                         <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
                             <tr>
+                                <th className="px-6 py-4 w-10"></th>
                                 <th className="px-6 py-4">Action</th>
                                 <th className="px-6 py-4">User</th>
                                 <th className="px-6 py-4">Details</th>
@@ -100,34 +107,73 @@ export default function AdminAuditLogsPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                             {filtered.length === 0 ? (
-                                <tr><td colSpan={5} className="text-center py-8 text-slate-500">No audit logs found</td></tr>
-                            ) : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((log, index) => (
-                                <tr key={log.id || index} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{log.action}</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                        {log.user}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-500 truncate max-w-xs">{log.details}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-max gap-1.5 ${
-                                            log.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 
-                                            log.type === 'danger' ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20' : 
-                                            log.type === 'warning' ? 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' : 
-                                            'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20'
-                                        }`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${
-                                                log.type === 'success' ? 'bg-emerald-500' :
-                                                log.type === 'danger' ? 'bg-red-500' :
-                                                log.type === 'warning' ? 'bg-amber-500' :
-                                                'bg-blue-500'
-                                            }`}></span>
-                                            {log.type === 'success' ? 'Success' : log.type === 'danger' ? 'Danger' : log.type === 'warning' ? 'Warning' : 'Info'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-500 text-xs font-bold">{log.time}</td>
-                                </tr>
-                            ))}
+                                <tr><td colSpan={6} className="text-center py-8 text-slate-500">No audit logs found</td></tr>
+                            ) : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((log, index) => {
+                                const rowId = log.id || index;
+                                const isExpanded = expandedLogId === rowId;
+                                return (
+                                <React.Fragment key={rowId}>
+                                    <tr className={`transition-colors ${isExpanded ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'}`}>
+                                        <td className="px-4 py-4 text-center">
+                                            <button 
+                                                onClick={() => toggleExpand(rowId)}
+                                                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200 dark:hover:text-slate-200 dark:hover:bg-slate-700 transition-all"
+                                            >
+                                                <svg className={`w-5 h-5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{log.action}</td>
+                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                            {log.user}
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-500 truncate max-w-[200px]">{log.details}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-max gap-1.5 ${
+                                                log.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 
+                                                log.type === 'danger' ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20' : 
+                                                log.type === 'warning' ? 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' : 
+                                                'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20'
+                                            }`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                                    log.type === 'success' ? 'bg-emerald-500' :
+                                                    log.type === 'danger' ? 'bg-red-500' :
+                                                    log.type === 'warning' ? 'bg-amber-500' :
+                                                    'bg-blue-500'
+                                                }`}></span>
+                                                {log.type === 'success' ? 'Success' : log.type === 'danger' ? 'Danger' : log.type === 'warning' ? 'Warning' : 'Info'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-500 text-xs font-bold">{log.time}</td>
+                                    </tr>
+                                    {isExpanded && (
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-4 bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-100 dark:border-slate-800/50">
+                                                <motion.div 
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    className="p-4 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap overflow-hidden"
+                                                >
+                                                    <h4 className="font-bold text-slate-900 dark:text-white mb-3 text-base">Log Details</h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                        <div><span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-1">Action</span><span className="font-medium">{log.action}</span></div>
+                                                        <div><span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-1">User / System</span><span className="font-medium">{log.user}</span></div>
+                                                        <div><span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-1">Status</span><span className="font-medium capitalize">{log.type}</span></div>
+                                                        <div><span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-1">Timestamp</span><span className="font-medium">{log.time}</span></div>
+                                                    </div>
+                                                    <span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-3">Raw Payload</span>
+                                                    <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded border border-slate-100 dark:border-slate-800 font-mono text-xs overflow-x-auto text-slate-600 dark:text-slate-400 leading-relaxed">
+                                                        {log.details}
+                                                    </div>
+                                                </motion.div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>

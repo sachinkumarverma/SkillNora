@@ -54,6 +54,11 @@ export default function CartPage() {
             // Generate dummy order ID for now
             const orderId = 'order_' + crypto.randomUUID().substring(0, 8)
             
+            const enrollmentsToInsert = cart.map(item => ({
+                course_id: item.id || item.course_id,
+                price: item.price
+            }))
+            
             // Send to backend to record order and enroll
             await apiClient.post('/api/payments/record-order-and-enroll', {
                 orderId,
@@ -103,9 +108,9 @@ export default function CartPage() {
                                     <img src={item.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600'} alt="" className="w-full h-full object-cover" />
                                 </Link>
                                 <div className="flex-1 flex flex-col justify-between py-1">
-                                    <div className="flex justify-between items-start gap-4">
-                                        <Link href={`/courses/${item.slug}`} className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-lg line-clamp-2">{item.title}</Link>
-                                        <div className="font-black text-slate-900 dark:text-white shrink-0 text-lg">{item.price}</div>
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:gap-4">
+                                        <Link href={`/courses/${item.slug}`} className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-base sm:text-lg line-clamp-2 mb-1 sm:mb-0">{item.title}</Link>
+                                        <div className="font-black text-slate-900 dark:text-white shrink-0 text-base sm:text-lg">{item.price}</div>
                                     </div>
                                     <div className="flex justify-between items-end">
                                         <div className="text-sm text-slate-500">1 Year Access</div>

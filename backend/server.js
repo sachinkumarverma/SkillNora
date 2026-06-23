@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import { logger } from './src/utils/logger.js'
 
 dotenv.config({ path: './.env', override: true })
 
@@ -72,9 +73,9 @@ const PORT = process.env.PORT || 4000
 
 runMigrations().then(() => {
     app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`)
+        logger.info(`Server running on port ${PORT}`)
     })
 }).catch(err => {
-    console.error("Migration failed, server not started.", err)
+    logger.error("Migration failed, server not started.", err)
     process.exit(1)
 })

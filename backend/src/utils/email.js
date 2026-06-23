@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { logger } from './logger.js';
 
 // Configure standard transporter (use valid SMTP in .env for production)
 const transporter = nodemailer.createTransport({
@@ -62,16 +63,16 @@ export const sendEmail = async ({ to, subject, html }) => {
             subject,
             html,
         });
-        console.log('Email sent: %s', info.messageId);
+        logger.info('Email sent: %s', info.messageId);
         
         // If using Ethereal email (fallback testing), you can view it here:
         if (info.messageId && process.env.SMTP_HOST === 'smtp.ethereal.email') {
-            console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+            logger.info('Preview URL: %s', nodemailer.getTestMessageUrl(info));
         }
         
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error('Error sending email:', error);
+        logger.error('Error sending email:', error);
         return { success: false, error };
     }
 };
