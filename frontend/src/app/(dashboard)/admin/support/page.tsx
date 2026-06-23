@@ -19,11 +19,20 @@ export default function AdminSupportPage() {
     const [resolveMessage, setResolveMessage] = useState('')
     const [isResolving, setIsResolving] = useState(false)
 
+    const fetchTickets = async () => {
+        setLoading(true)
+        try {
+            const res = await apiClient.get('/api/support/admin/all')
+            setTickets(res.data?.tickets || [])
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     useEffect(() => {
-        apiClient.get('/api/support/admin/all')
-            .then(res => setTickets(res.data?.tickets || []))
-            .catch(console.error)
-            .finally(() => setLoading(false))
+        fetchTickets()
     }, [])
 
     const submitResolution = async () => {
@@ -45,7 +54,7 @@ export default function AdminSupportPage() {
 
     const filtered = tickets.filter(t => t.subject?.toLowerCase().includes(search.toLowerCase()) || t.user?.toLowerCase().includes(search.toLowerCase()))
 
-    if (loading) return <Loader />
+    if (loading && tickets.length === 0) return <Loader />
 
     return (
         <>
@@ -76,7 +85,7 @@ export default function AdminSupportPage() {
                 transition={{ delay: 0.2 }}
                 className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
             >
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 flex items-center justify-between gap-4">
                     <div className="relative w-full max-w-md">
                         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         <input 
@@ -87,6 +96,16 @@ export default function AdminSupportPage() {
                             className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-full py-2 pl-10 pr-4 text-sm font-medium outline-none transition-all"
                         />
                     </div>
+                    <button 
+                        onClick={fetchTickets}
+                        disabled={loading}
+                        className={`p-2.5 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title="Refresh Data"
+                    >
+                        <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
                 </div>
 
                 <div className="overflow-x-auto min-h-[300px]">
