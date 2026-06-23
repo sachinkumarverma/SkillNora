@@ -41,6 +41,8 @@ app.use((req, res, next) => {
 
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
+import { authApi } from './src/features/auth/authApi.js'
+app.use('/api/auth', authApi)
 app.use('/api/users', usersApi)
 app.use('/api/courses', coursesApi)
 app.use('/api/enrollments', enrollmentsApi)

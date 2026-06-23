@@ -250,7 +250,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         const isActive = pathname === path || (path !== '/' && path !== '/dashboard' && path !== '/admin' && path !== '/instructor' && pathname.startsWith(path + '/'))
                         const isExternal = path.startsWith('http')
                         return (
-                            <Link key={path} href={path} target={isExternal ? '_blank' : undefined} rel={isExternal ? 'noopener noreferrer' : undefined} className={`group flex w-full items-center gap-3 rounded-xl p-2.5 transition-colors ${isActive ? 'bg-slate-100 text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'}`}>
+                            <Link 
+                                key={path} 
+                                href={path} 
+                                target={isExternal ? '_blank' : undefined} 
+                                rel={isExternal ? 'noopener noreferrer' : undefined} 
+                                onClick={() => {
+                                    if (window.innerWidth < 768) {
+                                        setSidebarOpen(false);
+                                    }
+                                }}
+                                className={`group flex w-full items-center gap-3 rounded-xl p-2.5 transition-colors ${isActive ? 'bg-slate-100 text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'}`}
+                            >
                                 <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPath} /></svg>
                                 {sidebarOpen && <span className="text-sm font-semibold whitespace-nowrap">{label}</span>}
                             </Link>
@@ -277,29 +288,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="flex flex-1 flex-col overflow-hidden relative z-10 md:z-10 w-full">
             <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 md:px-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80 z-20">
-                <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 md:p-0">
                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
                     
-                    <div className="hidden sm:flex items-center text-sm font-semibold">
+                    <div className="hidden lg:flex items-center text-sm font-semibold truncate">
                             {breadcrumbs.length > 0 ? (
                                 <div className="flex items-center gap-2">
                                     {breadcrumbs.map((bc, idx) => (
                                         <React.Fragment key={idx}>
-                                            {bc.href ? <Link href={bc.href} className="text-slate-400 hover:text-blue-600 transition-colors">{bc.label}</Link> : <span className="text-slate-900 dark:text-white">{bc.label}</span>}
+                                            {bc.href ? <Link href={bc.href} className="text-slate-400 hover:text-blue-600 transition-colors truncate">{bc.label}</Link> : <span className="text-slate-900 dark:text-white truncate">{bc.label}</span>}
                                             {idx < breadcrumbs.length - 1 && <span className="text-slate-300 dark:text-slate-600">/</span>}
                                         </React.Fragment>
                                     ))}
                                 </div>
                             ) : (
-                                <h1 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h1>
+                                <h1 className="text-lg font-bold text-slate-900 dark:text-white truncate">{title}</h1>
                             )}
                         </div>
 
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         {/* Mega Menu Explore Dropdown (Moved to left of search) */}
                         {role === 'student' && (
                             <div className="relative group hidden lg:block mr-2">
@@ -368,7 +379,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             </div>
                         )}
 
-                        <div className="relative hidden md:block" ref={searchRef}>
+                        <div className="relative hidden sm:block" ref={searchRef}>
                             <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             <input 
                                 type="text" 
@@ -376,8 +387,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
                                 onFocus={() => setShowSuggestions(true)}
                                 onKeyDown={handleSearch}
-                                placeholder="Search courses, categories, roles..." 
-                                className="h-10 w-64 lg:w-80 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-white dark:focus:bg-slate-900"
+                                placeholder="Search courses..." 
+                                className="h-10 w-32 sm:w-48 lg:w-80 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-white dark:focus:bg-slate-900"
                             />
                             {searchQuery && (
                                 <button 

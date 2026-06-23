@@ -305,7 +305,7 @@ export default function AdminOverviewPage() {
                     </div>
                     <div className="h-80 w-full min-w-0">
                         {mounted && (
-                            <ResponsiveContainer width="99%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <AreaChart data={realRevenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -341,7 +341,7 @@ export default function AdminOverviewPage() {
                     </div>
                     <div className="flex-1 w-full min-h-[250px] min-w-0">
                         {mounted && (
-                            <ResponsiveContainer width="99%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <BarChart data={realEnrollmentData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
@@ -370,7 +370,7 @@ export default function AdminOverviewPage() {
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Courses by Category</h2>
                     <div className="flex-1 w-full h-[300px] min-w-0">
                         {mounted && categoryPieData.length > 0 ? (
-                            <ResponsiveContainer width="99%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <PieChart>
                                     <Pie
                                         data={categoryPieData}

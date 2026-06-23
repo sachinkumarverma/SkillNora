@@ -36,7 +36,7 @@ export default function AdminCertificatesPage() {
     if (loading && certificates.length === 0) return <Loader />
 
     return (
-        <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
+        <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <motion.h1 

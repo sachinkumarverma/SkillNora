@@ -156,9 +156,9 @@ export default function SettingsPage() {
                 <p className="text-slate-500 mt-1 text-sm font-medium">Manage your profile, security, and app preferences.</p>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col lg:flex-row gap-8">
                 {/* Sidebar Navigation */}
-                <div className="w-full md:w-64 shrink-0">
+                <div className="w-full lg:w-64 shrink-0">
                     <nav className="flex flex-col space-y-2">
                         {tabs.map((tab) => {
                             const active = activeTab === tab.id
@@ -344,27 +344,27 @@ export default function SettingsPage() {
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Notifications</h2>
                                 
                                 <div className="space-y-6 max-w-lg">
-                                    <div className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                    <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                                         <div>
                                             <h4 className="font-bold text-slate-900 dark:text-white">Email Notifications</h4>
                                             <p className="text-xs text-slate-500 font-medium mt-1">Receive updates about your courses and account via email.</p>
                                         </div>
                                         <button 
                                             onClick={() => setEmailNotifs(!emailNotifs)}
-                                            className={`relative w-14 h-8 rounded-full transition-colors ${emailNotifs ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                            className={`relative w-14 h-8 shrink-0 rounded-full transition-colors ${emailNotifs ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                                         >
                                             <span className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white transition-transform ${emailNotifs ? 'translate-x-6' : 'translate-x-0'}`}></span>
                                         </button>
                                     </div>
 
-                                    <div className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                    <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                                         <div>
                                             <h4 className="font-bold text-slate-900 dark:text-white">Push Notifications</h4>
                                             <p className="text-xs text-slate-500 font-medium mt-1">Get instant alerts in your browser.</p>
                                         </div>
                                         <button 
                                             onClick={() => setPushNotifs(!pushNotifs)}
-                                            className={`relative w-14 h-8 rounded-full transition-colors ${pushNotifs ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                            className={`relative w-14 h-8 shrink-0 rounded-full transition-colors ${pushNotifs ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                                         >
                                             <span className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white transition-transform ${pushNotifs ? 'translate-x-6' : 'translate-x-0'}`}></span>
                                         </button>

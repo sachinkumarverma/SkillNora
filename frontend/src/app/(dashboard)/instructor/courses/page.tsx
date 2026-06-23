@@ -197,7 +197,7 @@ export default function AdminCourseManagement() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
+        <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">
             <ConfirmDeleteModal 
                 isOpen={!!courseToDelete}
                 onClose={() => setCourseToDelete(null)}
@@ -241,9 +241,9 @@ export default function AdminCourseManagement() {
                         </svg>
                     </button>
                     <Link href="/instructor/new">
-                        <button className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30 flex items-center gap-2">
+                        <button className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30 flex items-center gap-2 whitespace-nowrap shrink-0">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-                            Create Course
+                            Create
                         </button>
                     </Link>
                 </motion.div>

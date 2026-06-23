@@ -35,14 +35,21 @@ export const authService = {
     },
     logout: async () => {
         try {
-            await apiClient.post('/api/auth/logout').catch(() => {});
-        } catch(e) {}
-        // Also clear local session
-        if (supabase) {
-            await supabase.auth.signOut();
+            await apiClient.post('/api/auth/logout');
+        } catch (err) {
+            console.warn('Backend logout failed or missing', err);
+        }
+        // Force reload and clear client-side state
+        if (typeof window !== 'undefined') {
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('sb-')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            window.location.href = '/auth';
         }
     },
     updateProfile: async (data: { full_name?: string; avatar_url?: string }) => {
-        return (await apiClient.post('/api/auth/update-profile', data)).data;
+        return (await apiClient.post('/api/users/update-profile', data)).data;
     }
 };

@@ -32,8 +32,57 @@ const syncUser = async (req, res) => {
     }
 };
 
+const updateProfile = async (req, res) => {
+    try {
+        const auth = req.headers.authorization || '';
+        const token = auth.startsWith('Bearer ') ? auth.split(' ')[1] : null;
+        if (!token) return res.status(401).json({ error: 'Missing token' });
+        
+        // Get user from token
+        const user = await usersService.getProfile(token);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        await usersService.updateProfile(user.id, req.body);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updatePassword = async (req, res) => {
+    try {
+        const auth = req.headers.authorization || '';
+        const token = auth.startsWith('Bearer ') ? auth.split(' ')[1] : null;
+        if (!token) return res.status(401).json({ error: 'Missing token' });
+        
+        const user = await usersService.getProfile(token);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        await usersService.updatePassword(user.id, req.body.password);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const logout = async (req, res) => {
+    try {
+        const auth = req.headers.authorization || '';
+        const token = auth.startsWith('Bearer ') ? auth.split(' ')[1] : null;
+        if (token) {
+            await usersService.logout(token);
+        }
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 export const usersController = {
   getProfile,
   getInstructors,
-  syncUser
+  syncUser,
+  updateProfile,
+  updatePassword,
+  logout
 };

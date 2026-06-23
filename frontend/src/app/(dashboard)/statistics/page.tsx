@@ -184,7 +184,7 @@ export default function StatisticsPage() {
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-lg shadow-sm">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Monthly Learning Actions</h3>
                         <div className="h-64 w-full mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <AreaChart data={monthlyEngagement} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
@@ -206,48 +206,70 @@ export default function StatisticsPage() {
                 {/* Activity Heatmap */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-lg shadow-sm overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Activity Heatmap (Last 12 Months)</h3>
-                    <div className="flex flex-col items-start gap-2 min-w-max">
-                        <div className="flex w-full ml-[42px] mb-1">
-                            {heatmapMonths.map((m, i) => (
-                                <span key={i} className="text-[11px] font-semibold text-slate-400 w-[86px]">{m}</span>
-                            ))}
+                    
+                    <div className="flex gap-2 min-w-max items-end">
+                        <div className="flex flex-col justify-between text-[11px] font-semibold text-slate-400 py-1 mr-2 h-[140px] shrink-0">
+                            <span>Mon</span>
+                            <span>Wed</span>
+                            <span>Fri</span>
                         </div>
-                        <div className="flex gap-3">
-                            <div className="flex flex-col justify-between text-[11px] font-semibold text-slate-400 py-1 mr-2 h-[140px]">
-                                <span>Mon</span>
-                                <span>Wed</span>
-                                <span>Fri</span>
-                            </div>
-                            <div className="grid grid-rows-7 grid-flow-col gap-1 h-[140px]">
-                                {last364Days.map((d, i) => {
-                                    const key = formatDateKey(d);
-                                    const count = activityMap.get(key) || 0;
-                                    let intensity = 0;
-                                    if (count === 1) intensity = 20;
-                                    else if (count === 2) intensity = 50;
-                                    else if (count >= 3) intensity = 100;
-                                    
-                                    return (
-                                        <div 
-                                            key={i} 
-                                            title={`${d.toLocaleDateString()}: ${count} actions`}
-                                            className="w-4 h-4 rounded-[3px] bg-emerald-500 cursor-pointer transition-opacity hover:opacity-100" 
-                                            style={{ opacity: intensity === 0 ? 0.05 : intensity / 100 }}
-                                        ></div>
-                                    );
-                                })}
-                            </div>
+                        
+                        <div className="flex gap-1">
+                            {Array.from({ length: 52 }).map((_, colIndex) => {
+                                const colDays = last364Days.slice(colIndex * 7, colIndex * 7 + 7);
+                                if (colDays.length === 0) return null;
+                                
+                                // Determine if this column starts a new month
+                                const firstDay = colDays[0];
+                                const prevColFirstDay = colIndex > 0 ? last364Days[(colIndex - 1) * 7] : null;
+                                const isNewMonth = prevColFirstDay ? firstDay.getMonth() !== prevColFirstDay.getMonth() : true;
+                                
+                                return (
+                                    <div key={colIndex} className="flex flex-col shrink-0">
+                                        {/* Month Label Header */}
+                                        <div className="h-5 mb-1 relative">
+                                            {isNewMonth && (
+                                                <span className="absolute left-0 text-[11px] font-semibold text-slate-400 whitespace-nowrap">
+                                                    {monthNames[firstDay.getMonth()]}
+                                                </span>
+                                            )}
+                                        </div>
+                                        
+                                        {/* 7 Days Column */}
+                                        <div className="flex flex-col gap-1 h-[140px]">
+                                            {colDays.map((d, i) => {
+                                                const key = formatDateKey(d);
+                                                const count = activityMap.get(key) || 0;
+                                                let intensity = 0;
+                                                if (count === 1) intensity = 20;
+                                                else if (count === 2) intensity = 50;
+                                                else if (count >= 3) intensity = 100;
+                                                
+                                                return (
+                                                    <div 
+                                                        key={i} 
+                                                        title={`${d.toLocaleDateString()}: ${count} actions`}
+                                                        className="w-4 h-4 shrink-0 rounded-[3px] bg-emerald-500 cursor-pointer transition-opacity hover:opacity-100" 
+                                                        style={{ opacity: intensity === 0 ? 0.05 : intensity / 100 }}
+                                                    ></div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
-                        <div className="flex items-center gap-2 mt-4 text-xs font-semibold text-slate-500 ml-12">
-                            <span>Less</span>
-                            <div className="flex gap-1">
-                                <div className="w-4 h-4 rounded-[3px] bg-emerald-500 opacity-5"></div>
-                                <div className="w-4 h-4 rounded-[3px] bg-emerald-500 opacity-20"></div>
-                                <div className="w-4 h-4 rounded-[3px] bg-emerald-500 opacity-50"></div>
-                                <div className="w-4 h-4 rounded-[3px] bg-emerald-500 opacity-100"></div>
-                            </div>
-                            <span>More</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-4 text-xs font-semibold text-slate-500 ml-10">
+                        <span>Less</span>
+                        <div className="flex gap-1">
+                            <div className="w-4 h-4 rounded-[3px] bg-emerald-500 opacity-5"></div>
+                            <div className="w-4 h-4 rounded-[3px] bg-emerald-500 opacity-20"></div>
+                            <div className="w-4 h-4 rounded-[3px] bg-emerald-500 opacity-50"></div>
+                            <div className="w-4 h-4 rounded-[3px] bg-emerald-500 opacity-100"></div>
                         </div>
+                        <span>More</span>
                     </div>
                 </div>
             </div>

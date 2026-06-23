@@ -259,6 +259,63 @@ export default function InstructorCourseBuilder() {
         setModules(modules.map(m => m.id === id ? { ...m, [field]: value } : m))
     }
 
+    const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
+    const [generatingModuleMcqs, setGeneratingModuleMcqs] = useState<number | null>(null);
+
+    const generateCourseDetails = async () => {
+        if (!courseData.title) {
+            alert('Please enter a Course Title first to generate details.');
+            return;
+        }
+        setIsGeneratingDetails(true);
+        try {
+            const res = await apiClient.post('/api/ai/chat', {
+                messages: [
+                    { role: 'system', content: 'You are an expert course creator. Return a JSON object with two fields: "description" (a catchy 2-sentence summary) and "detailed_overview" (a comprehensive 2-3 paragraph overview of what the student will learn). Return ONLY valid JSON without markdown wrapping.' },
+                    { role: 'user', content: `Generate details for a course titled: "${courseData.title}"` }
+                ]
+            });
+            let reply = res.data?.reply || '';
+            reply = reply.replace(/```json/g, '').replace(/```/g, '').trim();
+            const json = JSON.parse(reply);
+            if (json.description && json.detailed_overview) {
+                setCourseData({ ...courseData, description: json.description, detailed_overview: json.detailed_overview });
+            }
+        } catch (e) {
+            console.error('Error generating details', e);
+            alert('Failed to generate details. Please try again. Ensure Groq API is reachable.');
+        } finally {
+            setIsGeneratingDetails(false);
+        }
+    }
+
+    const generateMCQs = async (modId: number, modTitle: string) => {
+        if (!modTitle || modTitle === 'New Module') {
+            alert('Please enter a specific Module Title to generate relevant questions.');
+            return;
+        }
+        setGeneratingModuleMcqs(modId);
+        try {
+            const res = await apiClient.post('/api/ai/chat', {
+                messages: [
+                    { role: 'system', content: 'You are an instructional designer. Return a JSON array of exactly 4 multiple-choice questions for the given module topic. Each object must have: "question" (string), "options" (an array of 4 string options), and "correctIndex" (integer 0-3 indicating the correct option). Return ONLY the JSON array without markdown.' },
+                    { role: 'user', content: `Generate 4 MCQs for the module: "${modTitle}" in the course: "${courseData.title}"` }
+                ]
+            });
+            let reply = res.data?.reply || '';
+            reply = reply.replace(/```json/g, '').replace(/```/g, '').trim();
+            const questions = JSON.parse(reply);
+            if (Array.isArray(questions)) {
+                updateModule(modId, 'mcqs', questions);
+            }
+        } catch (e) {
+            console.error('Error generating MCQs', e);
+            alert('Failed to generate MCQs. Please try again.');
+        } finally {
+            setGeneratingModuleMcqs(null);
+        }
+    }
+
     const getSelectedInstructorLabel = () => {
         if (courseData.instructor_id === 'none') return 'Unassigned (No Instructor)'
         if (courseData.instructor_id === 'myself') return 'Assign to myself'
@@ -368,7 +425,31 @@ export default function InstructorCourseBuilder() {
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 md:p-8 shadow-sm"
                     >
-                        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-6">Basic Information</h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Basic Information</h2>
+                            <button 
+                                type="button" 
+                                onClick={generateCourseDetails}
+                                disabled={isGeneratingDetails || !courseData.title}
+                                className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                                    isGeneratingDetails 
+                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800' 
+                                        : 'bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'
+                                }`}
+                            >
+                                {isGeneratingDetails ? (
+                                    <>
+                                        <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                        AI Generate Details
+                                    </>
+                                )}
+                            </button>
+                        </div>
                         <div className="space-y-5">
                             {currentUserRole === 'admin' && (
                                 <div className="relative">
@@ -694,11 +775,35 @@ export default function InstructorCourseBuilder() {
                                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Module Quiz (MCQs)</label>
                                                     <p className="text-xs text-slate-500">Add questions to test student knowledge after this module.</p>
                                                 </div>
-                                                <button type="button" onClick={() => {
-                                                    const newMcqs = [...(mod.mcqs || [])];
-                                                    newMcqs.push({ question: '', options: ['', '', '', ''], correctIndex: 0 });
-                                                    updateModule(mod.id, 'mcqs', newMcqs);
-                                                }} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700">+ Add Question</button>
+                                                <div className="flex items-center gap-2">
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => generateMCQs(mod.id, mod.title)}
+                                                        disabled={generatingModuleMcqs === mod.id || !mod.title || mod.title === 'New Module'}
+                                                        className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all ${
+                                                            generatingModuleMcqs === mod.id 
+                                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800' 
+                                                                : 'bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'
+                                                        }`}
+                                                    >
+                                                        {generatingModuleMcqs === mod.id ? (
+                                                            <>
+                                                                <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                Generating...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                                                AI Generate Quiz
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                    <button type="button" onClick={() => {
+                                                        const newMcqs = [...(mod.mcqs || [])];
+                                                        newMcqs.push({ question: '', options: ['', '', '', ''], correctIndex: 0 });
+                                                        updateModule(mod.id, 'mcqs', newMcqs);
+                                                    }} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-lg transition-colors">+ Add Question</button>
+                                                </div>
                                             </div>
                                             <div className="space-y-4">
                                                 {(mod.mcqs || []).map((mcq: any, qIdx: number) => (

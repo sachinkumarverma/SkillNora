@@ -36,11 +36,37 @@ export default function PaymentReceiptPage({ params }: { params: Promise<{ id: s
         )
     }
 
+    const handleDownloadReceipt = () => {
+        const element = document.getElementById('receipt-content');
+        if (!element) return;
+        
+        const generatePdf = () => {
+            const opt = {
+                margin:       [0.5, 0.5, 0.5, 0.5],
+                filename:     `SkillNora_Receipt_${payment.transaction_id || payment.id}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            (window as any).html2pdf().set(opt).from(element).save();
+        };
+
+        if ((window as any).html2pdf) {
+            generatePdf();
+        } else {
+            const script = document.createElement('script');
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+            script.onload = generatePdf;
+            document.body.appendChild(script);
+        }
+    }
+
     return (
         <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
             <Link href="/admin/payments" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors mb-4 inline-block">&larr; Back to Payments</Link>
             
             <motion.div 
+                id="receipt-content"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 shadow-sm max-w-2xl mx-auto overflow-hidden"
@@ -88,15 +114,15 @@ export default function PaymentReceiptPage({ params }: { params: Promise<{ id: s
                         <p className="font-bold text-slate-900 dark:text-white text-lg">{payment.course_title}</p>
                     </div>
                     
-                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6 flex items-center justify-between mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between mt-6 gap-4">
                         <p className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Total Amount Paid</p>
                         <p className="text-3xl font-black text-slate-900 dark:text-white">Rs. {payment.amount}</p>
                     </div>
                 </div>
 
-                <div className="relative z-10 mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center flex justify-center gap-4">
-                    <button onClick={() => window.print()} className="px-6 py-2.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow-sm text-sm hover:opacity-90 transition-opacity">
-                        Print Receipt
+                <div data-html2canvas-ignore className="relative z-10 mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center flex justify-center gap-4">
+                    <button onClick={handleDownloadReceipt} className="px-6 py-2.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow-sm text-sm hover:opacity-90 transition-opacity">
+                        Download Receipt
                     </button>
                 </div>
             </motion.div>

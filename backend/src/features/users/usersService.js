@@ -12,8 +12,23 @@ const syncUser = async (id, email, role) => {
     return await usersRepository.syncUser(id, email, role);
 };
 
+const updateProfile = async (id, data) => {
+    return await usersRepository.updateProfile(id, data);
+};
+
+const updatePassword = async (id, password) => {
+    return await usersRepository.updatePassword(id, password);
+};
+
+const logout = async (token) => {
+    return await usersRepository.logout(token);
+};
+
 export const usersService = {
   getProfile,
   getInstructors,
-  syncUser
+  syncUser,
+  updateProfile,
+  updatePassword,
+  logout
 };

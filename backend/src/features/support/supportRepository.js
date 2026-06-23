@@ -21,7 +21,8 @@ export const getAdminTickets = async () => {
             priority,
             status,
             created_at,
-            TO_CHAR(created_at, 'FMDay, FMDD FMMonth YYYY') as created
+            TO_CHAR(created_at, 'DD Mon YYYY, HH12:MI AM') as created,
+            TO_CHAR(resolved_at, 'DD Mon YYYY, HH12:MI AM') as closed_date
         FROM support_tickets
         ORDER BY created_at DESC
     `;
@@ -30,12 +31,22 @@ export const getAdminTickets = async () => {
 };
 
 export const updateTicketStatus = async (id, status, resolutionMessage = null) => {
-    const text = `
-        UPDATE support_tickets
-        SET status = $1, resolution_message = $2
-        WHERE id = $3
-        RETURNING *
-    `;
+    let text;
+    if (status === 'Closed') {
+        text = `
+            UPDATE support_tickets
+            SET status = $1, resolution_message = $2, resolved_at = CURRENT_TIMESTAMP
+            WHERE id = $3
+            RETURNING *
+        `;
+    } else {
+        text = `
+            UPDATE support_tickets
+            SET status = $1, resolution_message = $2
+            WHERE id = $3
+            RETURNING *
+        `;
+    }
     const res = await query(text, [status, resolutionMessage, id]);
     return res.rows[0];
 };

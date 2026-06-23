@@ -104,7 +104,7 @@ export default function InstructorPage() {
                     <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>Performance Analytics</h2>
                     <div className='h-[350px] w-full'>
                         {chartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <BarChart data={chartData} margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />

@@ -58,7 +58,7 @@ export default function AdminSupportPage() {
 
     return (
         <>
-        <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
+        <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <motion.h1 
@@ -116,16 +116,17 @@ export default function AdminSupportPage() {
                                 <th className="px-6 py-4">Priority</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4">Created</th>
+                                <th className="px-6 py-4">Closed Date</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                             {filtered.length === 0 ? (
-                                <tr><td colSpan={5} className="text-center py-8 text-slate-500">No support tickets found</td></tr>
+                                <tr><td colSpan={6} className="text-center py-8 text-slate-500">No support tickets found</td></tr>
                             ) : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(t => (
                                 <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-bold text-slate-900 dark:text-white max-w-sm truncate" title={t.subject}>{t.subject}</div>
+                                        <div className="font-bold text-slate-900 dark:text-white max-w-[200px] truncate" title={t.subject}>{t.subject}</div>
                                         <div className="text-xs text-slate-500">{t.user || t.email}</div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -147,7 +148,16 @@ export default function AdminSupportPage() {
                                             {t.status}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-500">{t.created}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-slate-500">{t.created}</div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {t.status === 'Closed' ? (
+                                            <div className="text-slate-500 font-medium">{t.closed_date || '-'}</div>
+                                        ) : (
+                                            <div className="text-slate-400 italic">-</div>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4 text-right">
                                         {t.status !== 'Closed' && (
                                             <button onClick={() => setResolvingTicketId(t.id)} className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">Resolve</button>
