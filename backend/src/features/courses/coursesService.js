@@ -3,7 +3,13 @@ import { coursesRepository } from './coursesRepository.js';
 const listAdminCourses = async userId => {
   const role = await coursesRepository.getUserRole(userId);
   if (role !== 'admin' && role !== 'instructor') throw new Error('Forbidden');
-  return await coursesRepository.getAllAdmin(role === 'instructor' ? userId : null);
+  
+  const instructorId = role === 'instructor' ? userId : null;
+  const courses = await coursesRepository.getAllAdmin(instructorId);
+  const total_unique_students = await coursesRepository.getUniqueStudentsCount(instructorId);
+  const recent_transactions = await coursesRepository.getInstructorTransactions(instructorId);
+  
+  return { courses, total_unique_students, recent_transactions };
 };
 
 const bulkPublish = async (userId, ids, status) => {
@@ -110,9 +116,15 @@ const completeLecture = async (userId, courseId, slug, lectureId, totalLectures,
     await coursesRepository.updateProgress(userId, courseId, prog);
     
     if (!isCertified && prog[slug].length >= totalLectures) {
-      const crypto = await import('crypto');
-      await coursesRepository.issueCertificate(userId, courseId, crypto.randomUUID().slice(0, 8).toUpperCase());
-      certUnlocked = true;
+      // Check if course provides certificate
+      const courseCheckSql = `SELECT certificate_type FROM courses WHERE id = $1 LIMIT 1`;
+      const { rows } = await (await import('../../config/db.js')).query(courseCheckSql, [courseId]);
+      
+      if (rows.length > 0 && rows[0].certificate_type) {
+        const crypto = await import('crypto');
+        await coursesRepository.issueCertificate(userId, courseId, crypto.randomUUID().slice(0, 8).toUpperCase());
+        certUnlocked = true;
+      }
     }
   }
   return {

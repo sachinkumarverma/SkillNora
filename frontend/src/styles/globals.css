@@ -108,3 +108,46 @@ body {
     background-image: linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
     background-size: 28px 28px;
 }
+
+/* React Quill Dark Mode Support */
+.dark .ql-toolbar.ql-snow {
+  border-color: #334155;
+}
+.dark .ql-container.ql-snow {
+  border-color: #334155;
+  color: #f8fafc;
+}
+.dark .ql-snow .ql-stroke {
+  stroke: #cbd5e1;
+}
+.dark .ql-snow .ql-fill, .dark .ql-snow .ql-stroke.ql-fill {
+  fill: #cbd5e1;
+}
+.dark .ql-snow .ql-picker {
+  color: #cbd5e1;
+}
+.dark .ql-snow .ql-picker-options {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+.ql-container.ql-snow {
+  min-height: 120px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.ql-toolbar.ql-snow {
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.dark .ql-toolbar.ql-snow {
+  border-bottom-color: #334155;
+}
+
+.ql-container {
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+}

@@ -148,7 +148,7 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
                             {/* Name in cursive */}
                             <div className="relative inline-block px-12 mb-4 md:mb-6">
                                 <h2 className="text-4xl md:text-5xl lg:text-5xl font-['Dancing_Script',cursive] text-[#1a2b4c] capitalize py-2">
-                                    {cert.studentName || user?.name || user?.full_name || 'Skillnora Student'}
+                                    {cert.studentName || user?.user_metadata?.full_name || user?.name || user?.full_name || 'Skillnora Student'}
                                 </h2>
                                 <div className="absolute bottom-0 left-0 w-full border-b border-dashed border-slate-400"></div>
                             </div>

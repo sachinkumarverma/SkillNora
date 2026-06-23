@@ -16,10 +16,8 @@ const listAdmin = async (req, res) => {
     if (!userData?.user) return res.status(401).json({
       error: 'Unauthorized: User not found from token'
     });
-    const courses = await coursesService.listAdminCourses(userData.user.id);
-    res.json({
-      courses
-    });
+    const result = await coursesService.listAdminCourses(userData.user.id);
+    res.json(result);
   } catch (err) {
     if (err.message === 'Forbidden') return res.status(403).json({ error: 'Forbidden' });
     res.status(500).json({

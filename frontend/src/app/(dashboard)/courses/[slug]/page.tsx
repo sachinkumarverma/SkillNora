@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import useUser from '@/lib/useUser'
 import Loader from '@/components/ui/Loader'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { coursesService } from '@/services/coursesService'
 import apiClient from '@/lib/apiClient'
 
@@ -192,7 +193,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                             </div>
                                         </div>
                                     </div>
-                                    <a href={`/courses/${course.slug}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:underline shrink-0">Watch</a>
+                                    <Link href={`/courses/${course.slug}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:underline shrink-0">Watch</Link>
                                 </div>
                             )) : (
                                 <div className="text-center py-10 text-slate-500 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">

@@ -170,6 +170,12 @@ export default function InstructorCourseBuilder() {
             alert('Please fill in all required fields (Title, Description, Price, Thumbnail URL)')
             return
         }
+
+        if (courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price)) {
+            alert('Discount price must be less than the regular price')
+            return
+        }
+
         setIsSaving(true)
         try {
             const { data } = await apiClient.get('/api/users/me')
@@ -200,10 +206,11 @@ export default function InstructorCourseBuilder() {
                 category: courseData.category,
                 target_role: courseData.target_role,
                 primary_skill: courseData.primary_skill,
-                certificate_type: courseData.certificate_type,
+                certificate_type: courseData.provide_certificate ? courseData.certificate_type : null,
                 price: Number(courseData.price) || 0,
                 discount_price: courseData.discountPrice ? Number(courseData.discountPrice) : null,
                 attachments: courseData.attachments,
+                provide_certificate: courseData.provide_certificate,
                 is_published: true
             }
 
@@ -334,7 +341,7 @@ export default function InstructorCourseBuilder() {
     }
 
     return (
-        <form onSubmit={handlePublish} className="max-w-5xl mx-auto p-6 lg:p-8 pb-32">
+        <form onSubmit={handlePublish} className="max-w-7xl mx-auto p-6 lg:p-8 pb-32">
             
             <AnimatePresence>
                 {showSuccessModal && (
@@ -394,7 +401,7 @@ export default function InstructorCourseBuilder() {
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
-                        <Link href="/admin/courses" className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors">Courses</Link>
+                        <Link href={currentUserRole === 'admin' ? '/admin/courses' : '/instructor/courses'} className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors">Courses</Link>
                         <span className="text-slate-300 dark:text-slate-600">/</span>
                         <span className="text-sm font-bold text-slate-900 dark:text-white">Edit Course</span>
                     </div>
@@ -874,10 +881,14 @@ export default function InstructorCourseBuilder() {
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Discount Price (₹)</label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                                    <input type="number" min="0" value={courseData.discountPrice} onChange={(e) => setCourseData({...courseData, discountPrice: e.target.value})} placeholder="2999" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 py-3 text-sm font-black text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" />
+                                    <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-bold ${courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? 'text-red-400' : 'text-slate-400'}`}>₹</span>
+                                    <input type="number" min="0" value={courseData.discountPrice} onChange={(e) => setCourseData({...courseData, discountPrice: e.target.value})} placeholder="2999" className={`w-full bg-slate-50 dark:bg-slate-800/50 border rounded-xl pl-8 pr-4 py-3 text-sm font-black text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal outline-none transition-all ${courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'}`} />
                                 </div>
-                                <p className="text-xs font-medium text-slate-500 mt-2">Leave blank if no discount is offered.</p>
+                                {courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? (
+                                    <p className="text-xs font-bold text-red-500 mt-2">Discount price must be less than the regular price.</p>
+                                ) : (
+                                    <p className="text-xs font-medium text-slate-500 mt-2">Leave blank if no discount is offered.</p>
+                                )}
                             </div>
                         </div>
 

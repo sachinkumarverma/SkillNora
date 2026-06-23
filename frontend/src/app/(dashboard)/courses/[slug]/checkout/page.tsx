@@ -13,6 +13,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
     const [course, setCourse] = useState<any | null>(null)
     const [loading, setLoading] = useState(true)
     const [processing, setProcessing] = useState(false)
+    const [showSuccessModal, setShowSuccessModal] = useState(false)
 
     useEffect(() => {
         if (userLoading) return
@@ -30,6 +31,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                     setCourse({
                         ...data,
                         instructor_name: data.instructor?.full_name || 'Instructor',
+                        instructor_avatar: data.instructor?.avatar_url || data.instructor?.picture || data.instructor?.photoURL || null,
                         image: data.image || data.thumbnail_url || data.image_url,
                         price: `Rs. ${data.price}`
                     })
@@ -62,8 +64,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
         }
 
         setProcessing(false)
-        alert("Payment successful! Welcome to the course!");
-        router.push(`/courses/${slug}`);
+        setShowSuccessModal(true)
     };
 
     if (loading || userLoading) return <Loader />
@@ -124,7 +125,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                     <div className="mt-auto">
                         <div className="text-sm text-slate-500 mb-2">Created by</div>
                         <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-black">{course.instructor_name?.[0] || 'I'}</div>
+                            {course.instructor_avatar ? (
+                                <img src={course.instructor_avatar} alt="Instructor" className="w-6 h-6 rounded-full object-cover border border-slate-200 dark:border-slate-700" referrerPolicy="no-referrer" />
+                            ) : (
+                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-black">{course.instructor_name?.[0] || 'I'}</div>
+                            )}
                             {course.instructor_name}
                         </div>
                     </div>
@@ -142,6 +147,20 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                         <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div className="h-full bg-blue-600 w-full animate-pulse origin-left"></div>
                         </div>
+                    </div>
+                </div>
+            )}
+            {showSuccessModal && (
+                <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-200 dark:border-slate-800">
+                        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Payment Successful!</h3>
+                        <p className="text-slate-500 mb-8">Welcome to the course. You now have full lifetime access.</p>
+                        <button onClick={() => router.push(`/courses/${slug}`)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
+                            Start Learning
+                        </button>
                     </div>
                 </div>
             )}

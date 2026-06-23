@@ -1,4 +1,4 @@
-import { query } from '../../config/db.js';
+import { query, supabaseServer } from '../../config/db.js';
 
 const getAllAdmin = async (instructorId = null) => {
   const params = [];
@@ -27,6 +27,54 @@ const getAllAdmin = async (instructorId = null) => {
       full_name: r.instructor_name,
       email: r.instructor_email
     }
+  }));
+};
+
+const getUniqueStudentsCount = async (instructorId = null) => {
+  const params = [];
+  let whereClause = '';
+  if (instructorId) {
+      whereClause = 'WHERE c.instructor_id = $1';
+      params.push(instructorId);
+  }
+  const sql = `
+    SELECT COUNT(DISTINCT e.user_id) as count
+    FROM enrollments e
+    JOIN courses c ON e.course_id = c.id
+    ${whereClause}
+  `;
+  const { rows } = await query(sql, params);
+  return parseInt(rows[0].count) || 0;
+};
+
+const getInstructorTransactions = async (instructorId = null) => {
+  const params = [];
+  let whereClause = '';
+  if (instructorId) {
+      whereClause = 'WHERE c.instructor_id = $1';
+      params.push(instructorId);
+  }
+  const sql = `
+      SELECT 
+          o.id as id,
+          o.razorpay_order_id as transaction_id,
+          o.amount,
+          o.status,
+          o.created_at as date,
+          u.full_name as user_name,
+          c.title as course_title
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      JOIN courses c ON o.course_id = c.id
+      ${whereClause}
+      ORDER BY o.created_at DESC
+      LIMIT 10
+  `;
+  const { rows } = await query(sql, params);
+  return rows.map(r => ({
+      ...r,
+      amount: parseInt(r.amount),
+      date: new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
   }));
 };
 
@@ -62,8 +110,8 @@ const getAllPublished = async () => {
 const getBySlugOrId = async identifier => {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
   const courseSql = isUuid 
-    ? `SELECT c.*, u.full_name as instructor_name, COALESCE(AVG(r.rating), 0) as average_rating FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.id = $1 GROUP BY c.id, u.full_name LIMIT 1` 
-    : `SELECT c.*, u.full_name as instructor_name, COALESCE(AVG(r.rating), 0) as average_rating FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.slug = $1 GROUP BY c.id, u.full_name LIMIT 1`;
+    ? `SELECT c.*, u.full_name as instructor_name, u.avatar_url as instructor_avatar, COALESCE(AVG(r.rating), 0) as average_rating FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.id = $1 GROUP BY c.id, u.full_name, u.avatar_url LIMIT 1` 
+    : `SELECT c.*, u.full_name as instructor_name, u.avatar_url as instructor_avatar, COALESCE(AVG(r.rating), 0) as average_rating FROM courses c LEFT JOIN users u ON c.instructor_id = u.id LEFT JOIN reviews r ON c.id = r.course_id WHERE c.slug = $1 GROUP BY c.id, u.full_name, u.avatar_url LIMIT 1`;
   const {
     rows: cRows
   } = await query(courseSql, [identifier]);
@@ -80,8 +128,20 @@ const getBySlugOrId = async identifier => {
   course.reviews = rRows;
   
   course.instructor = {
-    full_name: course.instructor_name
+    full_name: course.instructor_name,
+    avatar_url: course.instructor_avatar
   };
+
+  if (!course.instructor.avatar_url && course.instructor_id) {
+    try {
+      const { data: userData } = await supabaseServer.auth.admin.getUserById(course.instructor_id);
+      if (userData?.user?.user_metadata) {
+        course.instructor.avatar_url = userData.user.user_metadata.avatar_url || userData.user.user_metadata.picture || null;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch user metadata for instructor avatar', e);
+    }
+  }
   return course;
 };
 
@@ -241,6 +301,8 @@ const updateReview = async (userId, reviewId, rating, reviewText) => {
 
 export const coursesRepository = {
   getAllAdmin,
+  getUniqueStudentsCount,
+  getInstructorTransactions,
   updatePublishStatus,
   getAllPublished,
   getBySlugOrId,

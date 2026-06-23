@@ -8,7 +8,10 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    Legend
+    Legend,
+    PieChart,
+    Pie,
+    Cell
 } from 'recharts'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
@@ -16,6 +19,8 @@ import Loader from '@/components/ui/Loader'
 export default function InstructorPage() {
     const [courses, setCourses] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [totalUniqueStudents, setTotalUniqueStudents] = useState(0)
+    const [transactions, setTransactions] = useState<any[]>([])
 
     useEffect(() => {
         const fetchData = async () => {
@@ -23,6 +28,8 @@ export default function InstructorPage() {
                 const res = await apiClient.get('/api/courses/admin')
                 if (res.data?.courses) {
                     setCourses(res.data.courses)
+                    setTotalUniqueStudents(res.data.total_unique_students || 0)
+                    setTransactions(res.data.recent_transactions || [])
                 }
             } catch (err) {
                 console.error('Failed to load courses', err)
@@ -42,7 +49,7 @@ export default function InstructorPage() {
     const publishedCount = courses.filter(c => c.is_published).length
     const draftCount = courses.filter(c => !c.is_published).length
     const totalCourses = courses.length
-    const totalStudents = courses.reduce((acc, c) => acc + (parseInt(c.enrollment_count) || 0), 0)
+    const totalStudents = totalUniqueStudents
     const totalRevenue = courses.reduce((acc, c) => acc + ((parseInt(c.enrollment_count) || 0) * (parseFloat(c.price) || 0)), 0)
     
     // Calculate Averages
@@ -100,31 +107,65 @@ export default function InstructorPage() {
                     </div>
                 </section>
 
-                <section className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
-                    <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>Performance Analytics</h2>
-                    <div className='h-[350px] w-full'>
-                        {chartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} label={{ value: 'Total Students', angle: -90, position: 'insideLeft', offset: -15, fill: '#94a3b8', fontSize: 13, fontWeight: 'bold' }} />
-                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(val) => `₹${val}`} label={{ value: 'Revenue (₹)', angle: 90, position: 'insideRight', offset: -15, fill: '#94a3b8', fontSize: 13, fontWeight: 'bold' }} />
-                                    <Tooltip 
-                                        cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
-                                        contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc' }}
-                                        itemStyle={{ color: '#f8fafc' }}
-                                    />
-                                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '12px', color: '#64748b' }} />
-                                    <Bar yAxisId="left" dataKey="students" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Students" maxBarSize={40} />
-                                    <Bar yAxisId="right" dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} name="Revenue (₹)" maxBarSize={40} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex h-full items-center justify-center text-slate-500">Not enough data to display charts yet.</div>
-                        )}
-                    </div>
-                </section>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <section className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
+                        <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>Enrollments & Revenue</h2>
+                        <div className='h-[350px] w-full'>
+                            {chartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={false} />
+                                        <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} label={{ value: 'Total Students', angle: -90, position: 'insideLeft', offset: -15, fill: '#94a3b8', fontSize: 13, fontWeight: 'bold' }} />
+                                        <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(val) => `₹${val}`} label={{ value: 'Revenue (₹)', angle: 90, position: 'insideRight', offset: -15, fill: '#94a3b8', fontSize: 13, fontWeight: 'bold' }} />
+                                        <Tooltip 
+                                            cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
+                                            contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc' }}
+                                            itemStyle={{ color: '#f8fafc' }}
+                                        />
+                                        <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '12px', color: '#64748b' }} />
+                                        <Bar yAxisId="left" dataKey="students" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Students" maxBarSize={40} />
+                                        <Bar yAxisId="right" dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} name="Revenue (₹)" maxBarSize={40} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-slate-500">Not enough data to display charts yet.</div>
+                            )}
+                        </div>
+                    </section>
+                    
+                    <section className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
+                        <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>Revenue Distribution</h2>
+                        <div className='h-[350px] w-full'>
+                            {chartData.filter(d => d.revenue > 0).length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={chartData.filter(d => d.revenue > 0)}
+                                            cx="50%"
+                                            cy="45%"
+                                            innerRadius={90}
+                                            outerRadius={130}
+                                            paddingAngle={5}
+                                            dataKey="revenue"
+                                        >
+                                            {chartData.filter(d => d.revenue > 0).map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            formatter={(value: number) => [`₹${value}`, 'Revenue']}
+                                            contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc' }}
+                                        />
+                                        <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '12px', color: '#64748b' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-slate-500">No revenue data generated yet.</div>
+                            )}
+                        </div>
+                    </section>
+                </div>
 
                 <section className='grid gap-6 xl:grid-cols-[1.1fr_0.9fr]'>
                     <div className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
@@ -150,6 +191,45 @@ export default function InstructorPage() {
                                 <div key={item} className='rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300'>{item}</div>
                             ))}
                         </div>
+                    </div>
+                </section>
+
+                <section className='rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden'>
+                    <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+                        <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white'>Recent Transactions</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm whitespace-nowrap">
+                            <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold">Transaction ID</th>
+                                    <th className="px-6 py-4 font-bold">User</th>
+                                    <th className="px-6 py-4 font-bold">Course</th>
+                                    <th className="px-6 py-4 font-bold">Amount</th>
+                                    <th className="px-6 py-4 font-bold">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {transactions.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No transactions found.</td>
+                                    </tr>
+                                ) : transactions.map((tx) => (
+                                    <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-slate-600 dark:text-slate-300">{tx.transaction_id || `#${tx.id.substring(0, 8).toUpperCase()}`}</td>
+                                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{tx.user_name}</td>
+                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{tx.course_title}</td>
+                                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">₹{tx.amount}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${tx.status === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                                                <span className={`h-1.5 w-1.5 rounded-full ${tx.status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                                                {tx.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </section>
             </div>

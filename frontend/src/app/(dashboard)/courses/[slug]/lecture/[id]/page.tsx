@@ -9,6 +9,10 @@ const ReactPlayer: any = dynamic(() => import('react-player'), { ssr: false })
 import { coursesService } from '@/services/coursesService'
 import Loader from '@/components/ui/Loader'
 import { commentsService } from '@/services/commentsService'
+import 'react-quill-new/dist/quill.snow.css'
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false })
+const Confetti = dynamic(() => import('react-confetti'), { ssr: false })
 import Link from 'next/link'
 import apiClient from '@/lib/apiClient'
 
@@ -428,31 +432,33 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                         </div>
                         
                         {isEnrolled && !showQuiz && (
-                            <div className="mt-4 flex justify-end">
-                                {lecture?.mcqs && lecture.mcqs.length > 0 ? (
-                                    <button
-                                        onClick={() => setShowQuiz(true)}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
-                                    >
-                                        {videoCompleted ? "Retake Module Quiz" : "Take Module Quiz"}
-                                    </button>
-                                ) : !videoCompleted ? (
+                            <div className="mt-4 flex justify-end gap-3">
+                                {!videoCompleted && (
                                     <button
                                         onClick={handleVideoEnd}
                                         className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
                                     >
                                         Mark as Complete
                                     </button>
-                                ) : null}
+                                )}
+                                {lecture?.mcqs && lecture.mcqs.length > 0 && (
+                                    <button
+                                        onClick={() => setShowQuiz(true)}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                                    >
+                                        {videoCompleted ? "Retake Module Quiz" : "Take Module Quiz"}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
 
                     {/* Quiz Section */}
                     {isEnrolled && showQuiz && (
-                        <div className="mt-6 bg-slate-900 rounded-xl border border-slate-800 shadow-sm flex flex-col p-6 sm:p-10">
+                        <div className="mt-6 bg-slate-900 rounded-xl border border-slate-800 shadow-sm flex flex-col p-6 sm:p-10 relative">
                             {quizResult ? (
                                 <div className="flex-1 flex flex-col items-center justify-center text-center animate-in zoom-in py-8">
+                                    {quizResult.score >= 75 && <Confetti recycle={false} numberOfPieces={500} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100 }} />}
                                     {quizResult.passed ? (
                                         <>
                                             <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-6">
@@ -482,7 +488,22 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             ) : (
                                 <div className="max-w-3xl w-full mx-auto">
                                     <div className="flex items-center justify-between border-b border-slate-700 pb-4 mb-6">
-                                        <h2 className="text-2xl font-bold text-white">Knowledge Check</h2>
+                                        <h2 className="text-2xl font-bold text-white">
+                                            Knowledge Check
+                                            {Object.keys(quizAnswers).length > 0 && (
+                                                <span className="ml-4 text-sm font-normal text-slate-300">
+                                                    Score: {
+                                                        Object.keys(quizAnswers).reduce((acc, qIdxStr) => {
+                                                            const qIdx = parseInt(qIdxStr);
+                                                            const mcqList = Array.isArray(lecture.mcqs) ? lecture.mcqs : JSON.parse(lecture.mcqs || '[]');
+                                                            const mcq = mcqList[qIdx];
+                                                            if (mcq && mcq.correctIndex === quizAnswers[qIdx]) return acc + 1;
+                                                            return acc;
+                                                        }, 0)
+                                                    } / {(Array.isArray(lecture.mcqs) ? lecture.mcqs : JSON.parse(lecture.mcqs || '[]')).length}
+                                                </span>
+                                            )}
+                                        </h2>
                                         <button onClick={() => setShowQuiz(false)} className="text-slate-400 hover:text-white transition-colors">
                                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
@@ -492,15 +513,33 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             <div key={qIdx} className="bg-slate-800 rounded-xl p-6">
                                                 <p className="text-lg font-medium text-white mb-4">{qIdx + 1}. {mcq.question}</p>
                                                 <div className="space-y-3">
-                                                    {mcq.options.map((opt: string, optIdx: number) => (
-                                                        <button
-                                                            key={optIdx}
-                                                            onClick={() => setQuizAnswers({ ...quizAnswers, [qIdx]: optIdx })}
-                                                            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors border ${quizAnswers[qIdx] === optIdx ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'}`}
-                                                        >
-                                                            {opt}
-                                                        </button>
-                                                    ))}
+                                                    {mcq.options.map((opt: string, optIdx: number) => {
+                                                        const isAnswered = quizAnswers[qIdx] !== undefined;
+                                                        const isSelected = quizAnswers[qIdx] === optIdx;
+                                                        const isCorrectOption = mcq.correctIndex === optIdx;
+                                                        let btnClass = 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500';
+                                                        if (isAnswered) {
+                                                            if (isSelected) {
+                                                                if (isCorrectOption) btnClass = 'bg-green-600/20 border-green-500 text-green-400';
+                                                                else btnClass = 'bg-red-600/20 border-red-500 text-red-400';
+                                                            } else if (isCorrectOption) {
+                                                                btnClass = 'bg-slate-900 border-green-500/50 text-green-400/50';
+                                                            } else {
+                                                                btnClass = 'bg-slate-900 border-slate-800 text-slate-500 opacity-50';
+                                                            }
+                                                        }
+
+                                                        return (
+                                                            <button
+                                                                key={optIdx}
+                                                                disabled={isAnswered}
+                                                                onClick={() => setQuizAnswers({ ...quizAnswers, [qIdx]: optIdx })}
+                                                                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors border ${btnClass} disabled:cursor-not-allowed`}
+                                                            >
+                                                                {opt}
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         ))}
@@ -535,12 +574,15 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             </h2>
                             {noteSaved && <span className="text-xs font-bold text-green-600 dark:text-green-400 animate-pulse">✓ Saved successfully</span>}
                         </div>
-                        <textarea
-                            value={noteText}
-                            onChange={(e) => setNoteText(e.target.value)}
-                            placeholder="Type your notes for this lecture here. They will be saved automatically..."
-                            className="w-full h-40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-colors custom-scrollbar resize-y text-slate-700 dark:text-slate-300"
-                        ></textarea>
+                        <div className="bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white overflow-hidden">
+                            <ReactQuill 
+                                theme="snow"
+                                value={noteText}
+                                onChange={setNoteText}
+                                placeholder="Type your notes for this lecture here. They will be saved automatically..."
+                                className="w-full"
+                            />
+                        </div>
                         <div className="mt-4 flex justify-end">
                             <button
                                 onClick={saveNote}

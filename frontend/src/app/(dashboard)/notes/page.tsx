@@ -1,6 +1,10 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+import 'react-quill-new/dist/quill.snow.css'
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false })
 
 import { notesService } from '@/services/notesService'
 import useUser from '@/lib/useUser'
@@ -163,8 +167,12 @@ export default function NotesPage() {
                                    Course: {note.courseTitle}
                                </p>
                                
-                               <div className="flex-1 bg-amber-50 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-100 dark:border-amber-900/20 text-slate-700 dark:text-slate-300 text-sm whitespace-pre-wrap font-medium line-clamp-4 relative">
-                                   {note.text || <span className="text-slate-400 italic">Empty note</span>}
+                               <div className="flex-1 bg-amber-50 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-100 dark:border-amber-900/20 text-slate-700 dark:text-slate-300 text-sm font-medium line-clamp-4 relative overflow-hidden">
+                                   {note.text ? (
+                                       <div dangerouslySetInnerHTML={{ __html: note.text }} />
+                                   ) : (
+                                       <span className="text-slate-400 italic">Empty note</span>
+                                   )}
                                    
                                    {/* Click overlay hint */}
                                    <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-400 p-1.5 rounded-lg shadow-sm">
@@ -189,19 +197,19 @@ export default function NotesPage() {
                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Course: {modalNote.courseTitle}</p>
                        
                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-6">
-                           <textarea 
+                           <ReactQuill 
+                               theme="snow"
                                value={editText}
-                               onChange={(e) => setEditText(e.target.value)}
+                               onChange={setEditText}
                                placeholder="Type your notes here..."
-                               autoFocus
-                               className="w-full min-h-[300px] p-4 rounded-xl border-2 border-blue-500 bg-blue-50/50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 resize-none outline-none text-base leading-relaxed font-medium transition-colors"
+                               className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white pb-10"
                            />
                        </div>
 
                        <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 mt-auto">
                            <button onClick={() => handleDeleteNote(modalNote.id)} className="px-5 py-2.5 font-bold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-xl transition-colors flex items-center gap-2">
                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                               Delete Note
+                               Delete
                            </button>
                            <div className="flex-1"></div>
 
