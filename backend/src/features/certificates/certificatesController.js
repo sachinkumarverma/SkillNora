@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { certificatesService } from './certificatesService.js';
 import { supabaseServer } from '../../config/db.js';
 
@@ -18,7 +19,8 @@ const getMyCertificates = async (req, res) => {
     res.json({
       certificates: certs
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in certificatesController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -34,7 +36,8 @@ const getCertificateByCode = async (req, res) => {
     res.json({
       certificate: cert
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in certificatesController.js:', err); 
     res.status(500).json({
       error: err.message
     });

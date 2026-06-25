@@ -39,7 +39,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
     if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
 
     return (
-        <div className="max-w-5xl mx-auto px-6 py-12">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8 md:py-12">
             <button onClick={() => router.back()} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Back to Course

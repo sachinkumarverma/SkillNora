@@ -1,7 +1,5 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import VideoPlayer from '@/components/VideoPlayer'
-
 import useUser from '@/lib/useUser'
 import dynamic from 'next/dynamic'
 
@@ -34,6 +32,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [showQuiz, setShowQuiz] = useState(false)
     const [quizAnswers, setQuizAnswers] = useState<{ [key: number]: number }>({})
     const [quizResult, setQuizResult] = useState<{ score: number, passed: boolean } | null>(null)
+    const [quizCompleted, setQuizCompleted] = useState(false)
 
     // Comments State
     const [comments, setComments] = useState<any[]>([])
@@ -255,6 +254,9 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             setVideoCompleted(true)
                             setTimeElapsed(true)
                         }
+                        if (course.progress && course.progress.quizScores && course.progress.quizScores[id] !== undefined) {
+                            setQuizCompleted(true)
+                        }
                     }
                 } else {
                     setLecture(null)
@@ -338,7 +340,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         }
     }
 
-    if (loading) return <Loader />
+    if (loading) return <Loader type="lecture" />
 
     if (!lecture) return (
         <div className="flex h-[60vh] flex-col items-center justify-center text-center">
@@ -435,7 +437,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             <div className="mt-4 flex justify-end gap-3">
                                 {!videoCompleted && (
                                     <button
-                                        onClick={handleVideoEnd}
+                                        onClick={() => setVideoCompleted(true)}
                                         className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
                                     >
                                         Mark as Complete
@@ -446,7 +448,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                         onClick={() => setShowQuiz(true)}
                                         className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
                                     >
-                                        {videoCompleted ? "Retake Module Quiz" : "Take Module Quiz"}
+                                        {quizCompleted ? "Retake Module Quiz" : "Take Module Quiz"}
                                     </button>
                                 )}
                             </div>
@@ -468,7 +470,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             <p className="text-slate-300 mb-8 text-sm sm:text-base">You scored {quizResult.score}% and passed the module quiz.</p>
                                             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                                                 <button onClick={() => { setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Retake Quiz</button>
-                                                <button onClick={() => { setShowQuiz(false); setVideoCompleted(true); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Continue Course</button>
+                                                <button onClick={() => { setShowQuiz(false); setVideoCompleted(true); setQuizCompleted(true); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Continue Course</button>
                                             </div>
                                         </>
                                     ) : (

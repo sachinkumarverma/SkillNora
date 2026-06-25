@@ -89,7 +89,7 @@ const updatePublishStatus = async (ids, status) => {
 const getAllPublished = async () => {
   const sql = `
             SELECT 
-                c.id, c.title, c.slug, c.description, c.price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
+                c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
                 u.full_name as instructor_name,
                 COALESCE(AVG(r.rating), 0) as average_rating,
                 COUNT(r.id) as review_count
@@ -253,7 +253,7 @@ const updateLectures = async (courseId, lectures) => {
 const getAll = async () => {
   const sql = `
             SELECT 
-                c.id, c.title, c.slug, c.description, c.price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
+                c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
                 u.full_name as instructor_name,
                 COALESCE(AVG(r.rating), 0) as average_rating,
                 COUNT(r.id) as review_count

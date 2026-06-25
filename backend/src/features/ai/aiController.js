@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { aiService } from './aiService.js';
 
 const getSummary = async (req, res) => {
@@ -13,7 +14,8 @@ const getSummary = async (req, res) => {
     res.json({
       data
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in aiController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -30,7 +32,8 @@ const getChat = async (req, res) => {
     res.json({
       reply: data.choices[0].message.content
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in aiController.js:', err); 
     res.status(500).json({
       error: err.message
     });

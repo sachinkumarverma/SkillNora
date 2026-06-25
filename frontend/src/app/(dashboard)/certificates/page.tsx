@@ -26,7 +26,7 @@ export default function CertificatesPage() {
     }, [user])
 
     if (loading && user) {
-        return <Loader />
+        return <Loader type="courses" />
     }
 
     return (

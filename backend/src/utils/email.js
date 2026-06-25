@@ -55,15 +55,16 @@ export const buildEmailHtml = (content, title = 'Skillnora Notification', gradie
 </html>
 `;
 
-export const sendEmail = async ({ to, subject, html, bcc }) => {
+export const sendEmail = async ({ to, subject, html, bcc, attachments }) => {
     try {
         const mailOptions = {
-            from: '"Skillnora Support" <sachinv1410@gmail.com>',
+            from: '"Skillnora Billing" <sachinv1410@gmail.com>',
             to,
             subject,
             html,
         };
         if (bcc) mailOptions.bcc = bcc;
+        if (attachments) mailOptions.attachments = attachments;
 
         const info = await transporter.sendMail(mailOptions);
         logger.info('Email sent: %s', info.messageId);

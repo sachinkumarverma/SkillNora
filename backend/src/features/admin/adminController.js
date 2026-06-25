@@ -5,7 +5,8 @@ const getStudents = async (req, res) => {
     try {
         const data = await adminService.getStudents();
         res.json({ students: data });
-    } catch (err) {
+    } catch (err) { 
+        logger.error('Error in adminController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -14,7 +15,8 @@ const getPayments = async (req, res) => {
     try {
         const data = await adminService.getPayments();
         res.json({ payments: data });
-    } catch (err) {
+    } catch (err) { 
+        logger.error('Error in adminController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -23,7 +25,8 @@ const getEnrollments = async (req, res) => {
     try {
         const data = await adminService.getEnrollments();
         res.json({ enrollments: data });
-    } catch (err) {
+    } catch (err) { 
+        logger.error('Error in adminController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -32,7 +35,8 @@ const getCertificates = async (req, res) => {
     try {
         const data = await adminService.getCertificates();
         res.json({ certificates: data });
-    } catch (err) {
+    } catch (err) { 
+        logger.error('Error in adminController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };

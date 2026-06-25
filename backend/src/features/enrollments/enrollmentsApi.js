@@ -5,5 +5,6 @@ const enrollmentsApi = Router();
 
 enrollmentsApi.post('/', enrollmentsController.createEnrollment);
 enrollmentsApi.get('/user', enrollmentsController.getUserEnrollments);
+enrollmentsApi.post('/cancel', enrollmentsController.cancelEnrollment);
 
 export { enrollmentsApi };

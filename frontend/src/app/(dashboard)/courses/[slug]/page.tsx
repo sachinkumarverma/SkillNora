@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { coursesService } from '@/services/coursesService'
 import apiClient from '@/lib/apiClient'
+import { toast } from 'react-hot-toast'
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = React.use(params)
@@ -23,6 +24,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     const [reviewText, setReviewText] = useState('')
     const [submittingReview, setSubmittingReview] = useState(false)
     const [isEditingReview, setIsEditingReview] = useState(false)
+    const [showCancelModal, setShowCancelModal] = useState(false)
+    const [isCancelling, setIsCancelling] = useState(false)
 
     useEffect(() => {
         if (course && user) {
@@ -109,7 +112,23 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         setSubmittingReview(false)
     }
 
-    if (loading) return <Loader />
+    const handleCancel = async () => {
+        try {
+            setIsCancelling(true);
+            const res = await apiClient.post('/api/enrollments/cancel', { course_id: course.id });
+            toast.success(`Enrollment cancelled successfully.\nRefund amount: ₹${res.data.refundAmount?.toFixed(2)}`, { duration: 5000 });
+            toast.success("A receipt has been sent to your email.");
+            setIsEnrolled(false);
+            setShowCancelModal(false);
+        } catch (err: any) {
+            console.error(err);
+            toast.error(`Failed to cancel: ${err.response?.data?.error || err.message}`);
+        } finally {
+            setIsCancelling(false);
+        }
+    };
+
+    if (loading) return <Loader type="course-detail" />
 
     if (!course) return (
         <div className="flex h-[60vh] flex-col items-center justify-center text-center">
@@ -153,10 +172,15 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
                             <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
                                 {isEnrolled ? (
-                                    <div className="w-full sm:w-auto bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-8 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        Enrolled
-                                    </div>
+                                    <>
+                                        <div className="w-full sm:w-auto bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-8 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            Enrolled
+                                        </div>
+                                        <button onClick={handleCancel} className="w-full sm:w-auto bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 border border-red-200 dark:border-red-500/20 px-6 py-3 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors shadow-sm transform transition active:scale-95">
+                                            Cancel Course
+                                        </button>
+                                    </>
                                 ) : (
                                     <button onClick={handleEnroll} className="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm transform transition active:scale-95">
                                         Enroll Now
@@ -314,15 +338,23 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             })()}
 
                             {isEnrolled ? (
-                                <button onClick={handlePreview} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm mb-3">
-                                    Go to Course
-                                </button>
+                                <>
+                                    <button onClick={handlePreview} className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm mb-3 hover:bg-emerald-600">
+                                        Go to Course
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowCancelModal(true)}
+                                        className="w-full bg-transparent border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 dark:border-red-900/50 dark:hover:bg-red-900/20 py-3 rounded-xl font-bold transition-colors shadow-sm mb-3 text-sm"
+                                    >
+                                        Cancel Enrollment (within 30 days)
+                                    </button>
+                                </>
                             ) : (
                                 <button onClick={handleEnroll} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm mb-3">
                                     Enroll Now
                                 </button>
                             )}
-                            <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "You have full lifetime access" : "30-Day Money-Back Guarantee"}</p>
+                            <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "Partial refund available within 30 days" : "30-Day Money-Back Guarantee"}</p>
 
                             <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800 text-sm">
                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
@@ -342,6 +374,42 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                     </div>
                 </div>
             </div>
+
+            {/* Custom Cancel Modal */}
+            {showCancelModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-5">
+                            <svg className="w-6 h-6 text-red-600 dark:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Cancel Enrollment</h3>
+                        <p className="text-slate-500 dark:text-slate-400 mb-6">
+                            Are you sure you want to cancel your enrollment? You will only get a partial refund calculated dynamically based on days consumed, provided it is within 30 days.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button 
+                                onClick={() => setShowCancelModal(false)}
+                                disabled={isCancelling}
+                                className="px-5 py-2.5 rounded-xl font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                Never mind
+                            </button>
+                            <button 
+                                onClick={handleCancel}
+                                disabled={isCancelling}
+                                className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isCancelling ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Cancelling...
+                                    </>
+                                ) : 'Yes, Cancel'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,5 +1,6 @@
 "use client"
 import React, { useRef } from 'react'
+import Link from 'next/link'
 import { useWishlist } from '@/hooks/useWishlist'
 
 export default function CourseCarousel({ title, courses }: { title: string, courses: any[] }) {
@@ -52,7 +53,7 @@ export default function CourseCarousel({ title, courses }: { title: string, cour
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {courses.map(course => (
-                    <a key={course.id} href={`/courses/${course.slug}`} className="min-w-[300px] max-w-[300px] snap-start group flex flex-col bg-white dark:bg-slate-900 rounded-[1.25rem] border border-slate-200/80 dark:border-slate-800/80 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 cursor-pointer shrink-0 relative">
+                    <Link key={course.id} href={`/courses/${course.slug}`} className="min-w-[300px] max-w-[300px] snap-start group flex flex-col bg-white dark:bg-slate-900 rounded-[1.25rem] border border-slate-200/80 dark:border-slate-800/80 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 cursor-pointer shrink-0 relative">
                         <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
                             <img src={course.image || course.thumbnail_url || course.image_url || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -81,12 +82,22 @@ export default function CourseCarousel({ title, courses }: { title: string, cour
                                         )}
                                     </div>
                                     
-                                    <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-                                        <span>{course.price ? `₹${course.price}` : 'Free'}</span>
-                                        {(course.bestseller || course.price) && (
-                                            <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">Popular</span>
-                                        )}
-                                    </div>
+                                    {Number(course.discount_price) && Number(course.discount_price) < Number(course.price) ? (
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white">₹{course.discount_price}</span>
+                                            <span className="text-sm font-semibold text-slate-400 relative inline-block after:absolute after:left-0 after:w-full after:h-[1px] after:bg-slate-400 after:top-1/2 after:-translate-y-1/2">₹{course.price}</span>
+                                            <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                                                {Math.round(((Number(course.price) - Number(course.discount_price)) / Number(course.price)) * 100)}% off
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+                                            <span>{course.price ? `₹${course.price}` : 'Free'}</span>
+                                            {(course.bestseller || course.price) && (
+                                                <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">Popular</span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                                 <button 
                                     onClick={(e) => { e.preventDefault(); toggleWishlist(course.id); }}
@@ -98,7 +109,7 @@ export default function CourseCarousel({ title, courses }: { title: string, cour
                                 </button>
                             </div>
                         </div>
-                    </a>
+                    </Link>
                 ))}
             </div>
             <style jsx>{`

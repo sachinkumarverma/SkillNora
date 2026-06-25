@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import * as service from './supportService.js';
 import { sendEmail, buildEmailHtml } from '../../utils/email.js';
 
@@ -14,7 +15,7 @@ export const createTicket = async (req, res) => {
         const ticket = await service.submitTicket({ userId, name, email, subject, message });
         res.status(201).json({ success: true, ticket });
     } catch (error) {
-        console.error('Create ticket error:', error);
+        logger.error('Create ticket error:', error);
         res.status(500).json({ success: false, error: 'Failed to submit support ticket.' });
     }
 };
@@ -24,7 +25,7 @@ export const getAdminTickets = async (req, res) => {
         const tickets = await service.getAdminTickets();
         res.status(200).json({ success: true, tickets });
     } catch (error) {
-        console.error('Get admin tickets error:', error);
+        logger.error('Get admin tickets error:', error);
         res.status(500).json({ success: false, error: 'Failed to fetch tickets.' });
     }
 };
@@ -57,7 +58,7 @@ export const resolveTicket = async (req, res) => {
         
         res.status(200).json({ success: true, ticket });
     } catch (error) {
-        console.error('Resolve ticket error:', error);
+        logger.error('Resolve ticket error:', error);
         res.status(500).json({ success: false, error: 'Failed to resolve ticket.' });
     }
 };

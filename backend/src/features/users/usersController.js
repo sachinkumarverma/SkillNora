@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { usersService } from './usersService.js';
 
 const getProfile = async (req, res) => {
@@ -7,7 +8,7 @@ const getProfile = async (req, res) => {
     if (!token) return res.status(401).json({ error: 'Missing token' });
     const user = await usersService.getProfile(token);
     res.json({ user });
-  } catch (err) {
+  } catch (err) { logger.error('Error in usersController.js:', err); 
     res.status(500).json({ error: err.message });
   }
 };
@@ -16,7 +17,7 @@ const getInstructors = async (req, res) => {
     try {
         const instructors = await usersService.getInstructors();
         res.json({ instructors });
-    } catch (err) {
+    } catch (err) { logger.error('Error in usersController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -27,7 +28,7 @@ const syncUser = async (req, res) => {
         if (!id || !email) return res.status(400).json({ error: 'id and email required' });
         await usersService.syncUser(id, email, role || 'student');
         res.json({ ok: true });
-    } catch (err) {
+    } catch (err) { logger.error('Error in usersController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -44,7 +45,7 @@ const updateProfile = async (req, res) => {
         
         await usersService.updateProfile(user.id, req.body);
         res.json({ ok: true });
-    } catch (err) {
+    } catch (err) { logger.error('Error in usersController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -60,7 +61,7 @@ const updatePassword = async (req, res) => {
         
         await usersService.updatePassword(user.id, req.body.password);
         res.json({ ok: true });
-    } catch (err) {
+    } catch (err) { logger.error('Error in usersController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -73,7 +74,7 @@ const logout = async (req, res) => {
             await usersService.logout(token);
         }
         res.json({ ok: true });
-    } catch (err) {
+    } catch (err) { logger.error('Error in usersController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -92,7 +93,7 @@ const sendPromotionalEmail = async (req, res) => {
 
         const result = await usersService.sendPromotionalEmail(req.body);
         res.json({ ok: true, result });
-    } catch (err) {
+    } catch (err) { logger.error('Error in usersController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };

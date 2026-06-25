@@ -40,11 +40,7 @@ export default function InstructorPage() {
         fetchData()
     }, [])
 
-    if (loading) return (
-        <div className="flex h-[80vh] w-full items-center justify-center">
-            <Loader />
-        </div>
-    )
+    if (loading) return <Loader type="instructor-dashboard" />
 
     const publishedCount = courses.filter(c => c.is_published).length
     const draftCount = courses.filter(c => !c.is_published).length

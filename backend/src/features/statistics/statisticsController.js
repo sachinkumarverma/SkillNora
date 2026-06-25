@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { statisticsService } from './statisticsService.js';
 import { supabaseServer } from '../../config/db.js';
 
@@ -17,7 +18,8 @@ const getStats = async (req, res) => {
     res.json({
       stats
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in statisticsController.js:', err); 
     res.status(500).json({
       error: err.message
     });

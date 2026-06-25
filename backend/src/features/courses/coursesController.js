@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { coursesService } from './coursesService.js';
 import { supabaseServer } from '../../config/db.js';
 
@@ -18,7 +19,8 @@ const listAdmin = async (req, res) => {
     });
     const result = await coursesService.listAdminCourses(userData.user.id);
     res.json(result);
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     if (err.message === 'Forbidden') return res.status(403).json({ error: 'Forbidden' });
     res.status(500).json({
       error: err.message
@@ -36,7 +38,8 @@ const bulkPublish = async (req, res) => {
     res.json({
       ok: true
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     if (err.message === 'Forbidden') return res.status(403).json({ error: 'Forbidden' });
     res.status(500).json({
       error: err.message
@@ -54,7 +57,8 @@ const bulkDelete = async (req, res) => {
     res.json({
       ok: true
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     if (err.message === 'Forbidden') return res.status(403).json({ error: 'Forbidden' });
     res.status(500).json({
       error: err.message
@@ -72,7 +76,8 @@ const updateLectures = async (req, res) => {
     res.json({
       ok: true
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -85,7 +90,8 @@ const list = async (req, res) => {
     res.json({
       courses
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -109,7 +115,8 @@ const getOne = async (req, res) => {
     res.json({
       course
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -132,7 +139,8 @@ const create = async (req, res) => {
     res.json({
       course
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -155,7 +163,8 @@ const update = async (req, res) => {
     res.json({
       course
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -178,7 +187,8 @@ const removeCourse = async (req, res) => {
     res.json({
       ok: true
     });
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -209,7 +219,8 @@ const complete = async (req, res) => {
     });
     const result = await coursesService.completeLecture(userData.user.id, courseId, slug, lectureId, totalLectures, quizScore);
     res.json(result);
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({
       error: err.message
     });
@@ -242,7 +253,8 @@ const deleteWithRefund = async (req, res) => {
         }
         await coursesService.bulkDelete(ids);
         res.json({ success: true });
-    } catch (err) {
+    } catch (err) { 
+      logger.error('Error in coursesController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -261,7 +273,8 @@ const addReview = async (req, res) => {
     
     const result = await coursesService.addReview(userData.user.id, courseId, rating, review_text);
     res.json(result);
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({ error: err.message });
   }
 };
@@ -279,7 +292,8 @@ const updateReview = async (req, res) => {
     
     const result = await coursesService.updateReview(userData.user.id, reviewId, rating, review_text);
     res.json(result);
-  } catch (err) {
+  } catch (err) { 
+    logger.error('Error in coursesController.js:', err); 
     res.status(500).json({ error: err.message });
   }
 };

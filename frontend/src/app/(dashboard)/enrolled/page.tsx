@@ -27,7 +27,23 @@ export default function EnrolledPage() {
         return () => { active = false }
     }, [])
 
-    if (loading) return <Loader />
+    const handleCancel = async (courseId: string) => {
+        if (!confirm('Are you sure you want to cancel your enrollment? You will only get a partial refund (calculated dynamically) if it is within 30 days.')) return;
+        
+        try {
+            setLoading(true);
+            const res = await apiClient.post('/api/enrollments/cancel', { course_id: courseId });
+            alert(`Enrollment cancelled successfully.\nRefund amount: ₹${res.data.refundAmount?.toFixed(2)}\nA receipt has been sent to your email.`);
+            setEnrolledIds(enrolledIds.filter(id => id !== courseId));
+        } catch (err: any) {
+            console.error(err);
+            alert(`Failed to cancel: ${err.response?.data?.error || err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) return <Loader type="courses" />
 
     const enrolledCourses = courses.filter(c => enrolledIds.includes(c.id))
 
@@ -100,11 +116,19 @@ export default function EnrolledPage() {
                                             Enrolled
                                         </div>
                                     </div>
-                                    <button
-                                        className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        Continue
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleCancel(course.id); }}
+                                            className="bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                        >
+                                            Continue
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}

@@ -59,7 +59,7 @@ export default function AdminPaymentsPage() {
         document.body.removeChild(link);
     };
 
-    if (loading && payments.length === 0) return <Loader />
+    if (loading && payments.length === 0) return <Loader type="table" />
 
     return (
         <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">

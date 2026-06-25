@@ -33,7 +33,7 @@ export default function AdminCertificatesPage() {
         c.course_title?.toLowerCase().includes(search.toLowerCase())
     )
 
-    if (loading && certificates.length === 0) return <Loader />
+    if (loading && certificates.length === 0) return <Loader type="table" />
 
     return (
         <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">

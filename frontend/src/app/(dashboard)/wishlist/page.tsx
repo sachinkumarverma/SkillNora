@@ -37,7 +37,7 @@ export default function WishlistPage() {
     }, [])
 
     if (loading || isBuying) {
-        return <Loader />
+        return <Loader type="courses" />
     }
 
     const savedCourses = courses.filter(course => wishlist.includes(course.id))
@@ -142,19 +142,25 @@ export default function WishlistPage() {
                                             )}
                                         </div>
                                         
-                                        <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+                                        <div className="flex flex-col">
                                             {enrolledIds.includes(course.id) ? (
                                                 <div className="font-black text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-1">
                                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     Enrolled
                                                 </div>
+                                            ) : course.discount_price && course.price && course.price > course.discount_price ? (
+                                                <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                                                    <span className="text-lg font-black text-slate-900 dark:text-white">₹{course.discount_price}</span>
+                                                    <span className="text-xs font-medium text-slate-400 line-through">₹{course.price}</span>
+                                                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-wider">{Math.round(((course.price - course.discount_price) / course.price) * 100)}% off</span>
+                                                </div>
                                             ) : (
-                                                <>
+                                                <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
                                                     <span>{course.price ? `₹${course.price}` : '₹1,999.00'}</span>
                                                     {(course.bestseller || course.price) && (
                                                         <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">Popular</span>
                                                     )}
-                                                </>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

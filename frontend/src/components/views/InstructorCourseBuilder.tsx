@@ -84,6 +84,8 @@ export default function InstructorCourseBuilder() {
         { id: 1, title: 'Introduction to the Course', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '' }
     ])
 
+    const [localDraftTime, setLocalDraftTime] = useState<string | null>(null)
+
     const router = useRouter()
     const searchParams = useSearchParams()
     const editCourseId = searchParams?.get('course_id')
@@ -159,11 +161,38 @@ export default function InstructorCourseBuilder() {
         };
         if (editCourseId) {
             setIsLoadingData(true)
+        } else {
+            const savedDraftStr = localStorage.getItem('local_course_draft')
+            if (savedDraftStr) {
+                try {
+                    const parsed = JSON.parse(savedDraftStr)
+                    if (parsed.courseData) setCourseData(parsed.courseData)
+                    if (parsed.modules) setModules(parsed.modules)
+                    if (parsed.lastSaved) setLocalDraftTime(parsed.lastSaved)
+                } catch (e) {
+                    console.error("Failed to parse draft", e)
+                }
+            }
         }
         fetchAllData()
     }, [editCourseId])
 
-    const handlePublish = async (e?: React.FormEvent) => {
+    useEffect(() => {
+        if (!editCourseId && (courseData.title || courseData.description)) {
+            const timer = setTimeout(() => {
+                const draft = {
+                    courseData,
+                    modules,
+                    lastSaved: new Date().toISOString()
+                }
+                localStorage.setItem('local_course_draft', JSON.stringify(draft))
+                setLocalDraftTime(draft.lastSaved)
+            }, 2000)
+            return () => clearTimeout(timer)
+        }
+    }, [courseData, modules, editCourseId])
+
+    const handlePublish = async (e?: React.FormEvent, isPublished: boolean = true) => {
         if (e) e.preventDefault()
         
         if (!courseData.title || !courseData.description || !courseData.price || !courseData.thumbnail_url) {
@@ -211,7 +240,7 @@ export default function InstructorCourseBuilder() {
                 discount_price: courseData.discountPrice ? Number(courseData.discountPrice) : null,
                 attachments: courseData.attachments,
                 provide_certificate: courseData.provide_certificate,
-                is_published: true
+                is_published: isPublished
             }
 
             let apiResponse;
@@ -236,6 +265,10 @@ export default function InstructorCourseBuilder() {
                 if (lecturesToInsert.length > 0) {
                     await coursesService.updateLectures(course.id, lecturesToInsert);
                 }
+            }
+
+            if (!editCourseId) {
+                localStorage.removeItem('local_course_draft')
             }
 
             setShowSuccessModal(true)
@@ -413,11 +446,14 @@ export default function InstructorCourseBuilder() {
                         Course Builder
                     </motion.h1>
                 </div>
-                <div className="flex gap-3">
-                    <button type="button" className="px-5 py-2.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm">
+                <div className="flex gap-3 items-center">
+                    {localDraftTime && !editCourseId && (
+                        <span className="text-xs font-bold text-slate-400 mr-2">Local Draft Saved: {new Date(localDraftTime).toLocaleTimeString()}</span>
+                    )}
+                    <button type="button" onClick={(e) => handlePublish(e, false)} disabled={isSaving} className="px-5 py-2.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm">
                         Save as Draft
                     </button>
-                    <button type="submit" disabled={isSaving} className={`px-5 py-2.5 rounded-md text-white font-bold transition-colors shadow-sm text-sm flex items-center gap-2 ${isSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                    <button type="submit" onClick={(e) => handlePublish(e, true)} disabled={isSaving} className={`px-5 py-2.5 rounded-md text-white font-bold transition-colors shadow-sm text-sm flex items-center gap-2 ${isSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
                         {isSaving ? 'Submitting...' : 'Submit Course'}
                     </button>
                 </div>

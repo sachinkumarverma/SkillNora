@@ -46,9 +46,9 @@ export default function AdminCourseTable({
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                     {loading ? (
                         <tr>
-                            <td colSpan={6} className="px-6 py-12">
-                                <div className="flex justify-center w-full min-h-[200px] items-center">
-                                    <Loader />
+                            <td colSpan={6} className="p-0">
+                                <div className="flex flex-col w-full min-h-[200px]">
+                                    <Loader type="table-row" />
                                 </div>
                             </td>
                         </tr>

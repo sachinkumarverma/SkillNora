@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { uploadService } from './uploadService.js';
 
 const getUrl = async (req, res) => {
@@ -17,7 +18,7 @@ const getUrl = async (req, res) => {
       publicUrl: publicUrlData?.publicUrl || '',
       token: data.token
     });
-  } catch (err) {
+  } catch (err) { logger.error('Error in uploadController.js:', err); 
     res.status(500).json({
       error: err.message
     });

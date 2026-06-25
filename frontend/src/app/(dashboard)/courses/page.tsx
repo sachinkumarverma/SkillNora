@@ -67,7 +67,7 @@ function CoursesContent() {
         setCourses(filtered)
     }, [allCourses, loadingCourses, searchParams])
 
-    if (loadingCourses) return <Loader />
+    if (loadingCourses) return <Loader type="courses" />
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
@@ -117,10 +117,20 @@ function CoursesContent() {
                                             )}
                                         </div>
                                         
-                                        <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-                                            <span>{course.price ? `₹${course.price}` : '₹1,999.00'}</span>
-                                            {(course.bestseller || course.price) && (
-                                                <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">Popular</span>
+                                        <div className="flex flex-col">
+                                            {Number(course.discount_price) && Number(course.price) && Number(course.price) > Number(course.discount_price) ? (
+                                                <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                                                    <span className="text-lg font-black text-slate-900 dark:text-white">₹{course.discount_price}</span>
+                                                    <span className="text-sm font-semibold text-slate-400 relative inline-block after:absolute after:left-0 after:w-full after:h-[1px] after:bg-slate-400 after:top-1/2 after:-translate-y-1/2">₹{course.price}</span>
+                                                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-wider">{Math.round(((Number(course.price) - Number(course.discount_price)) / Number(course.price)) * 100)}% off</span>
+                                                </div>
+                                            ) : (
+                                                <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+                                                    <span>{course.price ? `₹${course.price}` : '₹1,999.00'}</span>
+                                                    {(course.bestseller || course.price) && (
+                                                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">Popular</span>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -152,7 +162,7 @@ function CoursesContent() {
 
 export default function CoursesPage() {
     return (
-        <Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader type="courses" />}>
             <CoursesContent />
         </Suspense>
     )

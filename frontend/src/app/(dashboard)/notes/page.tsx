@@ -82,7 +82,7 @@ export default function NotesPage() {
     }
 
     if (loading || userLoading) {
-        return <Loader />
+        return <Loader type="courses" />
     }
 
     return (

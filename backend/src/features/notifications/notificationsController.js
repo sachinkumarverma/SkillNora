@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { notificationsService } from './notificationsService.js';
 import { supabaseServer } from '../../config/db.js';
 
@@ -10,7 +11,8 @@ const getUserNotifications = async (req, res) => {
         
         const notifications = await notificationsService.getUserNotificationsList(userData.user.id);
         res.json({ notifications });
-    } catch (err) {
+    } catch (err) { 
+        logger.error('Error in notificationsController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };
@@ -24,7 +26,8 @@ const markRead = async (req, res) => {
         
         await notificationsService.markAsRead(userData.user.id);
         res.json({ success: true });
-    } catch (err) {
+    } catch (err) { 
+        logger.error('Error in notificationsController.js:', err); 
         res.status(500).json({ error: err.message });
     }
 };

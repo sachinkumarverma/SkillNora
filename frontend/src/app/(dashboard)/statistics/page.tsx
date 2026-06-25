@@ -22,7 +22,7 @@ export default function StatisticsPage() {
         return () => { active = false; };
     }, []);
 
-    if (loading) return <Loader />
+    if (loading) return <Loader type="dashboard" />
 
     // Heatmap data processing
     const today = new Date();

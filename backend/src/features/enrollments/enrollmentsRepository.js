@@ -34,8 +34,22 @@ const findEnrollmentsByUserId = async userId => {
   return rows;
 };
 
+const getEnrollment = async (userId, courseId) => {
+  const sql = `SELECT * FROM enrollments WHERE user_id = $1 AND course_id = $2 LIMIT 1`;
+  const { rows } = await query(sql, [userId, courseId]);
+  return rows.length > 0 ? rows[0] : null;
+};
+
+const deleteEnrollment = async (userId, courseId) => {
+  const sql = `DELETE FROM enrollments WHERE user_id = $1 AND course_id = $2 RETURNING *`;
+  const { rows } = await query(sql, [userId, courseId]);
+  return rows.length > 0 ? rows[0] : null;
+};
+
 export const enrollmentsRepository = {
   insertEnrollment,
   getCoursePrice,
-  findEnrollmentsByUserId
+  findEnrollmentsByUserId,
+  getEnrollment,
+  deleteEnrollment
 };

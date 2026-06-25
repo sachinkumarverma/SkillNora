@@ -84,7 +84,7 @@ export default function AdminOverviewPage() {
         fetchAll()
     }, [])
 
-    if (loading) return <Loader />
+    if (loading) return <Loader type="dashboard" />
 
     // Revenue chart (monthly)
     const revenueByMonth = new Array(12).fill(0)

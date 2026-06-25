@@ -54,7 +54,7 @@ export default function AdminSupportPage() {
 
     const filtered = tickets.filter(t => t.subject?.toLowerCase().includes(search.toLowerCase()) || t.user?.toLowerCase().includes(search.toLowerCase()))
 
-    if (loading && tickets.length === 0) return <Loader />
+    if (loading && tickets.length === 0) return <Loader type="table" />
 
     return (
         <>
