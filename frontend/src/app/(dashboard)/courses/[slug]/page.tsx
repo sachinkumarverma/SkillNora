@@ -18,6 +18,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     const [inCart, setInCart] = useState(false)
     const { user } = useUser()
     const router = useRouter()
+    
+    const role = user?.user_metadata?.role || user?.app_metadata?.role || (user?.email === 'sachinverma1489@gmail.com' ? 'admin' : 'student');
+    const isStaff = role === 'admin' || (role === 'instructor' && course?.instructor_id === user?.id);
 
     const [rating, setRating] = useState(0)
     const [hoverRating, setHoverRating] = useState(0)
@@ -177,7 +180,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             </div>
 
                             <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-                                {!isEnrolled && (
+                                {!isEnrolled && !isStaff && (
                                     <button onClick={handleEnroll} className="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm transform transition active:scale-95">
                                         Enroll Now
                                     </button>
@@ -333,24 +336,26 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                 return null;
                             })()}
 
-                            {isEnrolled ? (
+                            {isEnrolled || isStaff ? (
                                 <>
-                                    <button onClick={handlePreview} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm mb-3 hover:bg-blue-700">
+                                    <button onClick={() => router.push(`/courses/${course.slug}/lecture/${course.lectures?.[0]?.id || '1'}`)} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm mb-3 hover:bg-blue-700">
                                         Go to Course
                                     </button>
-                                    <button 
-                                        onClick={() => setShowCancelModal(true)}
-                                        className="w-full bg-transparent border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 dark:border-red-900/50 dark:hover:bg-red-900/20 py-3 rounded-xl font-bold transition-colors shadow-sm mb-3 text-sm"
-                                    >
-                                        Cancel Enrollment (within 30 days)
-                                    </button>
+                                    {isEnrolled && !isStaff && (
+                                        <button 
+                                            onClick={() => setShowCancelModal(true)}
+                                            className="w-full bg-transparent border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 dark:border-red-900/50 dark:hover:bg-red-900/20 py-3 rounded-xl font-bold transition-colors shadow-sm mb-3 text-sm"
+                                        >
+                                            Cancel Enrollment (within 30 days)
+                                        </button>
+                                    )}
                                 </>
                             ) : (
                                 <button onClick={handleEnroll} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm mb-3">
                                     Enroll Now
                                 </button>
                             )}
-                            <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "Partial refund available within 30 days" : "30-Day Money-Back Guarantee"}</p>
+                            {!isStaff && <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "Partial refund available within 30 days" : "30-Day Money-Back Guarantee"}</p>}
 
                             <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800 text-sm">
                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">

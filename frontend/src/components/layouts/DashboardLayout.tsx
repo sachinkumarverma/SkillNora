@@ -23,50 +23,72 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const role = useMemo(() => getRole(user), [user])
     const avatarUrl = useMemo(() => getAvatar(user), [user])
 
-    const title = useMemo(() => {
-        if (pathname.startsWith('/courses')) return 'Courses'
-        if (pathname.startsWith('/enrolled')) return 'Enrolled Courses'
-        if (pathname.startsWith('/coding')) return 'Code Playground'
-        if (pathname.startsWith('/notes')) return 'My Notes'
-        if (pathname.startsWith('/wishlist')) return 'Wishlist'
-        if (pathname.startsWith('/certificates')) return 'Certificates'
-        if (pathname.startsWith('/admin')) return 'Admin Approvals'
-        if (pathname.startsWith('/instructor')) return 'Instructor Studio'
-        if (pathname.startsWith('/settings')) return 'Settings'
-        return 'Dashboard'
-    }, [pathname])
+    const PATH_LABELS: Record<string, string> = {
+        '/dashboard': 'Dashboard',
+        '/courses': 'Courses',
+        '/enrolled': 'Enrolled',
+        '/coding': 'Code Playground',
+        '/notes': 'Notes',
+        '/statistics': 'Statistics',
+        '/wishlist': 'Wishlist',
+        '/certificates': 'Certificates',
+        '/settings': 'Account Details',
+        '/contact': 'Contact Support',
+        
+        '/instructor': 'Instructor Studio',
+        '/instructor/courses': 'Course Management',
+        '/instructor/ai': 'AI Studio',
+        '/instructor/drafts': 'Draft Courses',
+        '/instructor/new': 'Course Builder',
+        
+        '/admin': 'Admin Portal',
+        '/admin/courses': 'Course Management',
+        '/admin/instructors': 'Instructor Management',
+        '/admin/students': 'Student Management',
+        '/admin/payments': 'Payments & Enrollments',
+        '/admin/tickets': 'Support Tickets',
+        '/admin/ai': 'AI Studio',
+        '/admin/settings': 'System Settings',
+        '/admin/audit-logs': 'Audit Logs',
+        '/admin/drafts': 'Draft Courses',
+        '/admin/courses/new': 'Course Builder'
+    }
 
     const breadcrumbs = useMemo(() => {
         const parts = pathname?.split('/').filter(Boolean) || []
-        if (parts.length === 0 || parts[0] === 'dashboard') return [{ label: 'Dashboard' }]
-        const crumbs: {label: string, href?: string}[] = [{ label: title, href: `/${parts[0]}` }]
-        if (parts[0] === 'courses' && parts.length > 1) {
-            const courseSlug = parts[1];
-            const hasSubPage = parts.length > 2;
+        if (parts.length === 0) return [{ label: 'Dashboard' }]
+        
+        const crumbs: {label: string, href?: string}[] = []
+        let currentPath = ''
+        
+        parts.forEach((part) => {
+            currentPath += `/${part}`
             
-            crumbs.push({ 
-                label: courseSlug.replace(/-/g, ' '), 
-                href: hasSubPage ? `/courses/${courseSlug}` : undefined 
-            });
-            
-            if (hasSubPage) {
-                const subPage = parts[2];
-                if (subPage === 'lecture') {
-                    crumbs.push({ label: 'Lecture' });
-                } else {
-                    crumbs.push({ label: subPage.charAt(0).toUpperCase() + subPage.slice(1).replace(/-/g, ' ') });
-                }
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part)) {
+                return;
             }
-        } else if (parts.length > 1) {
-            let lastPart = parts[parts.length - 1]
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastPart)
-            if (isUUID && parts.length > 2) {
-                lastPart = parts[1] // Use the slug
+
+            let label = part
+            if (PATH_LABELS[currentPath]) {
+                label = PATH_LABELS[currentPath]
+            } else {
+                label = part.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
             }
-            crumbs.push({ label: lastPart.replace(/-/g, ' ') })
+
+            crumbs.push({
+                label,
+                href: currentPath
+            })
+        })
+        
+        if (crumbs.length > 0) {
+            delete crumbs[crumbs.length - 1].href
         }
+        
         return crumbs
-    }, [pathname, title])
+    }, [pathname])
+
+    const title = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].label : 'Dashboard'
 
     
     const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -476,7 +498,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             </Link>
                         )}
                         {user && (
-                            <Link href="/notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
+                            <Link href="/notifications" onClick={markNotificationsRead} className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                                 {notifications.filter(n => !n.is_read).length > 0 && (
                                     <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>

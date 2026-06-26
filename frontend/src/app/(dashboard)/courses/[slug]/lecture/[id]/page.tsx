@@ -31,12 +31,15 @@ const formatNoteContent = (html: string) => {
 export default function LecturePage({ params }: { params: Promise<{ slug: string, id: string }> }) {
     const { slug, id } = React.use(params)
     const { user } = useUser()
+    const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, instructor_id?: string, totalLectures: number, progress?: any } | null>(null)
+    const role = user?.user_metadata?.role || user?.app_metadata?.role || (user?.email === 'sachinverma1489@gmail.com' ? 'admin' : 'student');
+    const isStaff = role === 'admin' || (role === 'instructor' && courseInfo?.instructor_id === user?.id);
+    
     const [lecture, setLecture] = useState<any | null>(null)
     const [loading, setLoading] = useState(true)
     const [certUnlocked, setCertUnlocked] = useState(false)
     const [timeElapsed, setTimeElapsed] = useState(false)
     const [videoCompleted, setVideoCompleted] = useState(false)
-    const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, totalLectures: number, progress?: any } | null>(null)
     const [noteText, setNoteText] = useState("")
     const [noteSaved, setNoteSaved] = useState(false)
     const [isSavingNote, setIsSavingNote] = useState(false)
@@ -256,7 +259,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             const course = res?.course || res
             if (mounted) {
                 if (course) {
-                    setCourseInfo({ id: course.id, title: course.title, slug: course.slug, totalLectures: course.lectures?.length || 1, progress: course.progress })
+                    setCourseInfo({ id: course.id, title: course.title, instructor_id: course.instructor_id, slug: course.slug, totalLectures: course.lectures?.length || 1, progress: course.progress })
                     const lecIndex = course.lectures?.findIndex((l: any) => String(l.id) === String(id))
                     const lec = course.lectures?.[lecIndex]
                     if (lec) {
@@ -429,7 +432,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                         <h1 className='text-3xl font-serif font-bold text-slate-900 dark:text-white mb-6'>{lecture.title}</h1>
 
                         <div className='overflow-hidden rounded-xl bg-slate-900 aspect-video relative shadow-lg group'>
-                            {!isEnrolled ? (
+                            {!isEnrolled && !isStaff ? (
                                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-md">
                                     <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4">
                                         <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
@@ -441,7 +444,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                     </Link>
                                 </div>
                             ) : null}
-                            {isEnrolled && (
+                            {(isEnrolled || isStaff) && (
                                 <>
                                     {(() => {
                                         const url = lecture.videoUrl || lecture.video_url || '';
@@ -490,7 +493,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             )}
                         </div>
                         
-                        {isEnrolled && !showQuiz && (
+                        {isEnrolled && !isStaff && !showQuiz && (
                             <div className="mt-4 flex justify-end gap-3">
                                 {!videoCompleted && (
                                     <button
@@ -513,7 +516,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     </div>
 
                     {/* Quiz Section */}
-                    {isEnrolled && showQuiz && (
+                    {isEnrolled && !isStaff && showQuiz && (
                         <div className="mt-6 bg-slate-900 rounded-xl border border-slate-800 shadow-sm flex flex-col p-6 sm:p-10 relative">
                             {quizResult ? (
                                 <div className="flex-1 flex flex-col items-center justify-center text-center animate-in zoom-in py-8">
@@ -628,6 +631,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     )}
 
                     {/* Notes Section */}
+                    {isEnrolled && !isStaff && (
                     <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -666,6 +670,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             </button>
                         </div>
                     </div>
+                    )}
 
                     {/* Comments Section */}
                     <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
@@ -718,7 +723,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             ) : (() => {
                                 const myRootIds = new Set(comments.filter(c => c.user_id === user?.id && !c.parent_id).map(c => c.id));
                                 const visibleComments = comments.filter(c => {
-                                    if (user?.user_metadata?.role === 'admin' || user?.user_metadata?.role === 'instructor') return true;
+                                    if (isStaff) return true;
                                     if (c.user_id === user?.id) return true;
                                     if (myRootIds.has(c.parent_id)) return true;
                                     if (c.parent_id && comments.find(p => p.id === c.parent_id)?.user_id === user?.id) return true;
@@ -726,6 +731,10 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                 });
                                 const rootComments = visibleComments.filter(c => !c.parent_id);
                                 const getReplies = (parentId: string) => visibleComments.filter(c => c.parent_id === parentId);
+                                
+                                if (rootComments.length === 0) {
+                                    return <div className="text-center text-slate-500 py-4 italic">No comments visible to you yet. Be the first to start the discussion!</div>;
+                                }
 
                                 return rootComments.map((comment: any) => (
                                     <div key={comment.id} className="flex gap-4">
@@ -736,7 +745,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             <div className="flex items-center justify-between gap-2 mb-1 w-full">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-slate-900 dark:text-white">{user?.id === comment.user_id ? 'You' : comment.user_name}</span>
-                                                    {comment.role === 'instructor' && <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Instructor</span>}
+                                                    {comment.role === 'instructor' && <span className="inline-flex items-center justify-center bg-blue-100 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase leading-none h-[18px]">Instructor</span>}
                                                     <span className="text-xs text-slate-400 font-medium">{new Date(comment.created_at).toLocaleDateString()} {new Date(comment.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                                 </div>
                                                 {user?.id === comment.user_id && (
@@ -840,7 +849,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                                 <div className="flex items-center justify-between gap-2 mb-1 w-full">
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="font-bold text-slate-900 dark:text-white text-sm">{user?.id === reply.user_id ? 'You' : reply.user_name}</span>
-                                                                        {reply.role === 'instructor' && <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Instructor</span>}
+                                                                        {reply.role === 'instructor' && <span className="inline-flex items-center justify-center bg-blue-100 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase leading-none h-[18px]">Instructor</span>}
                                                                         <span className="text-xs text-slate-400 font-medium">{new Date(reply.created_at).toLocaleDateString()} {new Date(reply.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                                                     </div>
                                                                     {user?.id === reply.user_id && (
