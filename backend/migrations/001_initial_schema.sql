@@ -126,6 +126,7 @@ create table if not exists notes (
 create table if not exists notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references users(id) on delete cascade,
+  title text,
   type text,
   message text,
   is_read boolean default false,
@@ -142,6 +143,15 @@ create table if not exists refunds (
   reason text,
   status text default 'processed',
   created_at timestamptz default now()
+);
+
+-- cart_items
+create table if not exists cart_items (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  course_id uuid references courses(id) on delete cascade,
+  created_at timestamptz default now(),
+  unique(user_id, course_id)
 );
 
 -- lecture_comments (for Q&A threads)

@@ -19,8 +19,26 @@ export default function CartPage() {
         if (userLoading) return;
         setLoading(true)
         if (user) {
-            cartService.getCart().then(data => {
-                setCart(data)
+            Promise.all([
+                cartService.getCart(),
+                apiClient.get('/api/enrollments/user').then(r => r.data).catch(() => ({ enrolledIds: [] }))
+            ]).then(async ([cartData, enrollmentsData]) => {
+                const enrolledIds = new Set(enrollmentsData.enrolledIds || [])
+                let updatedCart = cartData
+                
+                // Find items that are already enrolled
+                const itemsToRemove = cartData.filter((item: any) => enrolledIds.has(item.id || item.course_id))
+                
+                if (itemsToRemove.length > 0) {
+                    // Remove them silently from the backend
+                    for (const item of itemsToRemove) {
+                        await cartService.removeFromCart(item.id || item.course_id)
+                    }
+                    // Get the fresh cart after removal
+                    updatedCart = await cartService.getCart()
+                }
+                
+                setCart(updatedCart)
                 setLoading(false)
             })
         } else {

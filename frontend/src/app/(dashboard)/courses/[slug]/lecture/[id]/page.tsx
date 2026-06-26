@@ -36,7 +36,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [certUnlocked, setCertUnlocked] = useState(false)
     const [timeElapsed, setTimeElapsed] = useState(false)
     const [videoCompleted, setVideoCompleted] = useState(false)
-    const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, totalLectures: number } | null>(null)
+    const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, totalLectures: number, progress?: any } | null>(null)
     const [noteText, setNoteText] = useState("")
     const [noteSaved, setNoteSaved] = useState(false)
     const [isSavingNote, setIsSavingNote] = useState(false)
@@ -256,7 +256,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             const course = res?.course || res
             if (mounted) {
                 if (course) {
-                    setCourseInfo({ id: course.id, title: course.title, slug: course.slug, totalLectures: course.lectures?.length || 1 })
+                    setCourseInfo({ id: course.id, title: course.title, slug: course.slug, totalLectures: course.lectures?.length || 1, progress: course.progress })
                     const lecIndex = course.lectures?.findIndex((l: any) => String(l.id) === String(id))
                     const lec = course.lectures?.[lecIndex]
                     if (lec) {

@@ -40,7 +40,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const parts = pathname?.split('/').filter(Boolean) || []
         if (parts.length === 0 || parts[0] === 'dashboard') return [{ label: 'Dashboard' }]
         const crumbs: {label: string, href?: string}[] = [{ label: title, href: `/${parts[0]}` }]
-        if (parts.length > 1) {
+        if (parts[0] === 'courses' && parts.length > 1) {
+            const courseSlug = parts[1];
+            const hasSubPage = parts.length > 2;
+            
+            crumbs.push({ 
+                label: courseSlug.replace(/-/g, ' '), 
+                href: hasSubPage ? `/courses/${courseSlug}` : undefined 
+            });
+            
+            if (hasSubPage) {
+                const subPage = parts[2];
+                if (subPage === 'lecture') {
+                    crumbs.push({ label: 'Lecture' });
+                } else {
+                    crumbs.push({ label: subPage.charAt(0).toUpperCase() + subPage.slice(1).replace(/-/g, ' ') });
+                }
+            }
+        } else if (parts.length > 1) {
             let lastPart = parts[parts.length - 1]
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastPart)
             if (isUUID && parts.length > 2) {

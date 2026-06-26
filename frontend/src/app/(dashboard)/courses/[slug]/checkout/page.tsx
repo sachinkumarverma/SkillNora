@@ -72,7 +72,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
     if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
 
     return (
-        <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="max-w-[1200px] mx-auto px-6 py-12">
             <button onClick={() => router.back()} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Go Back
@@ -95,7 +95,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                     </div>
 
                     <div className="text-sm text-slate-500 mb-8 space-y-3 font-medium">
-                        <p className="flex items-center gap-2"><svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg> Instant lifetime access to course content</p>
+                        <p className="flex items-center gap-2"><svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg> Instant 1-year access to course content</p>
                         <p className="flex items-center gap-2"><svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg> 30-Day Money-Back Guarantee</p>
                         <p className="text-xs mt-6 text-slate-400">By proceeding, you agree to our Terms of Service and Privacy Policy.</p>
                     </div>
@@ -157,7 +157,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                         </div>
                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Payment Successful!</h3>
-                        <p className="text-slate-500 mb-8">Welcome to the course. You now have full lifetime access.</p>
+                        <p className="text-slate-500 mb-8">Welcome to the course. You now have full 1-year access.</p>
                         <button onClick={() => router.push(`/courses/${slug}`)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
                             Start Learning
                         </button>

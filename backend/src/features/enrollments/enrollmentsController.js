@@ -156,7 +156,7 @@ const createEnrollment = async (req, res) => {
                                     <tr>
                                         <td>1</td>
                                         <td>Course: ${courseTitle}</td>
-                                        <td>Lifetime Access</td>
+                                        <td>1 Year Access</td>
                                         <td>₹${formattedAmount}</td>
                                         <td>₹${formattedAmount}</td>
                                     </tr>
@@ -235,7 +235,7 @@ const createEnrollment = async (req, res) => {
                     </div>
                     <div style="background-color: #f8fafc; padding: 30px; border-radius: 12px;">
                         <h2 style="margin-top: 0;">Welcome to your new learning journey!</h2>
-                        <p style="font-size: 16px; line-height: 1.5;">We are thrilled to have you on board. Your payment of <strong>₹${formattedAmount}</strong> was successful, and you now have full lifetime access to <strong>${courseTitle}</strong>.</p>
+                        <p style="font-size: 16px; line-height: 1.5;">We are thrilled to have you on board. Your payment of <strong>₹${formattedAmount}</strong> was successful, and you now have 1-year access to <strong>${courseTitle}</strong>.</p>
                         <p style="font-size: 16px; line-height: 1.5;">Dive right in and start learning at your own pace. If you have any questions, our support team is always here to help.</p>
                         <div style="text-align: center; margin-top: 30px;">
                             <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/courses" style="background-color: #2563eb; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to My Courses</a>

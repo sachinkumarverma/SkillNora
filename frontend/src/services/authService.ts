@@ -2,13 +2,13 @@ import apiClient from '@/lib/apiClient';
 import supabase from '@/lib/supabaseClient';
 
 export const authService = {
-    signUp: async (email: string, password: string,role: string) => {
+    signUp: async (email: string, password: string, role: string, fullName: string = '') => {
         return await supabase.auth.signUp({ 
             email, 
             password, 
             options: { 
                 emailRedirectTo: `${window.location.origin}/dashboard`,
-                data: { role } 
+                data: { role, full_name: fullName } 
             } 
         });
     },

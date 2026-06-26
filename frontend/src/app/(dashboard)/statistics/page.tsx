@@ -218,11 +218,11 @@ export default function StatisticsPage() {
                             {Array.from({ length: 52 }).map((_, colIndex) => {
                                 const colDays = last364Days.slice(colIndex * 7, colIndex * 7 + 7);
                                 if (colDays.length === 0) return null;
-                                
+
                                 const firstDay = colDays[0];
                                 const prevColFirstDay = colIndex > 0 ? last364Days[(colIndex - 1) * 7] : null;
                                 const isNewMonth = prevColFirstDay ? firstDay.getMonth() !== prevColFirstDay.getMonth() : true;
-                                
+
                                 return (
                                     <div key={colIndex} className={`flex flex-col ${isNewMonth && colIndex > 0 ? 'ml-2 md:ml-2' : ''}`}>
                                         {/* Month Label Header */}
@@ -233,7 +233,7 @@ export default function StatisticsPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        
+
                                         {/* 7 Days Column */}
                                         <div className="flex flex-col justify-between h-[145px]">
                                             {colDays.map((d, i) => {
@@ -243,12 +243,12 @@ export default function StatisticsPage() {
                                                 if (count === 1) intensity = 20;
                                                 else if (count === 2) intensity = 50;
                                                 else if (count >= 3) intensity = 100;
-                                                
+
                                                 return (
-                                                    <div 
-                                                        key={i} 
+                                                    <div
+                                                        key={i}
                                                         title={`${d.toLocaleDateString()}: ${count} actions`}
-                                                        className="w-[15px] h-[15px] sm:w-[16px] sm:h-[16px] md:w-[18px] md:h-[18px] shrink-0 rounded-[3px] bg-emerald-500 cursor-pointer transition-opacity hover:opacity-100" 
+                                                        className="w-[15px] h-[15px] sm:w-[16px] sm:h-[16px] md:w-[18px] md:h-[18px] shrink-0 rounded-[3px] bg-emerald-500 cursor-pointer transition-opacity hover:opacity-100"
                                                         style={{ opacity: intensity === 0 ? 0.05 : intensity / 100 }}
                                                     ></div>
                                                 );

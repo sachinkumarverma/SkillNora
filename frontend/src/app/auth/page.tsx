@@ -11,10 +11,10 @@ type Mode = 'signin' | 'signup' | 'magic' | 'reset'
 function GoogleIcon() {
     return (
         <svg viewBox='0 0 48 48' aria-hidden='true' className='h-5 w-5'>
-            <path fill='#FFC107' d='M43.611 20.083H42V20H24v8h11.303C33.655 32.659 29.369 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.158 7.961 3.047l5.657-5.657C34.412 6.053 29.476 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.648-.389-3.917z'/>
-            <path fill='#FF3D00' d='M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.158 7.961 3.047l5.657-5.657C34.412 6.053 29.476 4 24 4 16.318 4 9.656 8.337 6.306 14.691z'/>
-            <path fill='#4CAF50' d='M24 44c5.353 0 10.245-2.057 13.945-5.404l-6.437-5.44C29.474 34.978 26.947 36 24 36c-5.348 0-9.624-3.317-11.286-7.946l-6.52 5.025C9.51 39.556 16.227 44 24 44z'/>
-            <path fill='#1976D2' d='M43.611 20.083H42V20H24v8h11.303a11.997 11.997 0 01-4.795 6.156l.003-.002 6.437 5.44C36.485 39.655 44 34 44 24c0-1.341-.138-2.648-.389-3.917z'/>
+            <path fill='#FFC107' d='M43.611 20.083H42V20H24v8h11.303C33.655 32.659 29.369 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.158 7.961 3.047l5.657-5.657C34.412 6.053 29.476 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.648-.389-3.917z' />
+            <path fill='#FF3D00' d='M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.158 7.961 3.047l5.657-5.657C34.412 6.053 29.476 4 24 4 16.318 4 9.656 8.337 6.306 14.691z' />
+            <path fill='#4CAF50' d='M24 44c5.353 0 10.245-2.057 13.945-5.404l-6.437-5.44C29.474 34.978 26.947 36 24 36c-5.348 0-9.624-3.317-11.286-7.946l-6.52 5.025C9.51 39.556 16.227 44 24 44z' />
+            <path fill='#1976D2' d='M43.611 20.083H42V20H24v8h11.303a11.997 11.997 0 01-4.795 6.156l.003-.002 6.437 5.44C36.485 39.655 44 34 44 24c0-1.341-.138-2.648-.389-3.917z' />
         </svg>
     )
 }
@@ -55,12 +55,12 @@ export default function AuthPage() {
                 } else {
                     if (data?.user) {
                         // Sync user to backend users table
-                        await apiClient.post('/api/users/sync', { 
-                            id: data.user.id, 
-                            email: data.user.email, 
+                        await apiClient.post('/api/users/sync', {
+                            id: data.user.id,
+                            email: data.user.email,
                             role: isInstructor ? 'instructor' : 'student',
                             full_name: fullName
-                        }).catch(() => {})
+                        }).catch(() => { })
                     }
                     toast.success('Account created. Check your email to confirm your account.')
                 }
@@ -123,33 +123,59 @@ export default function AuthPage() {
             {loading && <Loader fullScreen />}
             <div className="fixed inset-0 pointer-events-none grid-pattern opacity-[0.35]" />
             <div className="relative z-10 w-full grid gap-6 lg:grid-cols-[1fr_0.95fr]">
-                <section className='surface rounded-xl p-6 md:p-8'>
-                    <div className="flex items-center gap-3 mb-6">
+                <section className='surface rounded-xl p-6 md:p-8 flex flex-col'>
+                    <div className="flex items-center gap-3">
                         <img src="/logo.png" alt="Skillnora" className="h-10 w-10 object-contain" />
                         <div className='inline-flex rounded-full bg-blue-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-blue-700 dark:text-blue-200'>Authentication</div>
                     </div>
                     <h1 className='mt-5 text-4xl font-black tracking-tight text-slate-950 dark:text-white'>{heading}</h1>
                     <p className='mt-4 max-w-2xl text-base leading-7 muted min-h-[56px]'>{description}</p>
-                    <div className='mt-8 rounded-[1.5rem] bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-600 p-8 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden'>
-                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                        <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-                        <div className='text-xs font-bold uppercase tracking-[0.25em] opacity-80 mb-3 relative z-10'>Premium access</div>
-                        <div className='text-3xl font-black leading-tight relative z-10'>Unlock your learning potential.</div>
-                        <p className='mt-4 max-w-xl text-sm leading-relaxed opacity-90 relative z-10'>Sign in to access your wishlist, track certificates, and enroll in our world-class courses.</p>
-                        <div className="mt-8 flex items-center gap-3 relative z-10">
-                            <div className="flex -space-x-2">
-                                {[1,2,3,4].map(i => (
-                                    <div key={i} className="w-8 h-8 rounded-full border-2 border-indigo-500 bg-slate-200 overflow-hidden">
-                                        <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="user" className="w-full h-full object-cover" />
+
+                    <div className='mt-4 flex-grow flex flex-col justify-between rounded-[1.5rem] bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-600 p-5 md:p-6 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden'>
+                        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+
+                        <div className='relative z-10'>
+                            <div className='text-xs font-bold uppercase tracking-[0.25em] opacity-80 mb-1.5'>Premium access</div>
+                            <div className='text-2xl lg:text-3xl font-black leading-tight'>Unlock your learning potential.</div>
+                            <p className='mt-1.5 max-w-xl text-sm leading-relaxed opacity-90'>Sign in to access your wishlist, track certificates, and enroll in our world-class courses.</p>
+
+                            <ul className="mt-3 space-y-2">
+                                {[
+                                    { title: "Expert-Led Courses", desc: "Learn from industry professionals with real-world experience." },
+                                    { title: "Verifiable Certificates", desc: "Earn certificates to showcase your new skills to employers." },
+                                    { title: "Interactive Learning", desc: "Engage with Q&A threads, notes, and progress tracking." }
+                                ].map((feature, idx) => (
+                                    <li key={idx} className="flex items-start gap-3">
+                                        <div className="mt-0.5 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-sm">{feature.title}</h3>
+                                            <p className="text-xs opacity-80 mt-0.5">{feature.desc}</p>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="mt-6 flex items-center gap-3 relative z-10 border-t border-white/20 pt-5">
+                            <div className="flex -space-x-3">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className="w-10 h-10 rounded-full border-2 border-indigo-500 bg-slate-200 overflow-hidden shadow-sm">
+                                        <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="user" className="w-full h-full object-cover" />
                                     </div>
                                 ))}
                             </div>
-                            <span className="text-xs font-semibold opacity-90">Join 10,000+ learners</span>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold">Join 10,000+</span>
+                                <span className="text-xs font-medium opacity-80">active learners today</span>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <section className='surface rounded-xl p-6 md:p-8'>
+                <section className='surface rounded-xl p-6 md:p-8 flex flex-col'>
                     <div className='flex flex-wrap items-center gap-2'>
                         {[
                             ['signin', 'Sign in'],
@@ -163,8 +189,8 @@ export default function AuthPage() {
                         ))}
                     </div>
 
-                    <form className='mt-6 flex flex-col gap-4' onSubmit={handleSubmit}>
-                        <div className="min-h-[320px] space-y-4">
+                    <form className='mt-5 flex flex-col gap-3' onSubmit={handleSubmit}>
+                        <div className="min-h-[280px] space-y-3">
                             {mode === 'signup' && (
                                 <div>
                                     <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Full Name</label>
@@ -181,16 +207,16 @@ export default function AuthPage() {
                                 <div>
                                     <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Password</label>
                                     <div className="relative">
-                                        <input 
-                                            value={password} 
-                                            onChange={(e) => setPassword(e.target.value)} 
-                                            type={showPassword ? 'text' : 'password'} 
-                                            className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 pr-10' 
-                                            placeholder='Enter your password' 
+                                        <input
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            type={showPassword ? 'text' : 'password'}
+                                            className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 pr-10'
+                                            placeholder='Enter your password'
                                         />
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setShowPassword(!showPassword)} 
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
                                             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                         >
                                             {showPassword ? (
