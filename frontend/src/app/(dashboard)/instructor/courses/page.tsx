@@ -63,13 +63,14 @@ export default function AdminCourseManagement() {
             const data = await coursesService.getAdminAll();
             if (data) {
                 const courseList = data.courses || (Array.isArray(data) ? data : []);
-                const mapped = courseList.map((c: any) => ({
+                const filteredList = courseList.filter((c: any) => c.is_published || c.is_archived);
+                const mapped = filteredList.map((c: any) => ({
                     id: c.id,
                     title: c.title || 'Untitled Course',
                     category: c.category || 'Uncategorized',
                     instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
                     price: `₹${c.price || 0}`,
-                    status: c.is_published ? 'Published' : 'Draft',
+                    status: c.is_published ? 'Published' : 'Archived',
                     enrollments: Number(c.enrollment_count) || 0,
                     rating: c.average_rating || 0,
                     thumbnail_url: c.thumbnail_url,
@@ -114,7 +115,8 @@ export default function AdminCourseManagement() {
         setLoading(true)
         try {
             await coursesService.bulkPublish([courseId], false);
-            setCourses(courses.map(c => c.id === courseId ? { ...c, status: 'Draft' } : c))
+            setCourses(courses.map(c => c.id === courseId ? { ...c, status: 'Archived' } : c))
+            toast.success('Course archived successfully.')
         } catch (error: any) {
             alert('Failed to archive course: ' + error.message)
         }
@@ -139,8 +141,8 @@ export default function AdminCourseManagement() {
         setLoading(true)
         try {
             await coursesService.bulkPublish(selectedCourses, false);
-            setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Draft' } : c))
-            setSelectedCourses([])
+            setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Archived' } : c))
+            toast.success(`Successfully archived ${selectedCourses.length} courses.`)
         } catch (error: any) {
             alert('Failed to archive courses: ' + error.message)
         }
@@ -314,6 +316,7 @@ export default function AdminCourseManagement() {
                     handleArchiveCourse={handleArchiveCourse}
                     setCourseToDelete={setCourseToDelete}
                     getStatusBadge={getStatusBadge}
+                    editBasePath="/instructor/new"
                 />
 
                 {/* Pagination */}

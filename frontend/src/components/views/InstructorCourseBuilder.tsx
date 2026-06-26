@@ -53,6 +53,10 @@ const CustomDropdown = ({ label, value, options, onChange, required }: { label: 
 
 export default function InstructorCourseBuilder() {
     const { width, height } = useWindowSize()
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const editCourseId = searchParams?.get('course_id')
+
     const [showSuccessModal, setShowSuccessModal] = useState(false)
     const [thumbnailMode, setThumbnailMode] = useState<'upload' | 'unsplash'>('upload')
     const [isInstructorDropdownOpen, setIsInstructorDropdownOpen] = useState(false)
@@ -71,6 +75,8 @@ export default function InstructorCourseBuilder() {
         thumbnail_url: '',
         instructor_id: 'myself', // 'myself', 'none', or a specific uuid
         provide_certificate: true,
+        is_published: false,
+        is_archived: false,
         attachments: [] as {title: string, url: string}[]
     })
     const [isSavingDraft, setIsSavingDraft] = useState(false)
@@ -78,7 +84,7 @@ export default function InstructorCourseBuilder() {
     const [currentUser, setCurrentUser] = useState<any>(null)
     const [currentUserRole, setCurrentUserRole] = useState<string>('instructor')
     const [instructors, setInstructors] = useState<any[]>([])
-    const [isLoadingData, setIsLoadingData] = useState(false)
+    const [isLoadingData, setIsLoadingData] = useState(!!editCourseId)
     
     // Modules
     const [modules, setModules] = useState<any[]>([
@@ -86,10 +92,6 @@ export default function InstructorCourseBuilder() {
     ])
 
     const [localDraftTime, setLocalDraftTime] = useState<string | null>(null)
-
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const editCourseId = searchParams?.get('course_id')
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -137,6 +139,8 @@ export default function InstructorCourseBuilder() {
                             instructor_id: c.instructor_id || 'myself',
                             initial_instructor_name: c.instructor?.full_name || c.instructor?.email,
                             provide_certificate: true,
+                            is_published: c.is_published || false,
+                            is_archived: c.is_archived || false,
                             attachments: Array.isArray(c.attachments) ? c.attachments : (typeof c.attachments === 'string' ? (function(){ try { const p = JSON.parse(c.attachments); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
                         });
                         if (c.thumbnail_url) setThumbnailMode('unsplash');
@@ -160,22 +164,29 @@ export default function InstructorCourseBuilder() {
                 setIsLoadingData(false);
             }
         };
-        if (editCourseId) {
-            setIsLoadingData(true)
-        } else {
-            const savedDraftStr = localStorage.getItem('local_course_draft')
-            if (savedDraftStr) {
-                try {
-                    const parsed = JSON.parse(savedDraftStr)
-                    if (parsed.courseData) setCourseData(parsed.courseData)
-                    if (parsed.modules) setModules(parsed.modules)
-                    if (parsed.lastSaved) setLocalDraftTime(parsed.lastSaved)
-                } catch (e) {
-                    console.error("Failed to parse draft", e)
+        const loadLocalDraft = (user: any) => {
+            if (!editCourseId && user) {
+                const savedDraftStr = localStorage.getItem('local_course_draft')
+                if (savedDraftStr) {
+                    try {
+                        const parsed = JSON.parse(savedDraftStr)
+                        if (parsed.userId === user.id) {
+                            if (parsed.courseData) setCourseData(parsed.courseData)
+                            if (parsed.modules) setModules(parsed.modules)
+                            if (parsed.lastSaved) setLocalDraftTime(parsed.lastSaved)
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse draft", e)
+                    }
                 }
             }
         }
-        fetchAllData()
+        fetchAllData().then(() => {
+            // Wait for user to load before loading local draft
+            apiClient.get('/api/users/me').then(res => {
+                if (res.data?.user) loadLocalDraft(res.data.user)
+            }).catch(() => {})
+        })
     }, [editCourseId])
 
     useEffect(() => {
@@ -184,10 +195,13 @@ export default function InstructorCourseBuilder() {
                 const draft = {
                     courseData,
                     modules,
-                    lastSaved: new Date().toISOString()
+                    lastSaved: new Date().toISOString(),
+                    userId: currentUser?.id
                 }
-                localStorage.setItem('local_course_draft', JSON.stringify(draft))
-                setLocalDraftTime(draft.lastSaved)
+                if (currentUser?.id) {
+                    localStorage.setItem('local_course_draft', JSON.stringify(draft))
+                    setLocalDraftTime(draft.lastSaved)
+                }
             }, 2000)
             return () => clearTimeout(timer)
         }
@@ -477,10 +491,12 @@ export default function InstructorCourseBuilder() {
                     {localDraftTime && !editCourseId && (
                         <span className="text-xs font-bold text-slate-400 mr-2">Local Draft Saved: {new Date(localDraftTime).toLocaleTimeString()}</span>
                     )}
-                    <button type="button" onClick={(e) => handlePublish(e, false)} disabled={isSavingDraft || isPublishing} className="px-5 py-2.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm">
-                        {isSavingDraft ? 'Saving...' : 'Save as Draft'}
-                    </button>
-                    <button type="submit" onClick={(e) => handlePublish(e, true)} disabled={isSavingDraft || isPublishing} className={`px-5 py-2.5 rounded-md text-white font-bold transition-colors shadow-sm text-sm flex items-center gap-2 ${isPublishing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                    {!courseData.is_published && !courseData.is_archived && !isLoadingData && (
+                        <button type="button" onClick={(e) => handlePublish(e, false)} disabled={isSavingDraft || isPublishing} className="px-5 py-2.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm">
+                            {isSavingDraft ? 'Saving...' : 'Save as Draft'}
+                        </button>
+                    )}
+                    <button type="submit" onClick={(e) => handlePublish(e, true)} disabled={isSavingDraft || isPublishing || isLoadingData} className={`px-5 py-2.5 rounded-md text-white font-bold transition-colors shadow-sm text-sm flex items-center gap-2 ${(isPublishing || isLoadingData) ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
                         {isPublishing ? 'Submitting...' : 'Submit Course'}
                     </button>
                 </div>

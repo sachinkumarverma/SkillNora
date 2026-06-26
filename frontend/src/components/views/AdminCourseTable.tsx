@@ -11,6 +11,7 @@ interface AdminCourseTableProps {
     handleArchiveCourse: (id: string) => void;
     setCourseToDelete: (id: string) => void;
     getStatusBadge: (status: string) => React.ReactNode;
+    editBasePath?: string;
 }
 
 export default function AdminCourseTable({
@@ -21,7 +22,8 @@ export default function AdminCourseTable({
     toggleSelectAll,
     handleArchiveCourse,
     setCourseToDelete,
-    getStatusBadge
+    getStatusBadge,
+    editBasePath = "/admin/courses/new"
 }: AdminCourseTableProps) {
     return (
         <div className="overflow-x-auto min-h-[400px]">
@@ -99,7 +101,7 @@ export default function AdminCourseTable({
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                        <Link href={`/admin/courses/new?course_id=${course.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Edit">
+                                        <Link href={`${editBasePath}?course_id=${course.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Edit">
                                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                         </Link>
                                         <Link href={`/courses/${course.slug}`} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors" title="Preview">

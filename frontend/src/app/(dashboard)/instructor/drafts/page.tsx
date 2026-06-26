@@ -18,7 +18,7 @@ export default function DraftsPage() {
                 const data = await coursesService.getAdminAll();
                 if (data) {
                     const courseList = data.courses || (Array.isArray(data) ? data : []);
-                    const drafts = courseList.filter((c: any) => !c.is_published).map((c: any) => ({
+                    const drafts = courseList.filter((c: any) => !c.is_published && !c.is_archived).map((c: any) => ({
                         id: c.id,
                         title: c.title || 'Untitled Course',
                         updated_at: c.updated_at || c.created_at,
@@ -68,7 +68,7 @@ export default function DraftsPage() {
     }
 
     return (
-        <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20 max-w-[1200px]">
+        <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">
             <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Draft Courses</h1>
@@ -84,7 +84,7 @@ export default function DraftsPage() {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
                 {localDraft && (
                     <motion.div 
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -95,7 +95,7 @@ export default function DraftsPage() {
                             <span className="bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded">Local Unsaved Draft</span>
                             <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
-                        <h3 className="font-extrabold text-lg text-slate-900 dark:text-white mb-2 line-clamp-2">{localDraft.title}</h3>
+                        <h3 className="font-extrabold text-lg text-slate-900 dark:text-white mb-2 line-clamp-2 break-all">{localDraft.title}</h3>
                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-auto pt-4 border-t border-amber-200/50 dark:border-amber-800/30">
                             Last saved: {timeAgo(localDraft.updated_at)}
                         </p>
@@ -112,7 +112,7 @@ export default function DraftsPage() {
                         <div className="flex items-center justify-between mb-4">
                             <span className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded">Cloud Draft</span>
                         </div>
-                        <h3 className="font-extrabold text-lg text-slate-900 dark:text-white mb-2 line-clamp-2">{draft.title}</h3>
+                        <h3 className="font-extrabold text-lg text-slate-900 dark:text-white mb-2 line-clamp-2 break-all">{draft.title}</h3>
                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
                             Last saved: {timeAgo(draft.updated_at)}
                         </p>
