@@ -1,5 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { coursesService } from './coursesService.js';
+import { coursesRepository } from './coursesRepository.js';
 import { supabaseServer } from '../../config/db.js';
 
 const listAdmin = async (req, res) => {
@@ -229,6 +230,11 @@ const complete = async (req, res) => {
 
 const deleteWithRefund = async (req, res) => {
     try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ error: 'Unauthorized' });
+        const { data: userData } = await supabaseServer.auth.getUser(token);
+        if (!userData?.user) return res.status(401).json({ error: 'Unauthorized' });
+
         const { ids } = req.body;
         if (!ids || ids.length === 0) return res.json({ success: true });
         
@@ -251,7 +257,7 @@ const deleteWithRefund = async (req, res) => {
                 }
             }
         }
-        await coursesService.bulkDelete(ids);
+        await coursesService.bulkDelete(userData.user.id, ids);
         res.json({ success: true });
     } catch (err) { 
       logger.error('Error in coursesController.js:', err); 

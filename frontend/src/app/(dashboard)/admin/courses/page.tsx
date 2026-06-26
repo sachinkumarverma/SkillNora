@@ -7,6 +7,7 @@ import apiClient from '@/lib/apiClient'
 import ConfirmDeleteModal from '@/components/views/ConfirmDeleteModal'
 import AdminCourseTable from '@/components/views/AdminCourseTable'
 import Pagination from '@/components/ui/Pagination'
+import toast from 'react-hot-toast'
 
 const CustomDropdown = ({ value, options, onChange }: { value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -56,6 +57,7 @@ export default function AdminCourseManagement() {
     const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
+    const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
 
     const fetchCourses = async () => {
         setLoading(true)
@@ -63,13 +65,14 @@ export default function AdminCourseManagement() {
             const data = await coursesService.getAdminAll();
             if (data) {
                 const courseList = data.courses || (Array.isArray(data) ? data : []);
-                const mapped = courseList.map((c: any) => ({
+                const filteredList = courseList.filter((c: any) => c.is_published || c.is_archived);
+                const mapped = filteredList.map((c: any) => ({
                     id: c.id,
                     title: c.title || 'Untitled Course',
                     category: c.category || 'Uncategorized',
                     instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
                     price: `₹${c.price || 0}`,
-                    status: c.is_published ? 'Published' : 'Draft',
+                    status: c.is_published ? 'Published' : 'Archived',
                     enrollments: Number(c.enrollment_count) || 0,
                     rating: c.average_rating || 0,
                     thumbnail_url: c.thumbnail_url,
@@ -99,12 +102,21 @@ export default function AdminCourseManagement() {
         setLoading(true)
 
         try {
+            const course = courses.find(c => c.id === courseToDelete);
+            const isPublished = course?.status === 'Published';
+            
             await apiClient.post('/api/courses/delete-with-refund', { ids: [courseToDelete] });
             setCourses(courses.filter(c => c.id !== courseToDelete))
             setCourseToDelete(null)
-            alert('Course deleted successfully. Active students have been partially refunded based on their remaining subscription time.')
+            
+            if (isPublished) {
+                toast.success('Course deleted successfully. Active students have been partially refunded.')
+            } else {
+                toast.success('Draft course deleted successfully.')
+            }
         } catch (error: any) {
-            alert('Failed to delete course: ' + error.message)
+            toast.error('Failed to delete course: ' + error.message)
+            setCourseToDelete(null)
         } finally {
             setLoading(false)
         }
@@ -114,9 +126,10 @@ export default function AdminCourseManagement() {
         setLoading(true)
         try {
             await coursesService.bulkPublish([courseId], false);
-            setCourses(courses.map(c => c.id === courseId ? { ...c, status: 'Draft' } : c))
+            setCourses(courses.map(c => c.id === courseId ? { ...c, status: 'Archived' } : c))
+            toast.success('Course archived successfully.')
         } catch (error: any) {
-            alert('Failed to archive course: ' + error.message)
+            toast.error('Failed to archive course: ' + error.message)
         }
         setLoading(false)
     }
@@ -127,9 +140,10 @@ export default function AdminCourseManagement() {
         try {
             await coursesService.bulkPublish(selectedCourses, true);
             setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Published' } : c))
+            toast.success(`Successfully published ${selectedCourses.length} courses.`)
             setSelectedCourses([])
         } catch (error: any) {
-            alert('Failed to publish courses: ' + error.message)
+            toast.error('Failed to publish courses: ' + error.message)
         }
         setLoading(false)
     }
@@ -139,26 +153,38 @@ export default function AdminCourseManagement() {
         setLoading(true)
         try {
             await coursesService.bulkPublish(selectedCourses, false);
-            setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Draft' } : c))
+            setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Archived' } : c))
+            toast.success(`Successfully archived ${selectedCourses.length} courses.`)
             setSelectedCourses([])
         } catch (error: any) {
-            alert('Failed to archive courses: ' + error.message)
+            toast.error('Failed to archive courses: ' + error.message)
         }
         setLoading(false)
     }
 
-    const handleBulkDelete = async () => {
+    const openBulkDeleteModal = () => {
         if (!selectedCourses.length) return
-        if (!confirm(`Are you sure you want to delete ${selectedCourses.length} selected courses? This action cannot be undone and will trigger partial refunds.`)) return
-        
+        setIsBulkDeleteModalOpen(true)
+    }
+
+    const confirmBulkDelete = async () => {
+        setIsBulkDeleteModalOpen(false)
         setLoading(true)
         try {
+            const hasPublished = courses.filter(c => selectedCourses.includes(c.id)).some(c => c.status === 'Published');
+            
             await apiClient.post('/api/courses/delete-with-refund', { ids: selectedCourses });
             setCourses(courses.filter(c => !selectedCourses.includes(c.id)))
+            
+            if (hasPublished) {
+                toast.success(`Successfully deleted ${selectedCourses.length} courses and issued partial refunds.`)
+            } else {
+                toast.success(`Successfully deleted ${selectedCourses.length} drafts.`)
+            }
+            
             setSelectedCourses([])
-            alert(`Successfully deleted ${selectedCourses.length} courses and issued partial refunds.`)
         } catch (error: any) {
-            alert('Failed to bulk delete courses: ' + error.message)
+            toast.error('Failed to bulk delete courses: ' + error.message)
         } finally {
             setLoading(false)
         }
@@ -202,8 +228,27 @@ export default function AdminCourseManagement() {
                 isOpen={!!courseToDelete}
                 onClose={() => setCourseToDelete(null)}
                 onConfirm={confirmDeleteCourse}
-                title="Delete Course?"
-                message="Are you completely sure you want to permanently delete this course? This action cannot be undone and all enrollments will be lost."
+                message={(() => {
+                    const c = courses.find(course => course.id === courseToDelete);
+                    if (c && c.status === 'Published') {
+                        return "Are you completely sure you want to permanently delete this published course? This action cannot be undone and active students will receive a partial refund."
+                    }
+                    return "Are you completely sure you want to permanently delete this draft course? This action cannot be undone."
+                })()}
+            />
+
+            <ConfirmDeleteModal 
+                isOpen={isBulkDeleteModalOpen}
+                onClose={() => setIsBulkDeleteModalOpen(false)}
+                onConfirm={confirmBulkDelete}
+                title="Delete Selected Courses?"
+                message={(() => {
+                    const hasPublished = courses.filter(c => selectedCourses.includes(c.id)).some(c => c.status === 'Published');
+                    if (hasPublished) {
+                        return `Are you sure you want to delete ${selectedCourses.length} selected courses? This action cannot be undone and will trigger partial refunds for active students.`
+                    }
+                    return `Are you sure you want to delete ${selectedCourses.length} selected drafts? This action cannot be undone.`
+                })()}
             />
 
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -299,7 +344,7 @@ export default function AdminCourseManagement() {
                             <div className="h-4 w-px bg-blue-200 dark:bg-blue-800 mx-2"></div>
                             <button onClick={handleBulkPublish} className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Publish</button>
                             <button onClick={handleBulkArchive} className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors ml-2">Archive</button>
-                            <button onClick={handleBulkDelete} className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors ml-2">Delete</button>
+                            <button onClick={openBulkDeleteModal} className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors ml-2">Delete</button>
                         </div>
                     )}
                 </div>

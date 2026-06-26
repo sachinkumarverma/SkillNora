@@ -163,10 +163,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 else if (role === 'instructor') router.replace('/instructor')
             }
             
-            // Prevent admin and instructor from accessing student pages that don't make sense for them
             const studentOnlyPaths = ['/cart', '/wishlist', '/enrolled', '/notes', '/statistics', '/coding']
             if ((role === 'admin' || role === 'instructor') && studentOnlyPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) {
                 router.replace(role === 'admin' ? '/admin' : '/instructor')
+            }
+
+            if (pathname.startsWith('/admin') && role !== 'admin') {
+                router.replace(role === 'instructor' ? '/instructor' : '/dashboard')
+            }
+
+            if (pathname.startsWith('/instructor') && role !== 'instructor') {
+                router.replace(role === 'admin' ? '/admin' : '/dashboard')
             }
         }
     }, [loading, user, pathname, router, role])
@@ -189,7 +196,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-    if (loading || isLoggingOut) return <Loader fullScreen />
+    const isRedirecting = !loading && user && (
+        (pathname === '/dashboard' && (role === 'admin' || role === 'instructor')) ||
+        ((role === 'admin' || role === 'instructor') && ['/cart', '/wishlist', '/enrolled', '/notes', '/statistics', '/coding'].some(p => pathname === p || pathname.startsWith(p + '/'))) ||
+        (pathname.startsWith('/admin') && role !== 'admin') ||
+        (pathname.startsWith('/instructor') && role !== 'instructor')
+    )
+
+    if (loading || isLoggingOut || isRedirecting) return <Loader fullScreen />
 
     async function signOut() {
         setDropdownOpen(false)

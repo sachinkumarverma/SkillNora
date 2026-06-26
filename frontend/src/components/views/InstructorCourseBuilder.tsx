@@ -10,6 +10,7 @@ import { useEffect } from 'react'
 import Loader from '@/components/ui/Loader'
 import Confetti from 'react-confetti'
 import { useWindowSize } from 'react-use'
+import toast from 'react-hot-toast'
 
 const CustomDropdown = ({ label, value, options, onChange, required }: { label: string, value: string, options: {value: string, label: string}[], onChange: (val: string) => void, required?: boolean }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -72,8 +73,8 @@ export default function InstructorCourseBuilder() {
         provide_certificate: true,
         attachments: [] as {title: string, url: string}[]
     })
-
-    const [isSaving, setIsSaving] = useState(false)
+    const [isSavingDraft, setIsSavingDraft] = useState(false)
+    const [isPublishing, setIsPublishing] = useState(false)
     const [currentUser, setCurrentUser] = useState<any>(null)
     const [currentUserRole, setCurrentUserRole] = useState<string>('instructor')
     const [instructors, setInstructors] = useState<any[]>([])
@@ -195,31 +196,45 @@ export default function InstructorCourseBuilder() {
     const handlePublish = async (e?: React.FormEvent, isPublished: boolean = true) => {
         if (e) e.preventDefault()
         
-        if (!courseData.title || !courseData.description || !courseData.price || !courseData.thumbnail_url) {
-            alert('Please fill in all required fields (Title, Description, Price, Thumbnail URL)')
-            return
+        if (isPublished) {
+            if (!courseData.title || !courseData.description || !courseData.price || !courseData.thumbnail_url) {
+                toast.error('Please fill in all required fields (Title, Description, Price, Thumbnail URL)')
+                return
+            }
+        } else {
+            if (!courseData.title) {
+                toast.error('Please provide at least a Course Title to save as a draft.')
+                return
+            }
         }
 
         if (courseData.title.length > 100) {
-            alert('Course title must be 100 characters or less.')
+            toast.error('Course title must be 100 characters or less.')
             return
         }
 
         if (courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price)) {
-            alert('Discount price must be less than the regular price')
+            toast.error('Discount price must be less than the regular price')
             return
         }
 
-        setIsSaving(true)
+        if (isPublished) {
+            setIsPublishing(true)
+        } else {
+            setIsSavingDraft(true)
+        }
         try {
             const { data } = await apiClient.get('/api/users/me')
             const user = data.user
             if (!user) {
-                alert('Please sign in to publish a course')
+                toast.error('Please sign in to publish a course')
                 return
             }
 
-            const slug = courseData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+            let slug = courseData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+            if (!editCourseId && !isPublished) {
+                slug = `${slug}-${Math.floor(Date.now() / 1000)}`
+            }
 
             let finalInstructorId: string | null = user.id
             if (currentUserRole === 'admin') {
@@ -276,19 +291,31 @@ export default function InstructorCourseBuilder() {
                 localStorage.removeItem('local_course_draft')
             }
 
-            setShowSuccessModal(true)
-            setTimeout(() => {
-                if (currentUserRole === 'admin') {
-                    router.push('/admin/courses')
-                } else {
-                    router.push('/instructor')
-                }
-            }, 6000)
+            if (isPublished) {
+                setShowSuccessModal(true)
+                setTimeout(() => {
+                    if (currentUserRole === 'admin') {
+                        router.push('/admin/courses')
+                    } else {
+                        router.push('/instructor')
+                    }
+                }, 6000)
+            } else {
+                toast.success('Draft saved successfully!')
+                setTimeout(() => {
+                    if (currentUserRole === 'admin') {
+                        router.push('/admin/courses')
+                    } else {
+                        router.push('/instructor')
+                    }
+                }, 1500)
+            }
         } catch (error: any) {
             console.error('Error publishing course:', error)
-            alert('Failed to publish course: ' + error.message)
+            toast.error('Failed to save course: ' + error.message)
         } finally {
-            setIsSaving(false)
+            setIsSavingDraft(false)
+            setIsPublishing(false)
         }
     }
 
@@ -309,7 +336,7 @@ export default function InstructorCourseBuilder() {
 
     const generateCourseDetails = async () => {
         if (!courseData.title) {
-            alert('Please enter a Course Title first to generate details.');
+            toast.error('Please enter a Course Title first to generate details.');
             return;
         }
         setIsGeneratingDetails(true);
@@ -328,7 +355,7 @@ export default function InstructorCourseBuilder() {
             }
         } catch (e) {
             console.error('Error generating details', e);
-            alert('Failed to generate details. Please try again. Ensure Groq API is reachable.');
+            toast.error('Failed to generate details. Please try again. Ensure Groq API is reachable.');
         } finally {
             setIsGeneratingDetails(false);
         }
@@ -336,7 +363,7 @@ export default function InstructorCourseBuilder() {
 
     const generateMCQs = async (modId: number, modTitle: string) => {
         if (!modTitle || modTitle === 'New Module') {
-            alert('Please enter a specific Module Title to generate relevant questions.');
+            toast.error('Please enter a specific Module Title to generate relevant questions.');
             return;
         }
         setGeneratingModuleMcqs(modId);
@@ -355,7 +382,7 @@ export default function InstructorCourseBuilder() {
             }
         } catch (e) {
             console.error('Error generating MCQs', e);
-            alert('Failed to generate MCQs. Please try again.');
+            toast.error('Failed to generate MCQs. Please try again.');
         } finally {
             setGeneratingModuleMcqs(null);
         }
@@ -379,7 +406,7 @@ export default function InstructorCourseBuilder() {
     }
 
     return (
-        <form onSubmit={handlePublish} className="max-w-7xl mx-auto p-6 lg:p-8 pb-32">
+        <form onSubmit={handlePublish} className="w-full mx-auto p-6 lg:p-8 pb-32">
             
             <AnimatePresence>
                 {showSuccessModal && (
@@ -438,11 +465,6 @@ export default function InstructorCourseBuilder() {
 
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
                 <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <Link href={currentUserRole === 'admin' ? '/admin/courses' : '/instructor/courses'} className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors">Courses</Link>
-                        <span className="text-slate-300 dark:text-slate-600">/</span>
-                        <span className="text-sm font-bold text-slate-900 dark:text-white">Edit Course</span>
-                    </div>
                     <motion.h1 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -455,11 +477,11 @@ export default function InstructorCourseBuilder() {
                     {localDraftTime && !editCourseId && (
                         <span className="text-xs font-bold text-slate-400 mr-2">Local Draft Saved: {new Date(localDraftTime).toLocaleTimeString()}</span>
                     )}
-                    <button type="button" onClick={(e) => handlePublish(e, false)} disabled={isSaving} className="px-5 py-2.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm">
-                        Save as Draft
+                    <button type="button" onClick={(e) => handlePublish(e, false)} disabled={isSavingDraft || isPublishing} className="px-5 py-2.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm">
+                        {isSavingDraft ? 'Saving...' : 'Save as Draft'}
                     </button>
-                    <button type="submit" onClick={(e) => handlePublish(e, true)} disabled={isSaving} className={`px-5 py-2.5 rounded-md text-white font-bold transition-colors shadow-sm text-sm flex items-center gap-2 ${isSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                        {isSaving ? 'Submitting...' : 'Submit Course'}
+                    <button type="submit" onClick={(e) => handlePublish(e, true)} disabled={isSavingDraft || isPublishing} className={`px-5 py-2.5 rounded-md text-white font-bold transition-colors shadow-sm text-sm flex items-center gap-2 ${isPublishing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                        {isPublishing ? 'Submitting...' : 'Submit Course'}
                     </button>
                 </div>
             </header>
@@ -706,32 +728,6 @@ export default function InstructorCourseBuilder() {
                         </div>
                     </motion.div>
 
-                    {/* Main Course Thumbnail */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 md:p-8 shadow-sm"
-                    >
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Course Thumbnail</h2>
-                            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                                <button type="button" onClick={() => setThumbnailMode('upload')} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${thumbnailMode === 'upload' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Upload</button>
-                                <button type="button" onClick={() => setThumbnailMode('unsplash')} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${thumbnailMode === 'unsplash' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Unsplash URL</button>
-                            </div>
-                        </div>
-                        
-                        {thumbnailMode === 'upload' ? (
-                            <div className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50/50 transition hover:border-blue-400 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-blue-500/50 dark:hover:bg-blue-900/10">
-                                <svg className="mb-3 h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                <span className="text-sm font-bold text-slate-600 dark:text-slate-300">Drag & drop image or click to browse</span>
-                                <span className="text-xs text-slate-400 mt-1">1920x1080 recommended</span>
-                            </div>
-                        ) : (
-                            <input required type="url" value={courseData.thumbnail_url} onChange={(e) => setCourseData({...courseData, thumbnail_url: e.target.value})} placeholder="https://images.unsplash.com/photo-..." className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
-                        )}
-                    </motion.div>
-
                     {/* Modules (Video + Thumbnail) */}
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
@@ -944,6 +940,32 @@ export default function InstructorCourseBuilder() {
                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Provide Certificate on Completion</span>
                             </label>
                         </div>
+                    </motion.div>
+
+                    {/* Main Course Thumbnail */}
+                    <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm"
+                    >
+                        <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 mb-6">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Course Thumbnail</h2>
+                            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                                <button type="button" onClick={() => setThumbnailMode('upload')} className={`px-2 py-1 rounded-md text-xs font-bold transition-colors ${thumbnailMode === 'upload' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Upload</button>
+                                <button type="button" onClick={() => setThumbnailMode('unsplash')} className={`px-2 py-1 rounded-md text-xs font-bold transition-colors ${thumbnailMode === 'unsplash' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Link</button>
+                            </div>
+                        </div>
+                        
+                        {thumbnailMode === 'upload' ? (
+                            <div className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50/50 transition hover:border-blue-400 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-blue-500/50 dark:hover:bg-blue-900/10">
+                                <svg className="mb-3 h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                <span className="text-sm font-bold text-slate-600 dark:text-slate-300 text-center px-4">Drag & drop image or click to browse</span>
+                                <span className="text-xs text-slate-400 mt-1">1920x1080 recommended</span>
+                            </div>
+                        ) : (
+                            <input required type="url" value={courseData.thumbnail_url} onChange={(e) => setCourseData({...courseData, thumbnail_url: e.target.value})} placeholder="https://images.unsplash.com/photo-..." className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
+                        )}
                     </motion.div>
                 </div>
             </div>

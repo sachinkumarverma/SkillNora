@@ -80,9 +80,9 @@ const getInstructorTransactions = async (instructorId = null) => {
 
 const updatePublishStatus = async (ids, status) => {
   if (!ids || ids.length === 0) return true;
-  const placeholders = ids.map((_, i) => '$' + (i + 2)).join(',');
-  const sql = `UPDATE courses SET is_published = $1 WHERE id IN (${placeholders})`;
-  await query(sql, [status, ...ids]);
+  const placeholders = ids.map((_, i) => '$' + (i + 3)).join(',');
+  const sql = `UPDATE courses SET is_published = $1, is_archived = $2 WHERE id IN (${placeholders})`;
+  await query(sql, [status, !status, ...ids]);
   return true;
 };
 
@@ -168,6 +168,7 @@ const create = async payload => {
 
 const update = async (id, payload) => {
   if (payload.attachments) payload.attachments = JSON.stringify(payload.attachments);
+  payload.updated_at = new Date().toISOString();
   const keys = Object.keys(payload);
   const values = Object.values(payload);
   const sets = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
