@@ -448,7 +448,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                         onClick={() => setShowQuiz(true)}
                                         className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"
                                     >
-                                        {quizCompleted ? "Retake Module Quiz" : "Take Module Quiz"}
+                                        {quizCompleted ? "Retake Quiz" : "Take Quiz"}
                                     </button>
                                 )}
                             </div>
@@ -556,6 +556,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                 });
                                                 const score = Math.round((correct / lecture.mcqs.length) * 100);
                                                 setQuizResult({ score, passed: score >= 70 });
+                                                setQuizCompleted(true);
                                             }}
                                             className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg"
                                         >

@@ -319,7 +319,7 @@ const cancelEnrollment = async (req, res) => {
         const enrolledDate = new Date(enrollment.created_at || Date.now());
         const now = new Date();
         const diffTime = Math.abs(now.getTime() - enrolledDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         
         if (diffDays > 30) {
             return res.status(400).json({ error: 'Cancellation only allowed within 30 days of purchase.' });
@@ -338,6 +338,20 @@ const cancelEnrollment = async (req, res) => {
         }
         
         await enrollmentsRepository.deleteEnrollment(userData.user.id, courseId);
+        
+        // Mark the order as cancelled in the database
+        try {
+            await query("UPDATE orders SET status = 'cancelled' WHERE user_id = $1 AND course_id = $2 AND status = 'paid'", [userData.user.id, courseId]);
+            
+            // Make a new entry in DB for the refunded amount (negative)
+            const refundReceipt = `rfnd_${Date.now()}`;
+            await query(`
+                INSERT INTO orders (razorpay_order_id, user_id, course_id, amount, currency, status, receipt)
+                VALUES ($1, $2, $3, $4, 'INR', 'refunded', $5)
+            `, [`sim_refund_${Date.now()}`, userData.user.id, courseId, -refundAmount, refundReceipt]);
+        } catch (e) {
+            console.error("Error updating order status or creating refund entry:", e);
+        }
         
         res.json({ success: true, refundAmount });
         

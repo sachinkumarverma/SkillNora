@@ -184,16 +184,19 @@ export default function DashboardPage() {
                     <CourseCarousel
                         title="New and popular"
                         courses={displayCourses.slice(0, 8)}
+                        enrolledIds={enrolledIds}
                     />
 
                     <CourseCarousel
                         title="Trending AI Courses"
                         courses={displayCourses.filter(c => c.category === 'Data Science' || c.category === 'Software Engineering')}
+                        enrolledIds={enrolledIds}
                     />
 
                     <CourseCarousel
                         title="Top rated in Web Development"
                         courses={displayCourses.filter(c => c.category === 'Web Development' || c.category === 'Python')}
+                        enrolledIds={enrolledIds}
                     />
                 </div>
                 )}
