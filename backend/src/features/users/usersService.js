@@ -8,8 +8,8 @@ const getInstructors = async () => {
     return await usersRepository.getInstructors();
 };
 
-const syncUser = async (id, email, role) => {
-    return await usersRepository.syncUser(id, email, role);
+const syncUser = async (id, email, role, full_name) => {
+    return await usersRepository.syncUser(id, email, role, full_name);
 };
 
 const updateProfile = async (id, data) => {

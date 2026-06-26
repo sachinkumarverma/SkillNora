@@ -34,10 +34,10 @@ export default function ContactPage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto py-12 px-6">
-            <h1 className="text-4xl font-bold mb-8">Contact Us</h1>
+        <div className="max-w-[1400px] mx-auto py-12 px-6">
             <div className="grid md:grid-cols-2 gap-12">
                 <div>
+                    <h1 className="text-4xl font-bold mb-8 text-center">Contact Us</h1>
                     <p className="text-lg text-slate-600 dark:text-slate-400 mb-8">
                         Have a question, feedback, or need support? We're here to help. Reach out to our team using the form or our contact details below.
                     </p>

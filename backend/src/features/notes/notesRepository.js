@@ -20,22 +20,12 @@ const getNotes = async (userId) => {
 };
 
 const saveNote = async (userId, courseId, lectureId, text) => {
-  const { rows: existing } = await query(`SELECT id FROM notes WHERE user_id = $1 AND course_id = $2 AND lecture_id = $3`, [userId, courseId, lectureId]);
-  
-  if (existing.length > 0) {
-    const { rows } = await query(`
-      UPDATE notes SET text = $1, updated_at = NOW() 
-      WHERE id = $2 RETURNING *
-    `, [text, existing[0].id]);
-    return rows[0];
-  } else {
-    const { rows } = await query(`
-      INSERT INTO notes (user_id, course_id, lecture_id, text) 
-      VALUES ($1, $2, $3, $4) 
-      RETURNING *
-    `, [userId, courseId, lectureId, text]);
-    return rows[0];
-  }
+  const { rows } = await query(`
+    INSERT INTO notes (user_id, course_id, lecture_id, text) 
+    VALUES ($1, $2, $3, $4) 
+    RETURNING *
+  `, [userId, courseId, lectureId, text]);
+  return rows[0];
 };
 
 const deleteNote = async (userId, noteId) => {

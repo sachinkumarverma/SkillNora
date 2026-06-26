@@ -110,7 +110,7 @@ const completeLecture = async (userId, courseId, slug, lectureId, totalLectures,
     // Save quiz score if provided
     if (quizScore !== undefined && quizScore !== null) {
       if (!prog.quizScores) prog.quizScores = {};
-      prog.quizScores[lectureId] = Math.max(prog.quizScores[lectureId] || 0, quizScore);
+      prog.quizScores[lectureId] = quizScore;
     }
     
     await coursesRepository.updateProgress(userId, courseId, prog);

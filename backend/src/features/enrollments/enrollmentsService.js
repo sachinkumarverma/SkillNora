@@ -12,7 +12,12 @@ const forceCreateEnrollment = async (userId, courseId) => {
 
 const getUserEnrollmentsList = async userId => {
   const enrollments = await enrollmentsRepository.findEnrollmentsByUserId(userId);
-  return enrollments.map(e => e.course_id);
+  const { rows } = await (await import('../../config/db.js')).query(`SELECT COUNT(*) FROM certificates WHERE user_id = $1`, [userId]);
+  return {
+    enrolledIds: enrollments.map(e => e.course_id),
+    enrollments,
+    certificatesCount: parseInt(rows[0].count, 10)
+  };
 };
 
 export const enrollmentsService = {

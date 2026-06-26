@@ -10,6 +10,19 @@ import { notesService } from '@/services/notesService'
 import useUser from '@/lib/useUser'
 import Loader from '@/components/ui/Loader'
 
+const formatNoteContent = (html: string) => {
+    if (!html) return '';
+    return html.replace(/<a\b([^>]*)href=(["'])(.*?)\2([^>]*)>/gi, (match, before, quote, url, after) => {
+        let finalUrl = url;
+        if (!/^https?:\/\//i.test(finalUrl) && !finalUrl.startsWith('mailto:')) {
+            finalUrl = 'http://' + finalUrl;
+        }
+        const cleanBefore = before.replace(/target=(["']).*?\1/gi, '').replace(/rel=(["']).*?\1/gi, '');
+        const cleanAfter = after.replace(/target=(["']).*?\1/gi, '').replace(/rel=(["']).*?\1/gi, '');
+        return `<a${cleanBefore}href="${finalUrl}" target="_blank" rel="noopener noreferrer"${cleanAfter}>`;
+    });
+};
+
 export default function NotesPage() {
     const [notes, setNotes] = useState<any[]>([])
     const { user, loading: userLoading } = useUser()
@@ -17,6 +30,7 @@ export default function NotesPage() {
     
     // Interactions state
     const [selectedNotes, setSelectedNotes] = useState<string[]>([])
+    const [selectedImage, setSelectedImage] = useState<string | null>(null)
     const [modalNote, setModalNote] = useState<any | null>(null)
     const [editText, setEditText] = useState("")
     const [confirmDelete, setConfirmDelete] = useState<{ id?: string, bulk?: boolean } | null>(null)
@@ -86,7 +100,7 @@ export default function NotesPage() {
     }
 
     return (
-        <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full relative">
+        <div className="w-full mx-auto p-4 md:p-8 lg:p-12 relative">
            <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
                     <h1 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">My Notes</h1>
@@ -118,7 +132,7 @@ export default function NotesPage() {
                     <p className="text-sm font-medium text-slate-500 max-w-md text-center">While watching a lecture, use the Notes section below the video to jot down important points.</p>
                </div>
            ) : (
-               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
                    {notes.map(note => {
                        const isSelected = selectedNotes.includes(note.id);
                        return (
@@ -148,15 +162,15 @@ export default function NotesPage() {
                                             title="Delete Note"
                                         >
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                        </button>
-                                        <Link 
-                                            onClick={e => e.stopPropagation()}
-                                            href={`/courses/${note.courseSlug}/lecture/${note.lectureId}`}
-                                            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold text-sm flex items-center gap-1 transition-colors"
-                                        >
-                                            Go to Video
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
-                                        </Link>
+                                       </button>
+                                       <Link 
+                                           onClick={e => e.stopPropagation()}
+                                           href={`/courses/${note.courseSlug}/lecture/${note.lectureId}`}
+                                           className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold text-sm flex items-center gap-1 transition-colors"
+                                       >
+                                           Go to Video
+                                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                                       </Link>
                                    </div>
                                </div>
                                
@@ -167,9 +181,18 @@ export default function NotesPage() {
                                    Course: {note.courseTitle}
                                </p>
                                
-                               <div className="flex-1 bg-amber-50 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-100 dark:border-amber-900/20 text-slate-700 dark:text-slate-300 text-sm font-medium line-clamp-4 relative overflow-hidden">
+                               <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-100 dark:border-amber-900/20 text-slate-700 dark:text-slate-300 text-sm font-medium relative overflow-hidden">
                                    {note.text ? (
-                                       <div dangerouslySetInnerHTML={{ __html: note.text }} />
+                                       <div 
+                                           className="custom-html-content"
+                                           onClick={(e) => {
+                                               if ((e.target as HTMLElement).tagName === 'IMG') {
+                                                   setSelectedImage((e.target as HTMLImageElement).src);
+                                                   e.stopPropagation();
+                                               }
+                                           }}
+                                           dangerouslySetInnerHTML={{ __html: formatNoteContent(note.text) }} 
+                                       />
                                    ) : (
                                        <span className="text-slate-400 italic">Empty note</span>
                                    )}
@@ -187,7 +210,7 @@ export default function NotesPage() {
 
            {/* Full View Modal */}
            {modalNote && (
-               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setModalNote(null)}>
+               <div className="fixed inset-0 z-[20] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setModalNote(null)}>
                    <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative flex flex-col max-h-[90vh] animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
                        <button onClick={() => setModalNote(null)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -196,13 +219,23 @@ export default function NotesPage() {
                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1 pr-10">{modalNote.lectureTitle}</h2>
                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Course: {modalNote.courseTitle}</p>
                        
-                       <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-6">
+                       <div className="flex-1 overflow-visible pr-2 mb-6 quill-editor-bounds" style={{ minHeight: '300px' }}>
                            <ReactQuill 
                                theme="snow"
+                               bounds=".quill-editor-bounds"
                                value={editText}
                                onChange={setEditText}
                                placeholder="Type your notes here..."
                                className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white pb-10"
+                               modules={{
+                                   toolbar: [
+                                       ['bold', 'italic', 'strike', 'underline', 'code-block', 'blockquote'],
+                                       [{ 'header': 1 }, { 'header': 2 }, { 'header': 3 }],
+                                       [{ 'list': 'bullet' }, { 'list': 'ordered' }],
+                                       [{ 'align': [] }],
+                                       ['link', 'image']
+                                   ]
+                               }}
                            />
                        </div>
 
@@ -230,7 +263,7 @@ export default function NotesPage() {
                </div>
            )}
            {confirmDelete && (
-               <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setConfirmDelete(null)}>
+               <div className="fixed inset-0 z-[20] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setConfirmDelete(null)}>
                    <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative flex flex-col text-center animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
                        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -245,6 +278,16 @@ export default function NotesPage() {
                        </div>
                    </div>
                </div>
+           )}
+           {selectedImage && (
+               <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedImage(null)}>
+                    <div className="sticky top-0 left-0 w-full h-[calc(100vh-64px)] flex items-center justify-center p-4">
+                   <img src={selectedImage} className="max-w-full max-h-full rounded-xl object-contain shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()} />
+                   <button onClick={() => setSelectedImage(null)} className="absolute top-4 right-4 p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition">
+                       <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                   </button>
+                </div>
+            </div>
            )}
         </div>
     )

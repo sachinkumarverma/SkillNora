@@ -280,9 +280,11 @@ const getUserEnrollments = async (req, res) => {
     if (!userData.user) return res.status(401).json({
       error: 'Invalid token'
     });
-    const ids = await enrollmentsService.getUserEnrollmentsList(userData.user.id);
+    const data = await enrollmentsService.getUserEnrollmentsList(userData.user.id);
     res.json({
-      enrolledIds: ids
+      enrolledIds: data.enrolledIds,
+      enrollments: data.enrollments,
+      certificatesCount: data.certificatesCount
     });
   } catch (err) { logger.error('Error in enrollmentsController.js:', err); 
     res.status(500).json({

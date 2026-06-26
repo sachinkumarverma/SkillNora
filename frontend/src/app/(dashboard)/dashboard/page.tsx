@@ -14,17 +14,58 @@ export default function DashboardPage() {
     const { user } = useUser()
     const [courses, setCourses] = useState<any[]>([])
     const [enrolledIds, setEnrolledIds] = useState<string[]>([])
+    const [userEnrollments, setUserEnrollments] = useState<any[]>([])
+    const [certificatesCount, setCertificatesCount] = useState<number>(0)
+    const [streakCount, setStreakCount] = useState<number>(1)
     const [loadingCourses, setLoadingCourses] = useState(true)
 
     useEffect(() => {
         let active = true
         Promise.all([
             apiClient.get('/api/courses').then(r => r.data).catch(e => { console.error(e); return { courses: [] }; }),
-            apiClient.get('/api/enrollments/user').then(r => r.data).catch(() => ({ enrolledIds: [] }))
-        ]).then(([coursesData, enrollData]) => {
+            apiClient.get('/api/enrollments/user').then(r => r.data).catch(() => ({ enrolledIds: [] })),
+            apiClient.get('/api/statistics').then(r => r.data.stats).catch(() => null)
+        ]).then(([coursesData, enrollData, statsData]) => {
             if (!active) return
             setCourses(Array.isArray(coursesData) ? coursesData : coursesData.courses || coursesData.data || [])
             setEnrolledIds(enrollData?.enrolledIds || [])
+            setUserEnrollments(enrollData?.enrollments || [])
+            setCertificatesCount(enrollData?.certificatesCount || 0)
+            
+            // Calculate Active Streak
+            let streak = 0;
+            if (statsData?.activityData) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const activityMap = new Map<string, number>();
+                const formatDateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                
+                Object.values(statsData.activityData).flat().forEach((dateStr: any) => {
+                    if (!dateStr) return;
+                    const d = new Date(dateStr);
+                    d.setHours(0,0,0,0);
+                    const key = formatDateKey(d);
+                    activityMap.set(key, (activityMap.get(key) || 0) + 1);
+                });
+
+                const last364Days = Array.from({ length: 364 }).map((_, i) => {
+                    const d = new Date(today);
+                    d.setDate(d.getDate() - (363 - i));
+                    return d;
+                });
+                
+                for (let i = 363; i >= 0; i--) {
+                    const d = last364Days[i];
+                    const key = formatDateKey(d);
+                    if (activityMap.get(key) && activityMap.get(key)! > 0) {
+                        streak++;
+                    } else {
+                        if (i !== 363) break;
+                    }
+                }
+            }
+            setStreakCount(streak || 1);
+            
         }).catch(() => {
             if (active) setCourses([])
         }).finally(() => {
@@ -84,15 +125,15 @@ export default function DashboardPage() {
                                     <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">Courses Enrolled</div>
                                 </div>
                                 <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border border-purple-100 dark:border-purple-800/30">
-                                    <div className="text-3xl font-black text-purple-600 dark:text-purple-400 mb-1">0</div>
+                                    <div className="text-3xl font-black text-purple-600 dark:text-purple-400 mb-1">{certificatesCount}</div>
                                     <div className="text-sm font-semibold text-purple-800 dark:text-purple-300">Completed</div>
                                 </div>
                                 <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-lg border border-emerald-100 dark:border-emerald-800/30">
-                                    <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mb-1">{user?.user_metadata?.certificates || 0}</div>
+                                    <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mb-1">{certificatesCount}</div>
                                     <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Certificates Earned</div>
                                 </div>
                                 <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-lg border border-amber-100 dark:border-amber-800/30">
-                                    <div className="text-3xl font-black text-amber-600 dark:text-amber-400 mb-1">{user?.user_metadata?.streak || 1}</div>
+                                    <div className="text-3xl font-black text-amber-600 dark:text-amber-400 mb-1">{streakCount}</div>
                                     <div className="text-sm font-semibold text-amber-800 dark:text-amber-300">Day Streak!</div>
                                 </div>
                             </div>
@@ -120,7 +161,12 @@ export default function DashboardPage() {
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Continue Watching</h2>
                             {enrolledCourses.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    {enrolledCourses.slice(0, 3).map((course, idx) => (
+                                    {enrolledCourses.slice(0, 3).map((course, idx) => {
+                                        const enrollment = userEnrollments.find(e => e.course_id === course.id);
+                                        const progList = enrollment?.progress?.[course.slug] || [];
+                                        const totalLectures = course.lectures?.length || 1; // avoid div 0
+                                        const percent = Math.min(100, Math.round((progList.length / totalLectures) * 100));
+                                        return (
                                         <div key={idx} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
                                             <div className="w-24 h-24 shrink-0 rounded-xl bg-slate-100 overflow-hidden relative">
                                                 <img src={course.thumbnail_url || course.image_url || course.image || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover" />
@@ -131,12 +177,12 @@ export default function DashboardPage() {
                                             <div className="flex-1 flex flex-col justify-center">
                                                 <h3 className="font-bold text-slate-900 dark:text-white line-clamp-2 mb-2 text-sm">{course.title}</h3>
                                                 <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mb-1 overflow-hidden">
-                                                    <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `0%` }}></div>
+                                                    <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${percent}%` }}></div>
                                                 </div>
-                                                <div className="text-xs text-slate-500 font-semibold">0% complete</div>
+                                                <div className="text-xs text-slate-500 font-semibold">{percent}% complete</div>
                                             </div>
                                         </div>
-                                    ))}
+                                    )})}
                                 </div>
                             ) : (
                                 <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 flex flex-col items-center justify-center text-center">

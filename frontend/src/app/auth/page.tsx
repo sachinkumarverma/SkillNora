@@ -22,6 +22,7 @@ function GoogleIcon() {
 export default function AuthPage() {
     const [mode, setMode] = useState<Mode>('signin')
     const [email, setEmail] = useState('')
+    const [fullName, setFullName] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [isInstructor, setIsInstructor] = useState(false)
@@ -42,7 +43,7 @@ export default function AuthPage() {
 
         try {
             if (mode === 'signup') {
-                const { data, error } = await authService.signUp(email, password, isInstructor ? 'instructor' : 'student')
+                const { data, error } = await authService.signUp(email, password, isInstructor ? 'instructor' : 'student', fullName)
                 if (error) {
                     if (error.message.toLowerCase().includes("already registered")) {
                         toast.error('An account with this email already exists. Please sign in instead.')
@@ -57,7 +58,8 @@ export default function AuthPage() {
                         await apiClient.post('/api/users/sync', { 
                             id: data.user.id, 
                             email: data.user.email, 
-                            role: isInstructor ? 'instructor' : 'student' 
+                            role: isInstructor ? 'instructor' : 'student',
+                            full_name: fullName
                         }).catch(() => {})
                     }
                     toast.success('Account created. Check your email to confirm your account.')
@@ -162,7 +164,14 @@ export default function AuthPage() {
                     </div>
 
                     <form className='mt-6 flex flex-col gap-4' onSubmit={handleSubmit}>
-                        <div className="min-h-[240px] space-y-4">
+                        <div className="min-h-[320px] space-y-4">
+                            {mode === 'signup' && (
+                                <div>
+                                    <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Full Name</label>
+                                    <input value={fullName} onChange={(e) => setFullName(e.target.value)} className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='Your full name' />
+                                </div>
+                            )}
+
                             <div>
                                 <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Email</label>
                                 <input value={email} onChange={(e) => setEmail(e.target.value)} className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='you@domain.com' />

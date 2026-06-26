@@ -30,7 +30,7 @@ export default function CertificatesPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="max-w-[1400px] mx-auto px-6 py-12">
             <h1 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-8">My Certificates</h1>
             
             {certs.length === 0 ? (

@@ -151,3 +151,8 @@ body {
   border-bottom-left-radius: 0.75rem;
   border-bottom-right-radius: 0.75rem;
 }
+
+/* Offset quill tooltip to prevent clipping behind sidebar */
+.ql-tooltip {
+  margin-left: 35px !important;
+}

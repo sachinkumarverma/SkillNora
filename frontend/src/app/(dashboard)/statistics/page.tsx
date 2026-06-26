@@ -35,7 +35,7 @@ export default function StatisticsPage() {
         Object.values(stats.activityData).flat().forEach((dateStr: any) => {
             if (!dateStr) return;
             const d = new Date(dateStr);
-            d.setHours(0,0,0,0);
+            d.setHours(0, 0, 0, 0);
             const key = formatDateKey(d);
             activityMap.set(key, (activityMap.get(key) || 0) + 1);
         });
@@ -47,14 +47,14 @@ export default function StatisticsPage() {
         return d;
     });
 
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
     const heatmapMonths = Array.from({ length: 12 }).map((_, i) => {
         const d = new Date(today);
         d.setMonth(d.getMonth() - (11 - i));
         return monthNames[d.getMonth()];
     });
-    
+
     // Calculate Active Streak
     let streak = 0;
     for (let i = 363; i >= 0; i--) {
@@ -89,7 +89,7 @@ export default function StatisticsPage() {
     // Calculate Activity Breakdown percentages
     const totalActivity = (stats?.totalEnrolled || 0) + (stats?.completedCourses || 0) + (stats?.totalWishlisted || 0) + (stats?.totalNotes || 0);
     const getPercent = (val: number) => totalActivity > 0 ? Math.round((val / totalActivity) * 100) : 0;
-    
+
     const breakdown = [
         { title: 'Enrolled', val: stats?.totalEnrolled || 0, percent: getPercent(stats?.totalEnrolled || 0), color: '#3b82f6', bg: 'bg-blue-600' },
         { title: 'Completed', val: stats?.completedCourses || 0, percent: getPercent(stats?.completedCourses || 0), color: '#10b981', bg: 'bg-emerald-600' },
@@ -106,7 +106,7 @@ export default function StatisticsPage() {
     const pieBackground = totalActivity > 0 ? `conic-gradient(${gradientStops.join(', ')})` : 'conic-gradient(#e2e8f0 0% 100%)';
 
     return (
-        <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen">
+        <div className="p-6 md:p-10 max-w-[1400px] mx-auto min-h-screen">
             <h1 className="text-3xl font-bold font-serif text-slate-900 dark:text-white mb-2">My Profile Statistics</h1>
             <p className="text-slate-500 mb-10">A deep dive into your learning journey and progress.</p>
 
@@ -118,7 +118,7 @@ export default function StatisticsPage() {
                     <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{stats?.totalEnrolled || 0}</div>
                     <div className="text-sm font-semibold text-slate-500">Courses Enrolled</div>
                 </div>
-                
+
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                     <div className="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-full flex items-center justify-center mb-4">
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
@@ -166,7 +166,7 @@ export default function StatisticsPage() {
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-lg shadow-sm">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Activity Breakdown</h3>
                         <div className="flex flex-col md:flex-row items-center gap-8">
-                            <div className="w-48 h-48 rounded-full border-4 border-white dark:border-slate-800 shadow-md flex-shrink-0" 
+                            <div className="w-48 h-48 rounded-full border-4 border-white dark:border-slate-800 shadow-md flex-shrink-0"
                                 style={{ background: pieBackground }}>
                             </div>
                             <div className="flex-1 w-full space-y-4">
@@ -188,8 +188,8 @@ export default function StatisticsPage() {
                                 <AreaChart data={monthlyEngagement} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -206,26 +206,25 @@ export default function StatisticsPage() {
                 {/* Activity Heatmap */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-lg shadow-sm overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Activity Heatmap (Last 12 Months)</h3>
-                    
-                    <div className="flex gap-2 min-w-max items-end">
-                        <div className="flex flex-col justify-between text-[11px] font-semibold text-slate-400 py-1 mr-2 h-[140px] shrink-0">
+
+                    <div className="flex gap-2 w-full min-w-max items-end">
+                        <div className="flex flex-col justify-between text-[11px] font-semibold text-slate-400 py-1 mr-2 h-[145px] shrink-0">
                             <span>Mon</span>
                             <span>Wed</span>
                             <span>Fri</span>
                         </div>
-                        
-                        <div className="flex gap-1">
+
+                        <div className="flex flex-1 justify-between w-full">
                             {Array.from({ length: 52 }).map((_, colIndex) => {
                                 const colDays = last364Days.slice(colIndex * 7, colIndex * 7 + 7);
                                 if (colDays.length === 0) return null;
                                 
-                                // Determine if this column starts a new month
                                 const firstDay = colDays[0];
                                 const prevColFirstDay = colIndex > 0 ? last364Days[(colIndex - 1) * 7] : null;
                                 const isNewMonth = prevColFirstDay ? firstDay.getMonth() !== prevColFirstDay.getMonth() : true;
                                 
                                 return (
-                                    <div key={colIndex} className="flex flex-col shrink-0">
+                                    <div key={colIndex} className={`flex flex-col ${isNewMonth && colIndex > 0 ? 'ml-2 md:ml-2' : ''}`}>
                                         {/* Month Label Header */}
                                         <div className="h-5 mb-1 relative">
                                             {isNewMonth && (
@@ -236,7 +235,7 @@ export default function StatisticsPage() {
                                         </div>
                                         
                                         {/* 7 Days Column */}
-                                        <div className="flex flex-col gap-1 h-[140px]">
+                                        <div className="flex flex-col justify-between h-[145px]">
                                             {colDays.map((d, i) => {
                                                 const key = formatDateKey(d);
                                                 const count = activityMap.get(key) || 0;
@@ -249,7 +248,7 @@ export default function StatisticsPage() {
                                                     <div 
                                                         key={i} 
                                                         title={`${d.toLocaleDateString()}: ${count} actions`}
-                                                        className="w-4 h-4 shrink-0 rounded-[3px] bg-emerald-500 cursor-pointer transition-opacity hover:opacity-100" 
+                                                        className="w-[15px] h-[15px] sm:w-[16px] sm:h-[16px] md:w-[18px] md:h-[18px] shrink-0 rounded-[3px] bg-emerald-500 cursor-pointer transition-opacity hover:opacity-100" 
                                                         style={{ opacity: intensity === 0 ? 0.05 : intensity / 100 }}
                                                     ></div>
                                                 );
@@ -260,7 +259,7 @@ export default function StatisticsPage() {
                             })}
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 mt-4 text-xs font-semibold text-slate-500 ml-10">
                         <span>Less</span>
                         <div className="flex gap-1">

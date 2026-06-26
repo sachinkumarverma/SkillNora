@@ -13,6 +13,20 @@ const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false })
 const Confetti = dynamic(() => import('react-confetti'), { ssr: false })
 import Link from 'next/link'
 import apiClient from '@/lib/apiClient'
+import toast from 'react-hot-toast'
+
+const formatNoteContent = (html: string) => {
+    if (!html) return '';
+    return html.replace(/<a\b([^>]*)href=(["'])(.*?)\2([^>]*)>/gi, (match, before, quote, url, after) => {
+        let finalUrl = url;
+        if (!/^https?:\/\//i.test(finalUrl) && !finalUrl.startsWith('mailto:')) {
+            finalUrl = 'http://' + finalUrl;
+        }
+        const cleanBefore = before.replace(/target=(["']).*?\1/gi, '').replace(/rel=(["']).*?\1/gi, '');
+        const cleanAfter = after.replace(/target=(["']).*?\1/gi, '').replace(/rel=(["']).*?\1/gi, '');
+        return `<a${cleanBefore}href="${finalUrl}" target="_blank" rel="noopener noreferrer"${cleanAfter}>`;
+    });
+};
 
 export default function LecturePage({ params }: { params: Promise<{ slug: string, id: string }> }) {
     const { slug, id } = React.use(params)
@@ -33,6 +47,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [quizAnswers, setQuizAnswers] = useState<{ [key: number]: number }>({})
     const [quizResult, setQuizResult] = useState<{ score: number, passed: boolean } | null>(null)
     const [quizCompleted, setQuizCompleted] = useState(false)
+    const [savedNotes, setSavedNotes] = useState<any[]>([])
+    const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
     // Comments State
     const [comments, setComments] = useState<any[]>([])
@@ -273,13 +289,22 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             if (user) {
                 const notesModule = await import('@/services/notesService')
                 const notes = await notesModule.notesService.getNotes()
-                const existingNote = notes.find((n: any) => String(n.course_id) === String(courseInfo?.id) && String(n.lecture_id) === String(id))
-                if (existingNote) setNoteText(existingNote.text)
+                const existingNotes = notes.filter((n: any) => String(n.course_id) === String(courseInfo?.id) && String(n.lecture_id) === String(id))
+                setSavedNotes(existingNotes)
             } else {
-                setNoteText('')
+                setSavedNotes([])
             }
         }
         loadNotes()
+        
+        const savedResult = localStorage.getItem(`quiz_result_${courseInfo?.id}_${id}`);
+        if (savedResult) {
+            try {
+                const parsed = JSON.parse(savedResult);
+                setQuizResult(parsed.result);
+                setQuizAnswers(parsed.answers);
+            } catch (e) {}
+        }
     }, [slug, id, user, courseInfo])
 
     const saveNote = async () => {
@@ -287,14 +312,23 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         if (user) {
             setIsSavingNote(true)
             const notesModule = await import('@/services/notesService')
-            await notesModule.notesService.saveNote(courseInfo.id, lecture.id, noteText)
+            const newNote = await notesModule.notesService.saveNote(courseInfo.id, lecture.id, noteText)
+            setSavedNotes(prev => [newNote, ...prev])
+            setNoteText('')
             setNoteSaved(true)
+            toast.success('Note saved successfully!')
             setTimeout(() => setNoteSaved(false), 3000)
             setTimeout(() => setIsSavingNote(false), 200)
         } else {
             alert('Please sign in to save notes')
         }
     }
+    
+    const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if ((e.target as HTMLElement).tagName === 'IMG') {
+            setSelectedImage((e.target as HTMLImageElement).src);
+        }
+    };
 
     useEffect(() => {
         // Recent courses logic should be fetched from DB enrollments via last_accessed_at
@@ -350,9 +384,18 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         </div>
     )
 
-
     return (
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8">
+        <div className="w-full mx-auto px-4 md:px-8 lg:px-12 py-8 relative">
+            {selectedImage && (
+                <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedImage(null)}>
+                    <div className="sticky top-0 left-0 w-full h-[calc(100vh-64px)] flex items-center justify-center p-4">
+                    <img src={selectedImage} className="max-w-full max-h-full rounded-xl object-contain shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()} />
+                    <button onClick={() => setSelectedImage(null)} className="absolute top-4 right-4 p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition cursor-pointer">
+                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                </div>
+            )}
             <div className='grid grid-cols-1 gap-8 lg:grid-cols-3'>
                 <main className='lg:col-span-2'>
                     <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
@@ -362,12 +405,26 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                 <span>•</span>
                                 <span>Video Lecture</span>
                             </div>
-                            {certUnlocked && (
-                                <a href="/certificates" className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-bold animate-pulse hover:bg-green-200 transition">
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    Certificate Unlocked!
-                                </a>
-                            )}
+                            <div className="flex items-center gap-3">
+                                {(() => {
+                                    const displayedScore = quizResult?.score ?? courseInfo?.progress?.quizScores?.[id];
+                                    if (displayedScore !== undefined && displayedScore !== null) {
+                                        return (
+                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-full text-xs font-bold border border-indigo-100 dark:border-indigo-800">
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                Score: {displayedScore}%
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                                {certUnlocked && (
+                                    <a href="/certificates" className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-bold animate-pulse hover:bg-green-200 transition">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        Certificate Unlocked!
+                                    </a>
+                                )}
+                            </div>
                         </div>
                         <h1 className='text-3xl font-serif font-bold text-slate-900 dark:text-white mb-6'>{lecture.title}</h1>
 
@@ -469,7 +526,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             <h2 className="text-3xl font-bold text-white mb-3">Great Job!</h2>
                                             <p className="text-slate-300 mb-8 text-sm sm:text-base">You scored {quizResult.score}% and passed the module quiz.</p>
                                             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                                                <button onClick={() => { setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Retake Quiz</button>
+                                                <button onClick={() => { setQuizAnswers({}); setQuizResult(null); localStorage.removeItem(`quiz_result_${courseInfo?.id}_${id}`); }} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Retake Quiz</button>
                                                 <button onClick={() => { setShowQuiz(false); setVideoCompleted(true); setQuizCompleted(true); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Continue Course</button>
                                             </div>
                                         </>
@@ -481,8 +538,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             <h2 className="text-3xl font-bold text-white mb-3">Needs Review</h2>
                                             <p className="text-slate-300 mb-8 text-sm sm:text-base">You scored {quizResult.score}%. We recommend reviewing the video to strengthen your understanding.</p>
                                             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                                                <button onClick={() => { setShowQuiz(false); setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Watch Again</button>
-                                                <button onClick={() => { setQuizAnswers({}); setQuizResult(null); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Retake Quiz</button>
+                                                <button onClick={() => { setShowQuiz(false); }} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Watch Again</button>
+                                                <button onClick={() => { setQuizAnswers({}); setQuizResult(null); localStorage.removeItem(`quiz_result_${courseInfo?.id}_${id}`); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 text-sm sm:text-base">Retake Quiz</button>
                                             </div>
                                         </>
                                     )}
@@ -555,8 +612,10 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                     if (quizAnswers[i] === m.correctIndex) correct++;
                                                 });
                                                 const score = Math.round((correct / lecture.mcqs.length) * 100);
-                                                setQuizResult({ score, passed: score >= 70 });
+                                                const result = { score, passed: score >= 70 };
+                                                setQuizResult(result);
                                                 setQuizCompleted(true);
+                                                localStorage.setItem(`quiz_result_${courseInfo?.id}_${id}`, JSON.stringify({ result, answers: quizAnswers }));
                                             }}
                                             className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg"
                                         >
@@ -577,13 +636,23 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             </h2>
                             {noteSaved && <span className="text-xs font-bold text-green-600 dark:text-green-400 animate-pulse">✓ Saved successfully</span>}
                         </div>
-                        <div className="bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white overflow-hidden">
+                        <div className="bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white quill-editor-bounds">
                             <ReactQuill 
+                                bounds=".quill-editor-bounds"
                                 theme="snow"
                                 value={noteText}
                                 onChange={setNoteText}
                                 placeholder="Type your notes for this lecture here. They will be saved automatically..."
                                 className="w-full"
+                                modules={{
+                                    toolbar: [
+                                        ['bold', 'italic', 'strike', 'underline', 'code-block', 'blockquote'],
+                                        [{ 'header': 1 }, { 'header': 2 }, { 'header': 3 }],
+                                        [{ 'list': 'bullet' }, { 'list': 'ordered' }],
+                                        [{ 'align': [] }],
+                                        ['link', 'image']
+                                    ]
+                                }}
                             />
                         </div>
                         <div className="mt-4 flex justify-end">
@@ -851,15 +920,39 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             {lecture.description || 'Watch this comprehensive lecture to master the concepts presented. Follow along with the code and practice to solidify your understanding.'}
                         </div>
                     </div>
+                    
+                    {savedNotes.length > 0 && (
+                        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm mt-6 p-6">
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-4">Saved Notes</h3>
+                            <div className="space-y-3">
+                                {savedNotes.map((note, idx) => (
+                                    <details key={note.id || idx} className="group bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 [&_summary::-webkit-details-marker]:hidden">
+                                        <summary className="flex items-center justify-between cursor-pointer p-4 font-bold text-slate-900 dark:text-white">
+                                            <span className="flex items-center gap-2">
+                                                <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" /></svg>
+                                                Note {savedNotes.length - idx} <span className="text-xs font-normal text-slate-400 ml-2">{new Date(note.created_at || note.updated_at).toLocaleString()}</span>
+                                            </span>
+                                            <span className="transition group-open:rotate-180">
+                                                <svg fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                                            </span>
+                                        </summary>
+                                        <div onClick={handleImageClick} className="text-slate-600 dark:text-slate-300 mt-2 px-4 pb-4 border-t border-slate-200 dark:border-slate-800 pt-4 custom-html-content" dangerouslySetInnerHTML={{ __html: formatNoteContent(note.text) }} />
+                                    </details>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </aside>
             </div>
             
             {previewImageUrl && (
-                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center backdrop-blur-sm p-4 sm:p-8 cursor-pointer" onClick={() => setPreviewImageUrl(null)}>
+                <div className="absolute inset-0 z-[60] bg-black/90 backdrop-blur-sm animate-in fade-in cursor-pointer" onClick={() => setPreviewImageUrl(null)}>
+                    <div className="sticky top-0 left-0 w-full h-[calc(100vh-64px)] flex items-center justify-center p-4 sm:p-8">
                     <button className="absolute top-6 right-6 text-white hover:text-red-500 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all" onClick={(e) => { e.stopPropagation(); setPreviewImageUrl(null); }}>
                         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                     <img src={previewImageUrl} alt="Full Preview" className="max-w-full max-h-full object-contain shadow-2xl rounded-lg cursor-default" onClick={(e) => e.stopPropagation()} />
+                    </div>
                 </div>
             )}
         </div>

@@ -27,7 +27,7 @@ const getCoursePrice = async courseId => {
 };
 
 const findEnrollmentsByUserId = async userId => {
-  const sql = `SELECT course_id FROM enrollments WHERE user_id = $1`;
+  const sql = `SELECT * FROM enrollments WHERE user_id = $1`;
   const {
     rows
   } = await query(sql, [userId]);

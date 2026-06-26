@@ -150,7 +150,7 @@ export default function SettingsPage() {
     const initials = (user.email || 'SN').slice(0, 2).toUpperCase()
 
     return (
-        <div className="p-6 md:p-8 max-w-6xl mx-auto">
+        <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
             <div className="mb-8">
                 <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Account Settings</h1>
                 <p className="text-slate-500 mt-1 text-sm font-medium">Manage your profile, security, and app preferences.</p>

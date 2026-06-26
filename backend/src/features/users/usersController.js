@@ -24,9 +24,9 @@ const getInstructors = async (req, res) => {
 
 const syncUser = async (req, res) => {
     try {
-        const { id, email, role } = req.body;
+        const { id, email, role, full_name } = req.body;
         if (!id || !email) return res.status(400).json({ error: 'id and email required' });
-        await usersService.syncUser(id, email, role || 'student');
+        await usersService.syncUser(id, email, role || 'student', full_name);
         res.json({ ok: true });
     } catch (err) { logger.error('Error in usersController.js:', err); 
         res.status(500).json({ error: err.message });
