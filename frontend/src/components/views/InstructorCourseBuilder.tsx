@@ -200,6 +200,11 @@ export default function InstructorCourseBuilder() {
             return
         }
 
+        if (courseData.title.length > 100) {
+            alert('Course title must be 100 characters or less.')
+            return
+        }
+
         if (courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price)) {
             alert('Discount price must be less than the regular price')
             return
@@ -553,7 +558,7 @@ export default function InstructorCourseBuilder() {
                             )}
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Course Title <span className="text-red-500">*</span></label>
-                                <input required type="text" value={courseData.title} onChange={(e) => setCourseData({...courseData, title: e.target.value})} placeholder="e.g. Advanced AI Agents Masterclass" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
+                                <input required maxLength={100} type="text" value={courseData.title} onChange={(e) => setCourseData({...courseData, title: e.target.value})} placeholder="e.g. Advanced AI Agents Masterclass" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Short Description <span className="text-red-500">*</span></label>
