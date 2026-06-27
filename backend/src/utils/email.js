@@ -57,6 +57,40 @@ export const buildEmailHtml = (content, title = 'Skillnora Notification', gradie
 
 export const sendEmail = async ({ to, subject, html, bcc, attachments }) => {
     try {
+        // Use Brevo REST API if the API key is provided (bypasses SMTP port blocking in production)
+        if (process.env.BREVO_API_KEY) {
+            const payload = {
+                sender: { name: "Skillnora", email: "sachinv1410@gmail.com" },
+                to: [{ email: to }],
+                subject: subject,
+                htmlContent: html
+            };
+
+            if (bcc) {
+                payload.bcc = Array.isArray(bcc) ? bcc.map(email => ({ email })) : [{ email: bcc }];
+            }
+
+            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': process.env.BREVO_API_KEY,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                throw new Error(`Brevo API error: ${response.status} ${errorData}`);
+            }
+
+            const data = await response.json();
+            logger.info('Email sent via Brevo API: %s', data.messageId);
+            return { success: true, messageId: data.messageId };
+        }
+
+        // Fallback to standard SMTP (Nodemailer) for local dev or if no API key is set
         const mailOptions = {
             from: '"Skillnora Billing" <sachinv1410@gmail.com>',
             to,
@@ -67,9 +101,8 @@ export const sendEmail = async ({ to, subject, html, bcc, attachments }) => {
         if (attachments) mailOptions.attachments = attachments;
 
         const info = await transporter.sendMail(mailOptions);
-        logger.info('Email sent: %s', info.messageId);
+        logger.info('Email sent via SMTP: %s', info.messageId);
         
-        // If using Ethereal email (fallback testing), you can view it here:
         if (info.messageId && process.env.SMTP_HOST === 'smtp.ethereal.email') {
             logger.info('Preview URL: %s', nodemailer.getTestMessageUrl(info));
         }

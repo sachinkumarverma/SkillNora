@@ -50,6 +50,9 @@ export const authService = {
         }
     },
     updateProfile: async (data: { full_name?: string; avatar_url?: string }) => {
-        return (await apiClient.post('/api/users/update-profile', data)).data;
+        const res = (await apiClient.post('/api/users/update-profile', data)).data;
+        // Refresh local session so the new user_metadata is saved to localStorage
+        await supabase.auth.refreshSession();
+        return res;
     }
 };

@@ -44,11 +44,11 @@ const updateProfile = async (id, profileData) => {
         values.push(profileData.avatar_url);
         idx++;
     }
-    if (values.length === 0) return true;
-    
-    q = q.slice(0, -2) + ` WHERE id = $${idx}`;
-    values.push(id);
-    await query(q, values);
+    if (values.length > 0) {
+        q = q.slice(0, -2) + ` WHERE id = $${idx}`;
+        values.push(id);
+        await query(q, values);
+    }
 
     // Sync back to Supabase user_metadata for frontend token consistency
     await supabaseServer.auth.admin.updateUserById(id, { user_metadata: profileData });
@@ -113,22 +113,19 @@ const sendPromotionalEmail = async ({ targetGroup, title, description, template,
         </div>
     `, title, cssGradient || 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)');
 
-    // Send emails individually so each recipient is in the 'TO' field (better privacy and UX)
-    let successCount = 0;
-    for (const u of recipients) {
-        const result = await sendEmail({
-            to: u.email,
-            subject: title,
-            html: htmlContent
-        });
+    // Send emails in the background to avoid blocking the HTTP request and causing the frontend to hang
+    Promise.allSettled(recipients.map(u => sendEmail({
+        to: u.email,
+        subject: title,
+        html: htmlContent
+    }))).then(results => {
+        const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
+        console.log(`[Promotional Email] Successfully sent to ${successCount} out of ${recipients.length} recipients.`);
+    }).catch(err => {
+        console.error(`[Promotional Email] Background send error:`, err);
+    });
 
-        if (!result.success) {
-            throw new Error(`Failed to send email to ${u.email}. Check backend logs. Error: ` + (result.error?.message || result.error));
-        }
-        successCount++;
-    }
-
-    return { sentCount: successCount };
+    return { sentCount: recipients.length, background: true };
 };
 
 export const usersRepository = {

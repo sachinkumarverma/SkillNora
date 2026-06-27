@@ -1,6 +1,7 @@
 "use client"
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import apiClient from '@/lib/apiClient'
 
 const CustomDropdown = ({ value, options, onChange }: { value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) => {
@@ -67,7 +68,6 @@ export default function PromotionalEmailsPage() {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [loading, setLoading] = useState(false)
-    const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
 
     const handleCategoryChange = (val: string) => {
         const cat = val as keyof typeof TEMPLATES;
@@ -78,13 +78,11 @@ export default function PromotionalEmailsPage() {
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!title || !description) {
-            setMessage({ type: 'error', text: 'Title and description are required.' })
-            setTimeout(() => setMessage(null), 3000)
+            toast.error('Title and description are required.')
             return
         }
 
         setLoading(true)
-        setMessage(null)
         try {
             await apiClient.post('/api/users/promotional-email', {
                 targetGroup,
@@ -93,13 +91,11 @@ export default function PromotionalEmailsPage() {
                 title,
                 description
             })
-            setMessage({ type: 'success', text: 'Promotional emails have been sent successfully.' })
+            toast.success('Promotional emails have been sent successfully.')
             setTitle('')
             setDescription('')
-            setTimeout(() => setMessage(null), 4000)
         } catch (error: any) {
-            setMessage({ type: 'error', text: error.response?.data?.error || error.message || 'Failed to send emails.' })
-            setTimeout(() => setMessage(null), 5000)
+            toast.error(error.response?.data?.error || error.message || 'Failed to send emails.')
         }
         setLoading(false)
     }
@@ -125,14 +121,6 @@ export default function PromotionalEmailsPage() {
                     </motion.p>
                 </div>
             </header>
-
-            {message && (
-                <div className={`p-4 rounded-xl border font-bold text-sm flex items-center gap-3 ${
-                    message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
-                }`}>
-                    {message.text}
-                </div>
-            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* Preview Side */}

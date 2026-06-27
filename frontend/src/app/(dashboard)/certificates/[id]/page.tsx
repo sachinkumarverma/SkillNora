@@ -3,6 +3,9 @@ import React, { useEffect, useState, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useUser from '@/lib/useUser'
 import Loader from '@/components/ui/Loader'
+import { toPng } from 'html-to-image'
+import { jsPDF } from 'jspdf'
+import toast from 'react-hot-toast'
 
 export default function CertificateViewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
@@ -12,6 +15,8 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
     const [cert, setCert] = useState<any | null>(null)
     const [copied, setCopied] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [isDownloading, setIsDownloading] = useState(false)
+    const certRef = React.useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const encodedData = searchParams.get('data')
@@ -43,8 +48,37 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
         fetchCert()
     }, [id, searchParams, user, userLoading])
 
-    const handlePrint = () => {
-        window.print()
+    const handlePrint = async () => {
+        if (!certRef.current) return
+        
+        setIsDownloading(true)
+        const toastId = toast.loading('Generating PDF...')
+        
+        try {
+            const dataUrl = await toPng(certRef.current, { 
+                cacheBust: true,
+                width: 1000,
+                height: 707,
+                style: { transform: 'none' },
+                pixelRatio: 3
+            })
+            
+            // Certificate dimensions: 1000x707
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [1000, 707]
+            })
+            
+            pdf.addImage(dataUrl, 'PNG', 0, 0, 1000, 707)
+            pdf.save(`${cert?.courseTitle || 'Certificate'}.pdf`)
+            toast.success('Certificate downloaded successfully!', { id: toastId })
+        } catch (error) {
+            console.error('Error generating PDF:', error)
+            toast.error('Failed to generate PDF.', { id: toastId })
+        } finally {
+            setIsDownloading(false)
+        }
     }
 
     const handleShare = () => {
@@ -109,17 +143,22 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                         {copied ? 'Link Copied!' : 'Share Link'}
                     </button>
-                    <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        Download PDF
+                    <button onClick={handlePrint} disabled={isDownloading} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50">
+                        {isDownloading ? (
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        ) : (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        )}
+                        {isDownloading ? 'Generating...' : 'Download PDF'}
                     </button>
                 </div>
             </div>
 
             <div className="w-full overflow-x-auto pb-8 flex justify-center print:overflow-visible print:block print:pb-0 print:m-0">
-                <div className="cert-container bg-white p-6 md:p-12 shadow-2xl overflow-hidden relative flex-shrink-0" style={{ width: '1000px', height: '707px' }}>
-                    {/* Modern Certificate Inner Border - Gold and Navy */}
-                    <div className="cert-inner border-[3px] border-[#c5a059] relative w-full h-full text-center flex flex-col justify-between p-6 md:p-10 bg-white z-10">
+                <div className="shadow-2xl flex-shrink-0">
+                    <div ref={certRef} className="cert-container bg-white p-6 md:p-12 overflow-hidden relative" style={{ width: '1000px', height: '707px' }}>
+                        {/* Modern Certificate Inner Border - Gold and Navy */}
+                        <div className="cert-inner border-[3px] border-[#c5a059] relative w-full h-full text-center flex flex-col justify-between p-6 md:p-10 bg-white z-10">
 
                         {/* Corner accents (Navy and Gold) */}
                         <div className="absolute top-0 left-0 w-16 h-16 md:w-24 md:h-24 border-t-[8px] border-l-[8px] md:border-t-[12px] md:border-l-[12px] border-[#1a2b4c] -translate-x-[3px] -translate-y-[3px]"></div>
@@ -146,11 +185,10 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
                             <p className="text-xs md:text-sm text-slate-500 uppercase tracking-[0.2em] mb-4 md:mb-6 font-medium">This certificate is proudly presented to</p>
 
                             {/* Name in cursive */}
-                            <div className="relative inline-block px-12 mb-4 md:mb-6">
-                                <h2 className="text-4xl md:text-5xl lg:text-5xl font-['Dancing_Script',cursive] text-[#1a2b4c] capitalize py-2">
+                            <div className="inline-block px-12 mb-4 md:mb-6">
+                                <h2 className="text-4xl md:text-5xl lg:text-5xl font-['Dancing_Script',cursive] text-[#1a2b4c] capitalize pb-2 border-b border-dashed border-slate-400">
                                     {cert.studentName || user?.user_metadata?.full_name || user?.name || user?.full_name || (user?.email ? user.email.split('@')[0] : 'Skillnora Student')}
                                 </h2>
-                                <div className="absolute bottom-0 left-0 w-full border-b border-dashed border-slate-400"></div>
                             </div>
 
                             <p className="text-sm md:text-base text-slate-600 max-w-3xl mx-auto leading-relaxed px-4">
@@ -162,12 +200,12 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
                         {/* Bottom Section */}
                         <div className="mt-4 flex justify-between items-end px-2 md:px-8 w-full relative z-20 pb-2">
                             {/* Signature Left */}
-                            <div className="text-center w-36 md:w-48 mb-2">
+                            <div className="text-center w-36 md:w-48 mb-2 flex flex-col items-center">
                                 <div className="h-12 flex items-end justify-center mb-1">
                                     <img src="/custom_signature.png" className="h-16 md:h-20 object-contain -mb-2 mix-blend-multiply opacity-80" alt="Signature" />
                                 </div>
-                                <div className="border-t border-dashed border-slate-400 w-full pt-1.5 text-[9px] md:text-xs font-bold text-[#1a2b4c] uppercase tracking-wider">Andrew Schulz</div>
-                                <div className="text-[9px] md:text-[10px] text-slate-500">Course Director</div>
+                                <div className="border-t border-dashed border-slate-400 w-full pt-1.5 text-[9px] md:text-xs font-bold text-[#1a2b4c] uppercase tracking-wider block">Andrew Schulz</div>
+                                <div className="text-[9px] md:text-[10px] text-slate-500 block w-full">Course Director</div>
                             </div>
 
                             {/* Center section with Date and Badge */}
@@ -196,16 +234,17 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
                             </div>
 
                             {/* Signature Right */}
-                            <div className="text-center w-36 md:w-48 mb-2">
+                            <div className="text-center w-36 md:w-48 mb-2 flex flex-col items-center">
                                 <div className="h-12 flex items-end justify-center mb-1">
                                     <img src="/custom_signature.png" className="h-16 md:h-20 object-contain -mb-2 mix-blend-multiply opacity-80" alt="Signature" />
                                 </div>
-                                <div className="border-t border-dashed border-slate-400 w-full pt-1.5 text-[9px] md:text-xs font-bold text-[#1a2b4c] uppercase tracking-wider">Brandi Love</div>
-                                <div className="text-[9px] md:text-[10px] text-slate-500">Chairman of the Board</div>
+                                <div className="border-t border-dashed border-slate-400 w-full pt-1.5 text-[9px] md:text-xs font-bold text-[#1a2b4c] uppercase tracking-wider block">Brandi Love</div>
+                                <div className="text-[9px] md:text-[10px] text-slate-500 block w-full">Chairman of the Board</div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     )
