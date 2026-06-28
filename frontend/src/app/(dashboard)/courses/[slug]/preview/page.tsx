@@ -38,6 +38,8 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
 
     if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
 
+    const totalAttachments = course.lectures?.reduce((acc: number, l: any) => acc + (Array.isArray(l.attachments) ? l.attachments.length : 0), 0) || 0;
+
     return (
         <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8 md:py-12">
             <button onClick={() => router.back()} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
@@ -85,10 +87,10 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
                                 <span>{course.lectures?.length || 0} lectures of on-demand video</span>
                             </div>
 
-                            {course.attachments && course.attachments.length > 0 && (
+                            {totalAttachments > 0 && (
                                 <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
                                     <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                    <span>{course.attachments.length} downloadable resource{course.attachments.length > 1 ? 's' : ''}</span>
+                                    <span>{totalAttachments} downloadable resource{totalAttachments > 1 ? 's' : ''}</span>
                                 </div>
                             )}
 

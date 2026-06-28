@@ -77,8 +77,7 @@ export default function InstructorCourseBuilder() {
         provide_certificate: true,
         is_free: false,
         is_published: false,
-        is_archived: false,
-        attachments: [] as {title: string, url: string}[]
+        is_archived: false
     })
     const [isSavingDraft, setIsSavingDraft] = useState(false)
     const [isPublishing, setIsPublishing] = useState(false)
@@ -89,7 +88,7 @@ export default function InstructorCourseBuilder() {
     
     // Modules
     const [modules, setModules] = useState<any[]>([
-        { id: 1, title: 'Introduction to the Course', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '' }
+        { id: 1, title: 'Introduction to the Course', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '', mcqs: [], attachments: [] }
     ])
 
     const [localDraftTime, setLocalDraftTime] = useState<string | null>(null)
@@ -142,8 +141,7 @@ export default function InstructorCourseBuilder() {
                             provide_certificate: true,
                             is_free: c.is_free || false,
                             is_published: c.is_published || false,
-                            is_archived: c.is_archived || false,
-                            attachments: Array.isArray(c.attachments) ? c.attachments : (typeof c.attachments === 'string' ? (function(){ try { const p = JSON.parse(c.attachments); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
+                            is_archived: c.is_archived || false
                         });
                         if (c.thumbnail_url) setThumbnailMode('unsplash');
                         
@@ -155,7 +153,8 @@ export default function InstructorCourseBuilder() {
                                 videoUrl: l.video_url || '',
                                 thumbnailMode: l.thumbnail_url ? 'unsplash' : 'upload',
                                 thumbnailUrl: l.thumbnail_url || '',
-                                mcqs: Array.isArray(l.mcqs) ? l.mcqs : (typeof l.mcqs === 'string' ? (function(){ try { const p = JSON.parse(l.mcqs); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
+                                mcqs: Array.isArray(l.mcqs) ? l.mcqs : (typeof l.mcqs === 'string' ? (function(){ try { const p = JSON.parse(l.mcqs); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : []),
+                                attachments: Array.isArray(l.attachments) ? l.attachments : (typeof l.attachments === 'string' ? (function(){ try { const p = JSON.parse(l.attachments); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
                             })));
                         }
                     }
@@ -274,7 +273,6 @@ export default function InstructorCourseBuilder() {
                 certificate_type: courseData.provide_certificate ? courseData.certificate_type : null,
                 price: Number(courseData.price) || 0,
                 discount_price: courseData.discountPrice ? Number(courseData.discountPrice) : null,
-                attachments: courseData.attachments,
                 provide_certificate: courseData.provide_certificate,
                 is_free: courseData.is_free,
                 is_published: isPublished
@@ -296,7 +294,8 @@ export default function InstructorCourseBuilder() {
                     video_url: mod.videoUrl,
                     thumbnail_url: mod.videoMode === 'link' ? '' : mod.thumbnailUrl,
                     position: index + 1,
-                    mcqs: mod.mcqs || []
+                    mcqs: mod.mcqs || [],
+                    attachments: mod.attachments || []
                 }))
 
                 if (lecturesToInsert.length > 0) {
@@ -337,7 +336,7 @@ export default function InstructorCourseBuilder() {
     }
 
     const addModule = () => {
-        setModules([...modules, { id: Date.now(), title: 'New Module', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '', mcqs: [] }])
+        setModules([...modules, { id: Date.now(), title: 'New Module', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '', mcqs: [], attachments: [] }])
     }
 
     const removeModule = (id: number) => {
@@ -610,126 +609,7 @@ export default function InstructorCourseBuilder() {
                                 <textarea rows={6} value={courseData.detailed_overview} onChange={(e) => setCourseData({...courseData, detailed_overview: e.target.value})} placeholder="Provide a comprehensive course description for the student preview page..." className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-y [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full" />
                             </div>
 
-                            {/* Course Attachments */}
-                            <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Course Attachments</h3>
-                                        <p className="text-xs text-slate-500 mt-1">Add PDFs, code zips, or other resources students can download.</p>
-                                    </div>
-                                    <button 
-                                        type="button"
-                                        onClick={() => setCourseData({...courseData, attachments: [...courseData.attachments, {title: '', url: '', mode: 'upload'}]})}
-                                        className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                                    >
-                                        + Add Attachment
-                                    </button>
-                                </div>
-                                <div className="space-y-3">
-                                    {courseData.attachments.map((att, i) => (
-                                        <div key={i} className="flex items-start gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                                            <div className="flex-1 space-y-3">
-                                                <input 
-                                                    type="text" 
-                                                    value={att.title} 
-                                                    onChange={(e) => {
-                                                        const newAtt = [...courseData.attachments];
-                                                        newAtt[i].title = e.target.value;
-                                                        setCourseData({...courseData, attachments: newAtt});
-                                                    }}
-                                                    placeholder="Attachment Title (e.g. Slide Deck PDF)" 
-                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-500" 
-                                                />
-                                                <div className="flex items-center justify-between mt-2 mb-1">
-                                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">File Source</label>
-                                                    <div className="flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-1 rounded-md">
-                                                        <button type="button" onClick={() => { const newAtt = [...courseData.attachments]; newAtt[i].mode = 'upload'; setCourseData({...courseData, attachments: newAtt}); }} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${(att.mode || 'upload') === 'upload' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Upload</button>
-                                                        <button type="button" onClick={() => { const newAtt = [...courseData.attachments]; newAtt[i].mode = 'link'; setCourseData({...courseData, attachments: newAtt}); }} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${att.mode === 'link' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Link URL</button>
-                                                    </div>
-                                                </div>
-                                                {(att.mode || 'upload') === 'upload' ? (
-                                                    <div className="flex min-h-[80px] relative overflow-hidden cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 transition hover:border-blue-400 dark:hover:border-blue-500">
-                                                        <input 
-                                                            type="file" 
-                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                            onChange={async (e) => {
-                                                                const file = e.target.files?.[0];
-                                                                if (!file) return;
-                                                                let loadingToastId;
-                                                                try {
-                                                                    loadingToastId = toast.loading('Uploading attachment...');
-                                                                    const filePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-                                                                    
-                                                                    const { data } = await apiClient.post('/api/upload/url', {
-                                                                        bucket: 'course-materials',
-                                                                        filePath
-                                                                    });
-                                                                    
-                                                                    if (!data.uploadUrl) throw new Error("Could not get upload url");
-                                                                    
-                                                                    const res = await fetch(data.uploadUrl, {
-                                                                        method: 'PUT',
-                                                                        headers: { 'Content-Type': file.type },
-                                                                        body: file
-                                                                    });
-                                                                    
-                                                                    if (!res.ok) throw new Error("Failed to upload to storage");
-                                                                    
-                                                                    const newAtt = [...courseData.attachments];
-                                                                    newAtt[i].url = data.publicUrl;
-                                                                    if (!newAtt[i].title) newAtt[i].title = file.name;
-                                                                    setCourseData({...courseData, attachments: newAtt});
-                                                                    toast.success('Uploaded successfully!', { id: loadingToastId });
-                                                                } catch(err: any) {
-                                                                    console.error(err);
-                                                                    if (loadingToastId) {
-                                                                        toast.error('Failed to upload file', { id: loadingToastId });
-                                                                    } else {
-                                                                        toast.error('Failed to upload file');
-                                                                    }
-                                                                }
-                                                            }}
-                                                        />
-                                                        {att.url ? (
-                                                            <span className="text-xs font-bold text-emerald-600 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> File Uploaded</span>
-                                                        ) : (
-                                                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg> Browse File (PDF, ZIP, etc)</span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <input 
-                                                        type="url" 
-                                                        value={att.url} 
-                                                        onChange={(e) => {
-                                                            const newAtt = [...courseData.attachments];
-                                                            newAtt[i].url = e.target.value;
-                                                            setCourseData({...courseData, attachments: newAtt});
-                                                        }}
-                                                        placeholder="Attachment URL (https://...)" 
-                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-500" 
-                                                    />
-                                                )}
-                                            </div>
-                                            <button 
-                                                type="button"
-                                                onClick={() => {
-                                                    const newAtt = [...courseData.attachments];
-                                                    newAtt.splice(i, 1);
-                                                    setCourseData({...courseData, attachments: newAtt});
-                                                }}
-                                                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                            </button>
-                                        </div>
-                                    ))}
-                                    {courseData.attachments.length === 0 && (
-                                        <div className="text-center py-6 text-slate-500 text-sm border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
-                                            No attachments added yet.
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+
                             
                             {/* Metadata Tags for Explore Filtering */}
                             <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
@@ -839,7 +719,7 @@ export default function InstructorCourseBuilder() {
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>
                                             </div>
                                             <span className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">Module {index + 1}:</span>
-                                            <input type="text" value={mod.title} onChange={(e) => updateModule(mod.id, 'title', e.target.value)} placeholder="Module Title" className="bg-transparent border-none outline-none font-bold text-slate-700 dark:text-slate-300 text-sm flex-1 focus:ring-0 p-0" />
+                                            <input type="text" value={mod.title} onChange={(e) => updateModule(mod.id, 'title', e.target.value)} placeholder="Module Title" title="Edit module title" className="bg-transparent border-none outline-none font-bold text-slate-700 dark:text-slate-300 text-sm flex-1 focus:ring-0 p-0" />
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0">
                                             <div className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 group-open:rotate-180 transition-transform">
@@ -1066,6 +946,128 @@ export default function InstructorCourseBuilder() {
                                                         </div>
                                                     </details>
                                                 ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Module Attachments */}
+                                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Module Attachments</h3>
+                                                    <p className="text-xs text-slate-500 mt-1">Add PDFs, code zips, or other resources students can download.</p>
+                                                </div>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => updateModule(mod.id, 'attachments', [...(mod.attachments || []), {title: '', url: '', mode: 'upload'}])}
+                                                    className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                                >
+                                                    + Add Attachment
+                                                </button>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {(mod.attachments || []).map((att: any, i: number) => (
+                                                    <div key={i} className="flex items-start gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                        <div className="flex-1 space-y-3">
+                                                            <input 
+                                                                type="text" 
+                                                                value={att.title} 
+                                                                onChange={(e) => {
+                                                                    const newAtt = [...(mod.attachments || [])];
+                                                                    newAtt[i].title = e.target.value;
+                                                                    updateModule(mod.id, 'attachments', newAtt);
+                                                                }}
+                                                                placeholder="Attachment Title (e.g. Slide Deck PDF)" 
+                                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-500" 
+                                                            />
+                                                            <div className="flex items-center justify-between mt-2 mb-1">
+                                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">File Source</label>
+                                                                <div className="flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-1 rounded-md">
+                                                                    <button type="button" onClick={() => { const newAtt = [...(mod.attachments || [])]; newAtt[i].mode = 'upload'; updateModule(mod.id, 'attachments', newAtt); }} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${(att.mode || 'upload') === 'upload' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Upload</button>
+                                                                    <button type="button" onClick={() => { const newAtt = [...(mod.attachments || [])]; newAtt[i].mode = 'link'; updateModule(mod.id, 'attachments', newAtt); }} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${att.mode === 'link' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Link URL</button>
+                                                                </div>
+                                                            </div>
+                                                            {(att.mode || 'upload') === 'upload' ? (
+                                                                <div className="flex min-h-[80px] relative overflow-hidden cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 transition hover:border-blue-400 dark:hover:border-blue-500">
+                                                                    <input 
+                                                                        type="file" 
+                                                                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                                        onChange={async (e) => {
+                                                                            const file = e.target.files?.[0];
+                                                                            if (!file) return;
+                                                                            let loadingToastId;
+                                                                            try {
+                                                                                loadingToastId = toast.loading('Uploading attachment...');
+                                                                                const filePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                                                                                
+                                                                                const { data } = await apiClient.post('/api/upload/url', {
+                                                                                    bucket: 'course-materials',
+                                                                                    filePath
+                                                                                });
+                                                                                
+                                                                                if (!data.uploadUrl) throw new Error("Could not get upload url");
+                                                                                
+                                                                                const res = await fetch(data.uploadUrl, {
+                                                                                    method: 'PUT',
+                                                                                    headers: { 'Content-Type': file.type },
+                                                                                    body: file
+                                                                                });
+                                                                                
+                                                                                if (!res.ok) throw new Error("Failed to upload to storage");
+                                                                                
+                                                                                const newAtt = [...(mod.attachments || [])];
+                                                                                newAtt[i].url = data.publicUrl;
+                                                                                if (!newAtt[i].title) newAtt[i].title = file.name;
+                                                                                updateModule(mod.id, 'attachments', newAtt);
+                                                                                toast.success('Uploaded successfully!', { id: loadingToastId });
+                                                                            } catch(err: any) {
+                                                                                console.error(err);
+                                                                                if (loadingToastId) {
+                                                                                    toast.error('Failed to upload file', { id: loadingToastId });
+                                                                                } else {
+                                                                                    toast.error('Failed to upload file');
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    {att.url ? (
+                                                                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> File Uploaded</span>
+                                                                    ) : (
+                                                                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg> Browse File (PDF, ZIP, etc)</span>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <input 
+                                                                    type="url" 
+                                                                    value={att.url} 
+                                                                    onChange={(e) => {
+                                                                        const newAtt = [...(mod.attachments || [])];
+                                                                        newAtt[i].url = e.target.value;
+                                                                        updateModule(mod.id, 'attachments', newAtt);
+                                                                    }}
+                                                                    placeholder="Attachment URL (https://...)" 
+                                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-500" 
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const newAtt = [...(mod.attachments || [])];
+                                                                newAtt.splice(i, 1);
+                                                                updateModule(mod.id, 'attachments', newAtt);
+                                                            }}
+                                                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {!(mod.attachments?.length) && (
+                                                    <div className="text-center py-6 text-slate-500 text-sm border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                                                        No attachments added yet.
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

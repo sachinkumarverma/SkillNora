@@ -27,7 +27,7 @@ create table if not exists courses (
   is_published boolean default false,
   average_rating numeric(3,2) default null, -- e.g. 4.50
   total_reviews integer default 0,
-  attachments jsonb default '[]'::jsonb,
+
   created_at timestamptz default now()
 );
 
@@ -40,6 +40,7 @@ create table if not exists lectures (
   thumbnail_url text,
   position integer,
   mcqs jsonb default '[]'::jsonb, -- MCQ quiz questions for this module
+  attachments jsonb default '[]'::jsonb, -- Attachments for this module
   created_at timestamptz default now()
 );
 

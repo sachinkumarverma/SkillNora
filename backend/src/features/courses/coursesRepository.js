@@ -252,8 +252,8 @@ const updateLectures = async (courseId, lectures) => {
   await query(`DELETE FROM lectures WHERE course_id = $1`, [courseId]);
   if (lectures && lectures.length > 0) {
     for (const lec of lectures) {
-      const sql = `INSERT INTO lectures (course_id, title, video_url, thumbnail_url, position, mcqs) VALUES ($1, $2, $3, $4, $5, $6)`;
-      await query(sql, [courseId, lec.title, lec.video_url, lec.thumbnail_url, lec.position, JSON.stringify(lec.mcqs || [])]);
+      const sql = `INSERT INTO lectures (course_id, title, video_url, thumbnail_url, position, mcqs, attachments) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+      await query(sql, [courseId, lec.title, lec.video_url, lec.thumbnail_url, lec.position, JSON.stringify(lec.mcqs || []), JSON.stringify(lec.attachments || [])]);
     }
   }
   return true;

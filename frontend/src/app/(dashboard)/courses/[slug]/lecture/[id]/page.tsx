@@ -46,6 +46,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
     const [isEnrolled, setIsEnrolled] = useState(false)
     const [attachments, setAttachments] = useState<{ title: string, url: string }[]>([])
+    const [selectedPdf, setSelectedPdf] = useState<string | null>(null)
+    const [pdfTitle, setPdfTitle] = useState<string>('')
     const [showQuiz, setShowQuiz] = useState(false)
     const [quizAnswers, setQuizAnswers] = useState<{ [key: number]: number }>({})
     const [quizResult, setQuizResult] = useState<{ score: number, passed: boolean } | null>(null)
@@ -264,7 +266,9 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     const lec = course.lectures?.[lecIndex]
                     if (lec) {
                         const parsedMcqs = Array.isArray(lec.mcqs) ? lec.mcqs : (typeof lec.mcqs === 'string' ? (function(){ try { const p = JSON.parse(lec.mcqs); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : []);
+                        const parsedAttachments = Array.isArray(lec.attachments) ? lec.attachments : (typeof lec.attachments === 'string' ? (function(){ try { const p = JSON.parse(lec.attachments); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : []);
                         setLecture({ ...lec, mcqs: parsedMcqs, index: lecIndex !== -1 ? lecIndex + 1 : 1 })
+                        setAttachments(parsedAttachments)
                     }
                     
                     if (course.isEnrolled) {
@@ -895,22 +899,59 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     </div>
                 </main>
                 <aside>
-                    <div className='p-6 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800'>
-                        <h3 className='font-bold text-lg text-slate-900 dark:text-white mb-4'>Resources</h3>
-                        <ul className='space-y-3 text-sm'>
+                    <div className='p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm'>
+                        <div className="flex items-center gap-2 mb-5 text-slate-900 dark:text-white">
+                            <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                            <h3 className='font-bold text-lg'>Resources</h3>
+                        </div>
+                        <ul className='space-y-3'>
                             {attachments.length > 0 ? (
-                                attachments.map((att, i) => (
-                                    <li key={i}>
-                                        <a href={att.url} target="_blank" rel="noreferrer" className='flex items-center gap-3 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'>
-                                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 flex items-center justify-center">
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                attachments.map((att, i) => {
+                                    const isPdf = att.title?.toLowerCase().includes('.pdf');
+                                    const isDoc = att.title?.toLowerCase().includes('.doc') || att.title?.toLowerCase().includes('.docx');
+
+                                    return (
+                                    <li key={i} className="group relative">
+                                        <button 
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setSelectedPdf(att.url);
+                                                setPdfTitle(att.title || 'Document');
+                                            }}
+                                            className={`w-full text-left flex items-center gap-3.5 p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-300 ${isPdf ? 'hover:border-red-300 dark:hover:border-red-500/50' : isDoc ? 'hover:border-blue-300 dark:hover:border-blue-500/50' : 'hover:border-slate-300 dark:hover:border-slate-500/50'}`}
+                                        >
+                                            <div className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center transition-colors ${isPdf ? 'bg-red-50 dark:bg-red-900/20 text-red-500 group-hover:bg-red-100 dark:group-hover:bg-red-900/40' : isDoc ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'}`}>
+                                                {isPdf ? (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9h1M9 13h6M9 17h6" /></svg>
+                                                ) : isDoc ? (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                ) : (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                )}
                                             </div>
-                                            <span className="font-bold">{att.title}</span>
+                                            <div className="flex-1 min-w-0 pr-10">
+                                                <p className={`font-bold text-sm truncate transition-colors ${isPdf ? 'text-slate-800 dark:text-slate-200 group-hover:text-red-600 dark:group-hover:text-red-400' : isDoc ? 'text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400' : 'text-slate-800 dark:text-slate-200 group-hover:text-slate-600 dark:group-hover:text-slate-400'}`} title={att.title}>{att.title}</p>
+                                                <p className="text-[10px] uppercase font-bold text-slate-400 mt-1 tracking-wider">{isPdf ? 'PDF Document' : isDoc ? 'Word Document' : 'Document'}</p>
+                                            </div>
+                                            
+                                        </button>
+                                        <a 
+                                            href={`${att.url}?download=`} 
+                                            download 
+                                            target="_blank" 
+                                            rel="noreferrer"
+                                            title="Download File"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 transition-all z-10 ${isPdf ? 'hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' : isDoc ? 'hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20' : 'hover:text-slate-600 dark:hover:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                                         </a>
                                     </li>
-                                ))
+                                    );
+                                })
                             ) : (
-                                <li className="text-slate-500 italic p-2">No additional resources available.</li>
+                                <li className="text-slate-500 italic p-3 text-sm text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">No additional resources available.</li>
                             )}
                         </ul>
                     </div>
@@ -955,6 +996,43 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                     <img src={previewImageUrl} alt="Full Preview" className="max-w-full max-h-full object-contain shadow-2xl rounded-lg cursor-default" onClick={(e) => e.stopPropagation()} />
+                    </div>
+                </div>
+            )}
+
+            {selectedPdf && (
+                <div className="absolute inset-0 z-[100] bg-slate-900/90 backdrop-blur-sm animate-in fade-in">
+                    <div className="sticky top-0 left-0 w-full h-[calc(100vh-64px)] flex flex-col">
+                        <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800 text-white shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-blue-900/50 text-blue-400 flex items-center justify-center">
+                                    {selectedPdf.toLowerCase().includes('.pdf') ? (
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9h1M9 13h6M9 17h6" /></svg>
+                                    ) : (
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    )}
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-sm truncate max-w-xs md:max-w-md" title={pdfTitle}>{pdfTitle}</h3>
+                                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Document Viewer</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <a href={`${selectedPdf}?download=`} download target="_blank" rel="noreferrer" className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    Download
+                                </a>
+                                <a href={`${selectedPdf}?download=`} download target="_blank" rel="noreferrer" className="sm:hidden p-2 text-blue-400 hover:bg-slate-800 rounded-lg transition-colors">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                </a>
+                                <button onClick={() => { setSelectedPdf(null); setPdfTitle(''); }} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors ml-1 md:ml-4">
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex-1 bg-slate-950 p-2 sm:p-4 md:p-8 overflow-hidden min-h-0">
+                            <iframe src={selectedPdf.toLowerCase().includes('.pdf') ? selectedPdf : `https://docs.google.com/gview?url=${encodeURIComponent(selectedPdf)}&embedded=true`} className="w-full h-full rounded-xl border border-slate-800 bg-white" title={pdfTitle} />
+                        </div>
                     </div>
                 </div>
             )}

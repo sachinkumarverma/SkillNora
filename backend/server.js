@@ -56,9 +56,12 @@ app.use('/api/statistics', statisticsApi)
 import { cartApi } from './src/features/cart/cartApi.js'
 import { wishlistApi } from './src/features/wishlist/wishlistApi.js'
 import { notesApi } from './src/features/notes/notesApi.js'
+import { cronApi } from './src/features/cron/cronApi.js'
+
 app.use('/api/cart', cartApi)
 app.use('/api/wishlist', wishlistApi)
 app.use('/api/notes', notesApi)
+app.use('/api/cron', cronApi)
 
 import { notificationsApi } from './src/features/notifications/notificationsApi.js'
 app.use('/api/notifications', notificationsApi)
