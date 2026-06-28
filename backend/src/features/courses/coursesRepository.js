@@ -125,11 +125,34 @@ const getBySlugOrId = async identifier => {
   } = await query(courseSql, [identifier]);
   if (cRows.length === 0) return null;
   const course = cRows[0];
-  const lecSql = `SELECT * FROM lectures WHERE course_id = $1 ORDER BY id ASC`;
+  const lecSql = `SELECT * FROM lectures WHERE course_id = $1 ORDER BY position ASC NULLS LAST, id ASC`;
   const {
     rows: lRows
   } = await query(lecSql, [course.id]);
   course.lectures = lRows;
+
+  // Generate fresh signed URLs for Supabase-hosted videos (private bucket)
+  for (const lec of course.lectures) {
+    if (lec.video_url && lec.video_url.includes('/storage/v1/object/')) {
+      try {
+        // Extract the bucket and file path from the stored public URL
+        // URL format: https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
+        const match = lec.video_url.match(/\/storage\/v1\/object\/(?:public\/)?([^/]+)\/(.+)/);
+        if (match) {
+          const bucket = match[1];
+          const filePath = match[2];
+          const { data: signedData, error: signedError } = await supabaseServer.storage
+            .from(bucket)
+            .createSignedUrl(filePath, 60 * 60 * 6); // 6 hour expiry
+          if (!signedError && signedData?.signedUrl) {
+            lec.video_url = signedData.signedUrl;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to generate signed video URL:', e.message);
+      }
+    }
+  }
   
   const reviewsSql = `SELECT r.*, u.full_name, u.email FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.course_id = $1 ORDER BY r.created_at DESC`;
   const { rows: rRows } = await query(reviewsSql, [course.id]);

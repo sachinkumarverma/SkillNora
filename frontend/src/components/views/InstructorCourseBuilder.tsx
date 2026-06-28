@@ -90,6 +90,7 @@ export default function InstructorCourseBuilder() {
     const [modules, setModules] = useState<any[]>([
         { id: 1, title: 'Introduction to the Course', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '', mcqs: [], attachments: [] }
     ])
+    const [openModuleIds, setOpenModuleIds] = useState<Set<number>>(new Set([1]))
 
     const [localDraftTime, setLocalDraftTime] = useState<string | null>(null)
 
@@ -146,16 +147,22 @@ export default function InstructorCourseBuilder() {
                         if (c.thumbnail_url) setThumbnailMode('unsplash');
                         
                         if (c.lectures && c.lectures.length > 0) {
-                            setModules(c.lectures.map((l: any, i: number) => ({
-                                id: l.id || Date.now() + i,
-                                title: l.title || '',
-                                videoMode: l.video_url?.includes('http') ? 'link' : 'upload',
-                                videoUrl: l.video_url || '',
-                                thumbnailMode: l.thumbnail_url ? 'unsplash' : 'upload',
-                                thumbnailUrl: l.thumbnail_url || '',
-                                mcqs: Array.isArray(l.mcqs) ? l.mcqs : (typeof l.mcqs === 'string' ? (function(){ try { const p = JSON.parse(l.mcqs); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : []),
-                                attachments: Array.isArray(l.attachments) ? l.attachments : (typeof l.attachments === 'string' ? (function(){ try { const p = JSON.parse(l.attachments); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
-                            })));
+                            setModules(c.lectures.map((l: any, i: number) => {
+                                const isYoutubeVideo = l.video_url?.includes('youtube') || l.video_url?.includes('youtu.be');
+                                const isSupabaseThumbnail = l.thumbnail_url?.includes('supabase') || l.thumbnail_url?.includes('/storage/v1/');
+                                return {
+                                    id: l.id || Date.now() + i,
+                                    title: l.title || '',
+                                    videoMode: isYoutubeVideo ? 'link' : 'upload',
+                                    videoUrl: l.video_url || '',
+                                    thumbnailMode: (l.thumbnail_url && !isSupabaseThumbnail) ? 'unsplash' : 'upload',
+                                    thumbnailUrl: l.thumbnail_url || '',
+                                    mcqs: Array.isArray(l.mcqs) ? l.mcqs : (typeof l.mcqs === 'string' ? (function(){ try { const p = JSON.parse(l.mcqs); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : []),
+                                    attachments: Array.isArray(l.attachments) ? l.attachments : (typeof l.attachments === 'string' ? (function(){ try { const p = JSON.parse(l.attachments); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
+                                };
+                            }));
+                            // All modules collapsed by default when editing existing course
+                            setOpenModuleIds(new Set());
                         }
                     }
                 }
@@ -336,7 +343,9 @@ export default function InstructorCourseBuilder() {
     }
 
     const addModule = () => {
-        setModules([...modules, { id: Date.now(), title: 'New Module', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '', mcqs: [], attachments: [] }])
+        const newId = Date.now();
+        setModules([...modules, { id: newId, title: 'New Module', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '', mcqs: [], attachments: [] }]);
+        setOpenModuleIds(prev => new Set([...prev, newId]));
     }
 
     const removeModule = (id: number) => {
@@ -705,7 +714,14 @@ export default function InstructorCourseBuilder() {
 
                         <div className="space-y-6">
                             {modules.map((mod, index) => (
-                                <details key={mod.id} open={index === 0} className="group border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50/50 dark:bg-slate-800/20 shadow-sm">
+                                <details key={mod.id} open={openModuleIds.has(mod.id)} onToggle={(e: any) => {
+                                    const isOpen = e.currentTarget.open;
+                                    setOpenModuleIds(prev => {
+                                        const next = new Set(prev);
+                                        if (isOpen) next.add(mod.id); else next.delete(mod.id);
+                                        return next;
+                                    });
+                                }} className="group border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50/50 dark:bg-slate-800/20 shadow-sm">
                                     <summary 
                                         className="flex items-center justify-between p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden"
                                         onClick={(e: any) => {
@@ -1033,7 +1049,7 @@ export default function InstructorCourseBuilder() {
                                                                     {att.url ? (
                                                                         <span className="text-xs font-bold text-emerald-600 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> File Uploaded</span>
                                                                     ) : (
-                                                                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg> Browse File (PDF, ZIP, etc)</span>
+                                                                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg> Browse File (PDF, DOCX)</span>
                                                                     )}
                                                                 </div>
                                                             ) : (

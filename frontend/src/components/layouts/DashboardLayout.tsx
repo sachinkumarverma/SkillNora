@@ -58,34 +58,113 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const breadcrumbs = useMemo(() => {
         const parts = pathname?.split('/').filter(Boolean) || []
         if (parts.length === 0) return [{ label: 'Dashboard' }]
-        
+
         const crumbs: {label: string, href?: string}[] = []
         let currentPath = ''
-        
-        parts.forEach((part) => {
-            currentPath += `/${part}`
-            
-            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part)) {
-                return;
+
+        const isRole = pathname.startsWith('/instructor') ? 'instructor' : pathname.startsWith('/admin') ? 'admin' : null;
+
+        if (isRole) {
+            if (pathname === `/${isRole}`) {
+                return [{ label: isRole === 'instructor' ? 'Instructor Studio' : 'Overview' }]
             }
 
+            let parentLabel = ''
+            let parentHref = ''
+
+            if (pathname.startsWith(`/${isRole}/courses`) || pathname.startsWith(`/${isRole}/new`) || pathname.startsWith(`/${isRole}/drafts`)) {
+                parentLabel = 'Course Management'
+                parentHref = `/${isRole}/courses`
+            } else if (pathname.startsWith(`/${isRole}/instructors`)) {
+                parentLabel = 'Instructor Management'
+                parentHref = `/${isRole}/instructors`
+            } else if (pathname.startsWith(`/${isRole}/students`)) {
+                parentLabel = 'Student Management'
+                parentHref = `/${isRole}/students`
+            } else if (pathname.startsWith(`/${isRole}/payments`)) {
+                parentLabel = 'Payments & Enrollments'
+                parentHref = `/${isRole}/payments`
+            } else if (pathname.startsWith(`/${isRole}/ai`)) {
+                parentLabel = isRole === 'instructor' ? 'AI Studio' : 'AI Content'
+                parentHref = `/${isRole}/ai`
+            } else if (pathname.startsWith(`/${isRole}/certificates`)) {
+                parentLabel = 'Certificates'
+                parentHref = `/${isRole}/certificates`
+            } else if (pathname.startsWith(`/${isRole}/reviews`)) {
+                parentLabel = 'Reviews & Ratings'
+                parentHref = `/${isRole}/reviews`
+            } else if (pathname.startsWith(`/${isRole}/support`)) {
+                parentLabel = 'Support Tickets'
+                parentHref = `/${isRole}/support`
+            } else if (pathname.startsWith(`/${isRole}/promotions`)) {
+                parentLabel = 'Promotions'
+                parentHref = `/${isRole}/promotions`
+            } else if (pathname.startsWith(`/${isRole}/audit-logs`)) {
+                parentLabel = 'Audit Logs'
+                parentHref = `/${isRole}/audit-logs`
+            } else if (pathname.startsWith(`/${isRole}/notifications`)) {
+                parentLabel = 'Notifications'
+                parentHref = `/${isRole}/notifications`
+            } else if (pathname.startsWith(`/${isRole}/settings`)) {
+                parentLabel = 'System Settings'
+                parentHref = `/${isRole}/settings`
+            } else {
+                const firstPart = pathname.split('/')[2];
+                if (firstPart) {
+                    parentLabel = firstPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    parentHref = `/${isRole}/${firstPart}`;
+                }
+            }
+
+            if (parentLabel) {
+                crumbs.push({ label: parentLabel, href: parentHref })
+            }
+
+            if (pathname === `/${isRole}/new`) {
+                crumbs.push({ label: 'Course Builder', href: pathname })
+            } else if (pathname === `/${isRole}/drafts`) {
+                crumbs.push({ label: 'Draft Courses', href: pathname })
+            } else {
+                const remainingPath = pathname.replace(parentHref, '')
+                const remainingParts = remainingPath.split('/').filter(Boolean)
+                let currentExt = parentHref
+                for (const part of remainingParts) {
+                    currentExt += `/${part}`
+                    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part) || /^\d+$/.test(part)) {
+                        if (parentHref.endsWith('/payments')) {
+                            crumbs.push({ label: 'View Receipt', href: currentExt })
+                        } else if (parentHref.endsWith('/instructors') || parentHref.endsWith('/students')) {
+                            crumbs.push({ label: 'View Profile', href: currentExt })
+                        } else if (parentHref.endsWith('/courses')) {
+                            crumbs.push({ label: 'Course Details', href: currentExt })
+                        } else {
+                            crumbs.push({ label: 'Details', href: currentExt })
+                        }
+                        continue
+                    }
+                    const label = PATH_LABELS[currentExt] || part.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    crumbs.push({ label, href: currentExt })
+                }
+            }
+
+            if (crumbs.length > 0) delete crumbs[crumbs.length - 1].href
+            return crumbs
+        }
+
+        // Student/default path handling
+        parts.forEach((part) => {
+            currentPath += `/${part}`
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part)) return
             let label = part
             if (PATH_LABELS[currentPath]) {
                 label = PATH_LABELS[currentPath]
             } else {
                 label = part.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
             }
-
-            crumbs.push({
-                label,
-                href: currentPath
-            })
+            crumbs.push({ label, href: currentPath })
         })
-        
-        if (crumbs.length > 0) {
-            delete crumbs[crumbs.length - 1].href
-        }
-        
+
+        if (crumbs.length > 0) delete crumbs[crumbs.length - 1].href
         return crumbs
     }, [pathname])
 

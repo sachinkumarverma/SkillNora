@@ -473,18 +473,22 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                             );
                                         }
 
-                                        const playerConfig: any = { file: { attributes: { poster: lecture.poster_url } } };
+                                        // Native HTML5 video player for uploaded videos
                                         return (
-                                            <ReactPlayer
-                                                url={url}
-                                                width="100%"
-                                                height="100%"
+                                            <video
+                                                key={url}
+                                                src={url}
                                                 controls
-                                                playing={!showQuiz}
+                                                preload="metadata"
+                                                poster={lecture.thumbnail_url || lecture.poster_url || undefined}
                                                 onEnded={handleVideoEnd}
-                                                config={playerConfig}
-                                                style={{ position: 'absolute', top: 0, left: 0 }}
-                                            />
+                                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: '#0f172a' }}
+                                                controlsList="nodownload"
+                                                playsInline
+                                            >
+                                                <source src={url} />
+                                                Your browser does not support the video tag.
+                                            </video>
                                         );
                                     })()}
                                 </>
