@@ -34,10 +34,13 @@ const getPayments = async () => {
             o.status,
             o.created_at as date,
             u.full_name as user_name,
-            c.title as course_title
+            c.title as course_title,
+            i.full_name as instructor_name,
+            i.email as instructor_email
         FROM orders o
         LEFT JOIN users u ON o.user_id = u.id
         LEFT JOIN courses c ON o.course_id = c.id
+        LEFT JOIN users i ON c.instructor_id = i.id
         ORDER BY o.created_at DESC
     `;
     const { rows } = await query(sql);

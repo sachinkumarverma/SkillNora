@@ -6,7 +6,7 @@ import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
 import Pagination from '@/components/ui/Pagination'
 
-export default function AdminPaymentsPage() {
+export default function InstructorPaymentsPage() {
     const [payments, setPayments] = useState<any[]>([])
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
@@ -16,8 +16,8 @@ export default function AdminPaymentsPage() {
     const fetchPayments = async () => {
         setLoading(true)
         try {
-            const res = await apiClient.get('/api/admin/payments')
-            setPayments(res.data?.payments || [])
+            const res = await apiClient.get('/api/courses/admin')
+            setPayments(res.data?.recent_transactions || [])
         } catch (err) {
             console.error(err)
         } finally {
@@ -29,23 +29,17 @@ export default function AdminPaymentsPage() {
         fetchPayments()
     }, [])
 
-    const filtered = payments.filter(p => 
-        p.transaction_id?.toLowerCase().includes(search.toLowerCase()) || 
-        p.user_name?.toLowerCase().includes(search.toLowerCase()) ||
-        p.instructor_name?.toLowerCase().includes(search.toLowerCase()) ||
-        p.instructor_email?.toLowerCase().includes(search.toLowerCase())
-    )
+    const filtered = payments.filter(p => p.transaction_id?.toLowerCase().includes(search.toLowerCase()) || p.user_name?.toLowerCase().includes(search.toLowerCase()))
 
     const exportToCSV = () => {
         if (!payments.length) return;
         
-        const headers = ['Transaction ID', 'Student', 'Instructor', 'Course', 'Amount', 'Status', 'Date'];
+        const headers = ['Transaction ID', 'Student', 'Course', 'Amount', 'Status', 'Date'];
         const csvRows = [
             headers.join(','),
             ...filtered.map(p => [
                 `"${p.transaction_id || p.id}"`,
                 `"${(p.user_name || '').replace(/"/g, '""')}"`,
-                `"${(p.instructor_name || p.instructor_email || 'Unassigned').replace(/"/g, '""')}"`,
                 `"${(p.course_title || '').replace(/"/g, '""')}"`,
                 p.amount,
                 p.status,
@@ -113,7 +107,7 @@ export default function AdminPaymentsPage() {
                         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         <input 
                             type="text" 
-                            placeholder="Search by Transaction ID, Student, or Instructor..." 
+                            placeholder="Search by Transaction ID or Student..." 
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-full py-2 pl-10 pr-4 text-sm font-medium outline-none transition-all"
@@ -137,12 +131,10 @@ export default function AdminPaymentsPage() {
                             <tr>
                                 <th className="px-6 py-4">Transaction ID</th>
                                 <th className="px-6 py-4">Student</th>
-                                <th className="px-6 py-4">Instructor</th>
                                 <th className="px-6 py-4">Course</th>
                                 <th className="px-6 py-4">Amount</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4">Date</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -150,7 +142,6 @@ export default function AdminPaymentsPage() {
                                 <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4 font-mono font-medium text-slate-600 dark:text-slate-400">{p.transaction_id || p.id}</td>
                                     <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{p.user_name}</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{p.instructor_name || p.instructor_email || <span className="text-slate-400 italic">Unassigned</span>}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{p.course_title}</td>
                                     <td className="px-6 py-4 font-black text-slate-900 dark:text-white">Rs. {p.amount}</td>
                                     <td className="px-6 py-4">
@@ -164,9 +155,6 @@ export default function AdminPaymentsPage() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-slate-500">{p.date}</td>
-                                    <td className="px-6 py-4 text-right">
-                                        <Link href={`/admin/payments/${p.id}`} className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">Receipt</Link>
-                                    </td>
                                 </tr>
                             ))}
                         </tbody>

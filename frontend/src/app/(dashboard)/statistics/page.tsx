@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
 
@@ -41,30 +41,29 @@ export default function StatisticsPage() {
         });
     }
 
-    const last364Days = Array.from({ length: 364 }).map((_, i) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() - (363 - i));
+    const dayOfWeek = today.getDay();
+    const totalDays = 51 * 7 + (dayOfWeek + 1);
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - totalDays + 1);
+
+    const allDays = Array.from({ length: totalDays }).map((_, i) => {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
         return d;
     });
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    const heatmapMonths = Array.from({ length: 12 }).map((_, i) => {
-        const d = new Date(today);
-        d.setMonth(d.getMonth() - (11 - i));
-        return monthNames[d.getMonth()];
-    });
-
     // Calculate Active Streak
     let streak = 0;
-    for (let i = 363; i >= 0; i--) {
-        const d = last364Days[i];
+    for (let i = allDays.length - 1; i >= 0; i--) {
+        const d = allDays[i];
         const key = formatDateKey(d);
         if (activityMap.get(key) && activityMap.get(key)! > 0) {
             streak++;
         } else {
             // Ignore today if we haven't done anything yet, but break on any past day with 0
-            if (i !== 363) break;
+            if (i !== allDays.length - 1) break;
         }
     }
 
@@ -208,19 +207,24 @@ export default function StatisticsPage() {
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Activity Heatmap (Last 12 Months)</h3>
 
                     <div className="flex gap-2 w-full min-w-max items-end">
-                        <div className="flex flex-col justify-between text-[11px] font-semibold text-slate-400 py-1 mr-2 h-[145px] shrink-0">
-                            <span>Mon</span>
-                            <span>Wed</span>
-                            <span>Fri</span>
+                        <div className="flex flex-col justify-between text-[11px] font-semibold text-slate-400 mr-2 h-[145px] shrink-0">
+                            {['', 'Mon', '', 'Wed', '', 'Fri', ''].map((day, i) => (
+                                <span key={i} className="flex items-center h-[15px] sm:h-[16px] md:h-[18px]">{day}</span>
+                            ))}
                         </div>
 
                         <div className="flex flex-1 justify-between w-full">
                             {Array.from({ length: 52 }).map((_, colIndex) => {
-                                const colDays = last364Days.slice(colIndex * 7, colIndex * 7 + 7);
-                                if (colDays.length === 0) return null;
+                                const colDays = Array.from({ length: 7 }).map((_, i) => {
+                                    const dayIndex = colIndex * 7 + i;
+                                    return dayIndex < allDays.length ? allDays[dayIndex] : null;
+                                });
+                                
+                                // Only process columns that have at least one day
+                                if (!colDays[0]) return null;
 
                                 const firstDay = colDays[0];
-                                const prevColFirstDay = colIndex > 0 ? last364Days[(colIndex - 1) * 7] : null;
+                                const prevColFirstDay = colIndex > 0 && allDays[(colIndex - 1) * 7] ? allDays[(colIndex - 1) * 7] : null;
                                 const isNewMonth = prevColFirstDay ? firstDay.getMonth() !== prevColFirstDay.getMonth() : true;
 
                                 return (
@@ -237,6 +241,8 @@ export default function StatisticsPage() {
                                         {/* 7 Days Column */}
                                         <div className="flex flex-col justify-between h-[145px]">
                                             {colDays.map((d, i) => {
+                                                if (!d) return <div key={i} className="w-[15px] h-[15px] sm:w-[16px] sm:h-[16px] md:w-[18px] md:h-[18px] shrink-0 bg-transparent"></div>;
+                                                
                                                 const key = formatDateKey(d);
                                                 const count = activityMap.get(key) || 0;
                                                 let intensity = 0;

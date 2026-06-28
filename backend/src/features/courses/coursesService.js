@@ -53,8 +53,10 @@ const getCourse = async (identifier, userId = null) => {
   const course = await coursesRepository.getBySlugOrId(identifier);
   if (!course) return null;
   let isEnrolled = false;
+  let has_certificate = false;
   if (userId) {
     isEnrolled = await coursesRepository.checkEnrollment(userId, course.id);
+    has_certificate = await coursesRepository.checkCertificate(userId, course.id);
   }
   return {
     ...course,
@@ -62,6 +64,7 @@ const getCourse = async (identifier, userId = null) => {
     image: course.thumbnail_url,
     priceFormatted: `₹${course.price}`,
     isEnrolled: !!isEnrolled,
+    has_certificate: !!has_certificate,
     progress: isEnrolled?.progress || {}
   };
 };

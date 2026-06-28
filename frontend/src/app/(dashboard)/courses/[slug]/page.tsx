@@ -314,10 +314,19 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             )}
                         </div>
                         <div className="p-6">
-                            <div className="text-3xl font-black text-slate-900 dark:text-white mb-6">
-                                {course.price ? `Rs. ${course.price}` : 'Free'}
+                            <div className="mb-6">
+                                {Number(course.discount_price) && Number(course.price) && Number(course.price) > Number(course.discount_price) ? (
+                                    <div className="flex flex-wrap items-end gap-3">
+                                        <span className="text-3xl font-black text-slate-900 dark:text-white">₹{course.discount_price}</span>
+                                        <span className="text-lg font-semibold text-slate-400 line-through decoration-slate-400/70 mb-1">₹{course.price}</span>
+                                        <span className="text-xs font-black text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-1 rounded uppercase tracking-wider mb-1.5">{Math.round(((Number(course.price) - Number(course.discount_price)) / Number(course.price)) * 100)}% off</span>
+                                    </div>
+                                ) : (
+                                    <div className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                                        <span>{course.price ? `₹${course.price}` : (course.is_free ? 'Free' : '₹1,999.00')}</span>
+                                    </div>
+                                )}
                             </div>
-                            
                             {/* AI Matrix Recommendation */}
                             {isEnrolled && course?.progress?.quizScores && (() => {
                                 const scores = Object.values(course.progress.quizScores);
@@ -356,7 +365,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                 </button>
                             )}
                             {!isStaff && <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "Partial refund available within 30 days" : "30-Day Money-Back Guarantee"}</p>}
-
+                            
                             <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800 text-sm">
                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                                     <span className="flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> Total Lectures</span>
@@ -373,6 +382,20 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             </div>
                         </div>
                     </div>
+                    
+                    {/* Certificate Unlocked Nudge */}
+                    {course?.has_certificate && (
+                        <div className="mt-6 p-6 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-emerald-800 dark:text-emerald-300 flex flex-col items-center text-center shadow-sm">
+                            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-800/50 rounded-full flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400">
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <h3 className="text-xl font-bold mb-2 text-emerald-900 dark:text-emerald-100">Certificate Unlocked!</h3>
+                            <p className="text-sm mb-6 opacity-90">Congratulations! You have completed this course and earned your certificate.</p>
+                            <Link href={`/certificates/${course.slug}`} className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-md text-sm">
+                                View Certificate
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
 

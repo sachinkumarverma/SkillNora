@@ -7,6 +7,7 @@ const getUserCertificates = async userId => {
     dbId: c.id,
     courseSlug: c.courses?.slug,
     courseTitle: c.courses?.title,
+    studentName: c.studentName,
     date: c.issued_at
   }));
 };

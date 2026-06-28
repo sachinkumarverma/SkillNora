@@ -52,7 +52,7 @@ export default function CertificatesPage() {
                             <h3 className="font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{cert.courseTitle}</h3>
                             <p className="text-sm text-slate-500 mb-6">Earned on {new Date(cert.date).toLocaleDateString()}</p>
                             
-                            <button onClick={() => router.push(`/certificates/${cert.id || cert.courseSlug}`)} className="w-full mt-auto bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            <button onClick={() => router.push(`/certificates/${cert.courseSlug || cert.id}`)} className="w-full mt-auto bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                                 View Certificate
                             </button>
                         </div>

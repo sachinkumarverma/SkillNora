@@ -32,18 +32,29 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
         if (userLoading) return;
 
         const fetchCert = async () => {
-            if (user) {
-                try {
-                    const certModule = await import('@/services/certificatesService')
+            try {
+                const certModule = await import('@/services/certificatesService')
+                let found = null;
+                
+                if (user) {
                     const response = await certModule.certificatesService.getMyCertificates()
                     const certs = Array.isArray(response) ? response : response.certificates || []
-                    const found = certs.find((c: any) => c.id === id || c.course_id === id)
-                    if (found) {
-                        setCert(found)
-                    }
-                } catch (e) {}
+                    found = certs.find((c: any) => c.id === id || c.dbId === id || c.courseSlug === id)
+                }
+                
+                if (!found) {
+                    const publicRes = await certModule.certificatesService.getCertificate(id)
+                    found = publicRes.certificate || publicRes;
+                }
+                
+                if (found) {
+                    setCert(found)
+                }
+            } catch (e) {
+                console.error('Failed to fetch certificate', e)
+            } finally {
+                setLoading(false)
             }
-            setLoading(false)
         }
         fetchCert()
     }, [id, searchParams, user, userLoading])
@@ -83,8 +94,7 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
 
     const handleShare = () => {
         if (!cert) return
-        const encoded = btoa(JSON.stringify(cert))
-        const url = `${window.location.origin}/certificates/${id}?data=${encoded}`
+        const url = `${window.location.origin}/certificates/${cert.id}`
         navigator.clipboard.writeText(url)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)

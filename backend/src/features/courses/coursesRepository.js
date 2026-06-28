@@ -68,7 +68,6 @@ const getInstructorTransactions = async (instructorId = null) => {
       JOIN courses c ON o.course_id = c.id
       ${whereClause}
       ORDER BY o.created_at DESC
-      LIMIT 10
   `;
   const { rows } = await query(sql, params);
   return rows.map(r => ({
@@ -92,7 +91,8 @@ const getAllPublished = async () => {
                 c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
                 u.full_name as instructor_name,
                 COALESCE(AVG(r.rating), 0) as average_rating,
-                COUNT(r.id) as review_count
+                COUNT(DISTINCT r.id) as review_count,
+                (SELECT COUNT(*) FROM lectures l WHERE l.course_id = c.id) as lectures_count
             FROM courses c
             LEFT JOIN users u ON c.instructor_id = u.id
             LEFT JOIN reviews r ON c.id = r.course_id
@@ -257,7 +257,8 @@ const getAll = async () => {
                 c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
                 u.full_name as instructor_name,
                 COALESCE(AVG(r.rating), 0) as average_rating,
-                COUNT(r.id) as review_count
+                COUNT(DISTINCT r.id) as review_count,
+                (SELECT COUNT(*) FROM lectures l WHERE l.course_id = c.id) as lectures_count
             FROM courses c
             LEFT JOIN users u ON c.instructor_id = u.id
             LEFT JOIN reviews r ON c.id = r.course_id

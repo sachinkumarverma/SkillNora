@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import api from '@/lib/api'
 import useUser from '@/lib/useUser'
 import apiClient from '@/lib/apiClient'
@@ -111,37 +112,234 @@ export default function DashboardPage() {
                 {/* Logged-in User Specific Sections */}
                 {user && (
                     <div className="space-y-12 mb-12">
-                        {/* Statistics Section */}
-                        <section>
-                            <div className="flex justify-between items-end mb-6">
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-serif">Your Learning Statistics</h2>
-                                <a href="/statistics" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
-                                    See full statistics <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                                </a>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-100 dark:border-blue-800/30">
-                                    <div className="text-3xl font-black text-blue-600 dark:text-blue-400 mb-1">{enrolledCourses.length}</div>
-                                    <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">Courses Enrolled</div>
-                                </div>
-                                <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border border-purple-100 dark:border-purple-800/30">
-                                    <div className="text-3xl font-black text-purple-600 dark:text-purple-400 mb-1">{certificatesCount}</div>
-                                    <div className="text-sm font-semibold text-purple-800 dark:text-purple-300">Completed</div>
-                                </div>
-                                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-lg border border-emerald-100 dark:border-emerald-800/30">
-                                    <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mb-1">{certificatesCount}</div>
-                                    <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Certificates Earned</div>
-                                </div>
-                                <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-lg border border-amber-100 dark:border-amber-800/30">
-                                    <div className="text-3xl font-black text-amber-600 dark:text-amber-400 mb-1">{streakCount}</div>
-                                    <div className="text-sm font-semibold text-amber-800 dark:text-amber-300">Day Streak!</div>
-                                </div>
-                            </div>
-                        </section>
+                        {/* ═══════════ DEEP ANALYTICS & INSIGHTS ═══════════ */}
+                        {!loadingCourses && (() => {
+                            // ── Compute all analytics from real data ──
+                            const progressData = enrolledCourses.map(course => {
+                                const enrollment = userEnrollments.find(e => e.course_id === course.id)
+                                const progList = enrollment?.progress?.[course.slug] || []
+                                const totalLectures = course.lectures?.length || parseInt(course.lectures_count) || 1
+                                const percent = Math.min(100, Math.round((progList.length / totalLectures) * 100))
+                                return { ...course, percent, lecturesCompleted: progList.length, totalLectures }
+                            })
+
+                            const completionRate = enrolledCourses.length > 0 ? Math.round((certificatesCount / enrolledCourses.length) * 100) : 0
+                            const avgProgress = progressData.length > 0 ? Math.round(progressData.reduce((s, c) => s + c.percent, 0) / progressData.length) : 0
+                            const totalLecturesCompleted = progressData.reduce((s, c) => s + c.lecturesCompleted, 0)
+                            const totalLecturesAll = progressData.reduce((s, c) => s + c.totalLectures, 0)
+
+                            // Skill coverage from enrolled categories
+                            const enrolledCategories = new Set(enrolledCourses.map(c => c.category).filter(Boolean))
+                            const allCategories = new Set(courses.map(c => c.category).filter(Boolean))
+                            const skillCoverage = allCategories.size > 0 ? Math.round((enrolledCategories.size / allCategories.size) * 100) : 0
+
+                            // Category distribution
+                            const catCounts: Record<string, number> = {}
+                            enrolledCourses.forEach(c => { if (c.category) catCounts[c.category] = (catCounts[c.category] || 0) + 1 })
+                            const topCategory = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0]
+
+                            // Skill gaps: categories with courses available but not enrolled
+                            const gapCategories = [...allCategories].filter(cat => !enrolledCategories.has(cat))
+
+                            // Smart recommendations: courses NOT enrolled, sorted by rating
+                            const notEnrolled = courses.filter(c => !enrolledIds.includes(c.id) && c.is_published !== false)
+                            const topRatedNotEnrolled = [...notEnrolled].sort((a, b) => (parseFloat(b.average_rating) || 0) - (parseFloat(a.average_rating) || 0)).slice(0, 3)
+
+                            // Courses in same category as top enrolled category (for "Because you studied X")
+                            const sameCategory = topCategory ? notEnrolled.filter(c => c.category === topCategory[0]).slice(0, 3) : []
+
+                            // Stalled courses (enrolled but < 30% progress)
+                            const stalledCourses = progressData.filter(c => c.percent > 0 && c.percent < 30)
+
+                            // Near completion (> 70% but not 100%)
+                            const nearCompletion = progressData.filter(c => c.percent >= 70 && c.percent < 100)
+
+                            // Learning velocity: lectures per enrolled course
+                            const velocity = enrolledCourses.length > 0 ? (totalLecturesCompleted / enrolledCourses.length).toFixed(1) : '0'
+
+                            // Streak analysis
+                            const streakLabel = streakCount >= 30 ? '🔥 Legendary' : streakCount >= 14 ? '⚡ On Fire' : streakCount >= 7 ? '💪 Strong' : streakCount >= 3 ? '✨ Growing' : '🌱 Starting'
+
+                            return (
+                                <section className="space-y-8">
+                                    <div className="flex justify-between items-end mb-6">
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-serif">Deep Insights & Analytics</h2>
+                                        <Link href="/statistics" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
+                                            See full statistics <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                        </Link>
+                                    </div>
+
+                                    {/* Row 1: Key Metrics */}
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-5 rounded-xl text-white">
+                                            <div className="text-sm font-medium opacity-80">Completion Rate</div>
+                                            <div className="text-3xl font-black mt-1">{completionRate}%</div>
+                                            <div className="text-xs opacity-70 mt-1">{certificatesCount} of {enrolledCourses.length} courses finished</div>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-5 rounded-xl text-white">
+                                            <div className="text-sm font-medium opacity-80">Avg. Progress</div>
+                                            <div className="text-3xl font-black mt-1">{avgProgress}%</div>
+                                            <div className="text-xs opacity-70 mt-1">{totalLecturesCompleted} / {totalLecturesAll} lectures done</div>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-5 rounded-xl text-white">
+                                            <div className="text-sm font-medium opacity-80">Skill Coverage</div>
+                                            <div className="text-3xl font-black mt-1">{skillCoverage}%</div>
+                                            <div className="text-xs opacity-70 mt-1">{enrolledCategories.size} of {allCategories.size} domains explored</div>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-5 rounded-xl text-white">
+                                            <div className="text-sm font-medium opacity-80">Streak Status</div>
+                                            <div className="text-3xl font-black mt-1">{streakCount}d</div>
+                                            <div className="text-xs opacity-70 mt-1">{streakLabel}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 2: Skill Distribution + Learning Velocity */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {/* Skill Distribution */}
+                                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 font-serif">Your Skill Distribution</h3>
+                                            {Object.entries(catCounts).length > 0 ? (
+                                                <div className="space-y-3">
+                                                    {Object.entries(catCounts).sort((a, b) => b[1] - a[1]).map(([cat, count], i) => {
+                                                        const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500', 'bg-cyan-500']
+                                                        const maxCount = Math.max(...Object.values(catCounts))
+                                                        const width = Math.round((count / maxCount) * 100)
+                                                        return (
+                                                            <div key={cat}>
+                                                                <div className="flex justify-between mb-1">
+                                                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{cat}</span>
+                                                                    <span className="text-sm font-bold text-slate-900 dark:text-white">{count} course{count > 1 ? 's' : ''}</span>
+                                                                </div>
+                                                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                                                                    <div className={`h-2 rounded-full ${colors[i % colors.length]} transition-all duration-500`} style={{ width: `${width}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-slate-500">Enroll in courses to see your skill distribution.</p>
+                                            )}
+                                        </div>
+
+                                        {/* Learning Velocity & Insights */}
+                                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 font-serif">Learning Velocity</h3>
+                                            <div className="grid grid-cols-2 gap-4 mb-5">
+                                                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 text-center">
+                                                    <div className="text-2xl font-black text-slate-900 dark:text-white">{velocity}</div>
+                                                    <div className="text-xs font-semibold text-slate-500 mt-1">Lectures / Course</div>
+                                                </div>
+                                                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 text-center">
+                                                    <div className="text-2xl font-black text-slate-900 dark:text-white">{totalLecturesCompleted}</div>
+                                                    <div className="text-xs font-semibold text-slate-500 mt-1">Total Lectures Done</div>
+                                                </div>
+                                            </div>
+                                            {/* Near Completion Nudges */}
+                                            {nearCompletion.length > 0 && (
+                                                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                                                    <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300 mb-2">🎯 Almost There!</div>
+                                                    {nearCompletion.map(c => (
+                                                        <div key={c.id} className="flex items-center justify-between py-1 cursor-pointer hover:opacity-80" onClick={() => router.push(`/courses/${c.slug}`)}>
+                                                            <span className="text-sm text-emerald-800 dark:text-emerald-200 font-medium line-clamp-1 flex-1">{c.title}</span>
+                                                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 ml-2 shrink-0">{c.percent}%</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {/* Stalled Courses Warning */}
+                                            {stalledCourses.length > 0 && (
+                                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mt-3">
+                                                    <div className="text-sm font-bold text-amber-700 dark:text-amber-300 mb-2">⏸️ Needs Attention</div>
+                                                    {stalledCourses.slice(0, 2).map(c => (
+                                                        <div key={c.id} className="flex items-center justify-between py-1 cursor-pointer hover:opacity-80" onClick={() => router.push(`/courses/${c.slug}`)}>
+                                                            <span className="text-sm text-amber-800 dark:text-amber-200 font-medium line-clamp-1 flex-1">{c.title}</span>
+                                                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 ml-2 shrink-0">{c.percent}%</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Row 3: Skill Gap Analysis */}
+                                    {gapCategories.length > 0 && (
+                                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 font-serif">Skill Gap Analysis</h3>
+                                            <p className="text-sm text-slate-500 mb-4">You haven't explored these domains yet. Broaden your knowledge base:</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {gapCategories.map(cat => {
+                                                    const countInCat = courses.filter(c => c.category === cat).length
+                                                    return (
+                                                        <span key={cat} className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer transition-colors" onClick={() => router.push('/courses')}>
+                                                            {cat} <span className="text-xs text-slate-400">({countInCat})</span>
+                                                        </span>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Row 4: Personalized Recommendations */}
+                                    {topRatedNotEnrolled.length > 0 && (
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 font-serif">
+                                                {topCategory ? `Because you study ${topCategory[0]}` : 'Recommended For You'}
+                                            </h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                                {(sameCategory.length > 0 ? sameCategory : topRatedNotEnrolled).map(course => (
+                                                    <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => router.push(`/courses/${course.slug}`)}>
+                                                        <div className="aspect-[16/10] bg-slate-100 dark:bg-slate-800 overflow-hidden relative">
+                                                            <img src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                            <div className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-md">Recommended</div>
+                                                            {parseFloat(course.average_rating) > 0 && (
+                                                                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">⭐ {parseFloat(course.average_rating).toFixed(1)}</div>
+                                                            )}
+                                                        </div>
+                                                        <div className="p-4">
+                                                            <div className="text-xs text-blue-600 dark:text-blue-400 font-bold mb-1">{course.category || course.primary_skill || 'General'}</div>
+                                                            <h4 className="font-bold text-slate-900 dark:text-white line-clamp-2 text-sm mb-2">{course.title}</h4>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-xs text-slate-500 font-medium">{course.instructor_name || 'Instructor'}</span>
+                                                                <span className="font-bold text-sm text-slate-900 dark:text-white">{parseFloat(course.price) > 0 ? `₹${course.price}` : 'Free'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Row 5: Top Rated Courses You Haven't Tried */}
+                                    {topRatedNotEnrolled.length > 0 && sameCategory.length > 0 && (
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 font-serif">Top Rated Courses You Haven't Tried</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                                {topRatedNotEnrolled.map(course => (
+                                                    <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
+                                                        <div className="w-20 h-20 shrink-0 rounded-lg bg-slate-100 overflow-hidden">
+                                                            <img src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <div className="flex-1 flex flex-col justify-center">
+                                                            <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1 text-sm">{course.title}</h4>
+                                                            <div className="text-xs text-slate-500 mt-1">{course.category}</div>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                {parseFloat(course.average_rating) > 0 && <span className="text-xs font-bold text-amber-600">⭐ {parseFloat(course.average_rating).toFixed(1)}</span>}
+                                                                <span className="text-xs font-bold text-slate-900 dark:text-white">{parseFloat(course.price) > 0 ? `₹${course.price}` : 'Free'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </section>
+                            )
+                        })()}
 
                         {/* Continue Watching */}
                         {loadingCourses ? (
-                            <section className="animate-pulse">
+                            <section className="animate-pulse mt-12">
                                 <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {[1, 2, 3].map(i => (
@@ -157,14 +355,14 @@ export default function DashboardPage() {
                                 </div>
                             </section>
                         ) : (
-                            <section>
+                            <section className="mt-12">
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Continue Watching</h2>
                             {enrolledCourses.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {enrolledCourses.slice(0, 3).map((course, idx) => {
                                         const enrollment = userEnrollments.find(e => e.course_id === course.id);
                                         const progList = enrollment?.progress?.[course.slug] || [];
-                                        const totalLectures = course.lectures?.length || 1; // avoid div 0
+                                        const totalLectures = course.lectures?.length || parseInt(course.lectures_count) || 1;
                                         const percent = Math.min(100, Math.round((progList.length / totalLectures) * 100));
                                         return (
                                         <div key={idx} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>

@@ -2,14 +2,13 @@
 import React, { useState, useEffect } from 'react'
 import useUser from '@/lib/useUser'
 import { authService } from '@/services/authService'
-import { motion, AnimatePresence } from 'framer-motion'
 import apiClient from '@/lib/apiClient'
+import toast from 'react-hot-toast'
 
 export default function SettingsPage() {
     const { user, loading } = useUser()
     const [activeTab, setActiveTab] = useState('profile')
     const [isSaving, setIsSaving] = useState(false)
-    const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null)
 
     // Form states
     const [fullName, setFullName] = useState('')
@@ -48,13 +47,12 @@ export default function SettingsPage() {
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSaving(true)
-        setMessage(null)
         
         try {
             await authService.updateProfile({ full_name: fullName })
-            setMessage({ text: 'Profile updated successfully!', type: 'success' })
+            toast.success('Profile updated successfully!')
         } catch (error: any) {
-            setMessage({ text: error.message || 'Failed to update profile', type: 'error' })
+            toast.error(error.message || 'Failed to update profile')
         } finally {
             setIsSaving(false)
         }
@@ -63,24 +61,23 @@ export default function SettingsPage() {
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault()
         if (password !== confirmPassword) {
-            setMessage({ text: 'Passwords do not match.', type: 'error' })
+            toast.error('Passwords do not match.')
             return
         }
         if (password.length < 6) {
-            setMessage({ text: 'Password must be at least 6 characters.', type: 'error' })
+            toast.error('Password must be at least 6 characters.')
             return
         }
         
         setIsSaving(true)
-        setMessage(null)
         try {
             await authService.updatePassword(password)
 
             setPassword('')
             setConfirmPassword('')
-            setMessage({ text: 'Password updated successfully!', type: 'success' })
+            toast.success('Password updated successfully!')
         } catch (error: any) {
-            setMessage({ text: error.message || 'Failed to update password', type: 'error' })
+            toast.error(error.message || 'Failed to update password')
         } finally {
             setIsSaving(false)
         }
@@ -91,7 +88,6 @@ export default function SettingsPage() {
         if (!file || !user) return
 
         setIsSaving(true)
-        setMessage(null)
         try {
             const fileExt = file.name.split('.').pop()
             const fileName = `${user.id}-${Math.random()}.${fileExt}`
@@ -129,9 +125,9 @@ export default function SettingsPage() {
 
             await authService.updateProfile({ avatar_url: finalAvatarUrl })
             
-            setMessage({ text: 'Avatar updated successfully!', type: 'success' })
+            toast.success('Avatar updated successfully!')
         } catch (error: any) {
-            setMessage({ text: error.message || 'Failed to upload avatar', type: 'error' })
+            toast.error(error.message || 'Failed to upload avatar')
         } finally {
             setIsSaving(false)
         }
@@ -165,7 +161,7 @@ export default function SettingsPage() {
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => { setActiveTab(tab.id); setMessage(null) }}
+                                    onClick={() => { setActiveTab(tab.id) }}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all duration-200 ${
                                         active 
                                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
@@ -184,27 +180,6 @@ export default function SettingsPage() {
 
                 {/* Content Area */}
                 <div className="flex-1 relative">
-                    {/* Toast Notification */}
-                    <AnimatePresence>
-                        {message && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className={`absolute top-0 right-0 z-50 p-4 rounded-xl shadow-lg border text-sm font-bold flex items-center gap-3 ${
-                                    message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-900 dark:text-emerald-300' : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:border-red-900 dark:text-red-300'
-                                }`}
-                            >
-                                {message.type === 'success' ? (
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                ) : (
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                )}
-                                {message.text}
-                                <button onClick={() => setMessage(null)} className="ml-2 hover:opacity-70"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
 
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
                         

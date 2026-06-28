@@ -15,6 +15,7 @@ import {
 } from 'recharts'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
+import Link from 'next/link'
 
 export default function InstructorPage() {
     const [courses, setCourses] = useState<any[]>([])
@@ -181,25 +182,106 @@ export default function InstructorPage() {
                         </div>
                     </div>
                     <div className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
-                        <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white'>Upcoming tools</h2>
-                        <div className='mt-5 grid gap-3'>
-                            {['Drag-and-drop lecture ordering', 'Rich text editor', 'Video/resource uploads', 'Course publishing workflow'].map((item) => (
-                                <div key={item} className='rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300'>{item}</div>
-                            ))}
+                        <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white'>Course Health</h2>
+                        <div className='mt-5 space-y-3'>
+                            {(() => {
+                                const sortedByStudents = [...courses].filter(c => c.is_published).sort((a, b) => (parseInt(b.enrollment_count) || 0) - (parseInt(a.enrollment_count) || 0))
+                                const bestPerformer = sortedByStudents[0]
+                                const worstPerformer = sortedByStudents.length > 1 ? sortedByStudents[sortedByStudents.length - 1] : null
+                                const avgStudentsPerCourse = publishedCount > 0 ? Math.round(totalStudents / publishedCount) : 0
+                                const revenuePerStudent = totalStudents > 0 ? Math.round(totalRevenue / totalStudents) : 0
+                                const freeCount = courses.filter(c => !parseFloat(c.price) || parseFloat(c.price) === 0).length
+                                const paidCount = courses.filter(c => parseFloat(c.price) > 0).length
+
+                                return (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-3 mb-4">
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+                                                <div className="text-xl font-black text-blue-600 dark:text-blue-400">{avgStudentsPerCourse}</div>
+                                                <div className="text-[10px] font-bold text-blue-800 dark:text-blue-300 uppercase">Avg Students/Course</div>
+                                            </div>
+                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-center">
+                                                <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">₹{revenuePerStudent}</div>
+                                                <div className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase">Revenue/Student</div>
+                                            </div>
+                                        </div>
+                                        {bestPerformer && (
+                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
+                                                <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">🏆 Best Performer</div>
+                                                <div className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{bestPerformer.title}</div>
+                                                <div className="text-xs text-slate-500 mt-0.5">{bestPerformer.enrollment_count || 0} students • ₹{((parseInt(bestPerformer.enrollment_count) || 0) * (parseFloat(bestPerformer.price) || 0))} revenue</div>
+                                            </div>
+                                        )}
+                                        {worstPerformer && (parseInt(worstPerformer.enrollment_count) || 0) < avgStudentsPerCourse && (
+                                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                                <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">⚠️ Needs Attention</div>
+                                                <div className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{worstPerformer.title}</div>
+                                                <div className="text-xs text-slate-500 mt-0.5">{worstPerformer.enrollment_count || 0} students — below average</div>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2 mt-2">
+                                            <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded font-semibold">{paidCount} Paid</span>
+                                            <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded font-semibold">{freeCount} Free</span>
+                                        </div>
+                                    </>
+                                )
+                            })()}
                         </div>
                     </div>
                 </section>
 
+                {/* ═══════════ INSTRUCTOR DEEP INSIGHTS ═══════════ */}
+                <section className="rounded-xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>Smart Recommendations</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {(() => {
+                            const recommendations: {icon: string, title: string, desc: string, color: string}[] = []
+                            const noRatingCourses = courses.filter(c => c.is_published && (!c.average_rating || parseFloat(c.average_rating) === 0))
+                            const lowEnrollment = courses.filter(c => c.is_published && (parseInt(c.enrollment_count) || 0) < 10)
+                            const allFree = courses.filter(c => c.is_published).every(c => !parseFloat(c.price) || parseFloat(c.price) === 0)
+
+                            if (draftCount > 0) {
+                                recommendations.push({ icon: '📝', title: `${draftCount} Draft${draftCount > 1 ? 's' : ''} Pending`, desc: 'Publish your draft courses to start attracting students and generating revenue.', color: 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20' })
+                            }
+                            if (noRatingCourses.length > 0) {
+                                recommendations.push({ icon: '⭐', title: 'Need More Reviews', desc: `${noRatingCourses.length} published course${noRatingCourses.length > 1 ? 's have' : ' has'} zero reviews. Encourage your students to leave a rating.`, color: 'border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20' })
+                            }
+                            if (lowEnrollment.length > 0) {
+                                recommendations.push({ icon: '📈', title: 'Boost Your Enrollment', desc: `${lowEnrollment.length} course${lowEnrollment.length > 1 ? 's have' : ' has'} fewer than 10 students. Consider promoting via email campaigns.`, color: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20' })
+                            }
+                            if (allFree && publishedCount > 0) {
+                                recommendations.push({ icon: '💰', title: 'Monetization Opportunity', desc: 'All your courses are free. Consider creating a premium course to generate revenue.', color: 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' })
+                            }
+                            if (totalCourses === 0) {
+                                recommendations.push({ icon: '🚀', title: 'Get Started!', desc: 'Create your first course to start your instructor journey on Skillnora.', color: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20' })
+                            }
+                            if (recommendations.length === 0) {
+                                recommendations.push({ icon: '✅', title: 'Looking Great!', desc: 'Your courses are performing well. Keep creating content and engaging students!', color: 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20' })
+                            }
+
+                            return recommendations.slice(0, 3).map((rec, i) => (
+                                <div key={i} className={`rounded-lg border p-5 ${rec.color}`}>
+                                    <div className="text-2xl mb-2">{rec.icon}</div>
+                                    <div className="text-sm font-bold text-slate-900 dark:text-white mb-1">{rec.title}</div>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{rec.desc}</p>
+                                </div>
+                            ))
+                        })()}
+                    </div>
+                </section>
+
                 <section className='rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden'>
-                    <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+                    <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
                         <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white'>Recent Transactions</h2>
+                        <Link href="/instructor/payments" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">View All Transactions &rarr;</Link>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                                 <tr>
                                     <th className="px-6 py-4 font-bold">Transaction ID</th>
-                                    <th className="px-6 py-4 font-bold">User</th>
+                                    <th className="px-6 py-4 font-bold">Date</th>
+                                    <th className="px-6 py-4 font-bold">Student</th>
                                     <th className="px-6 py-4 font-bold">Course</th>
                                     <th className="px-6 py-4 font-bold">Amount</th>
                                     <th className="px-6 py-4 font-bold">Status</th>
@@ -208,11 +290,12 @@ export default function InstructorPage() {
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                 {transactions.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No transactions found.</td>
+                                        <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No transactions found.</td>
                                     </tr>
-                                ) : transactions.map((tx) => (
+                                ) : transactions.slice(0, 6).map((tx) => (
                                     <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-slate-600 dark:text-slate-300">{tx.transaction_id || `#${tx.id.substring(0, 8).toUpperCase()}`}</td>
+                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">{tx.date}</td>
                                         <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{tx.user_name}</td>
                                         <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{tx.course_title}</td>
                                         <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">₹{tx.amount}</td>
