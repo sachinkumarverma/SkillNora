@@ -18,9 +18,18 @@ export default function CourseCard({ course, isEnrolled, className = "", variant
     const { user } = useUser()
     const { isInWishlist, toggleWishlist } = useWishlist()
 
+    const isFree = course.is_free || course.price === '0' || course.price === 0;
+
     const priceDisplay = (
         <div className="flex flex-col">
-            {Number(course.discount_price) && Number(course.price) && Number(course.price) > Number(course.discount_price) ? (
+            {isFree ? (
+                <div className="flex items-center gap-2.5 mt-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-2.5 py-1 rounded">Free</span>
+                    {course.bestseller && (
+                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">Popular</span>
+                    )}
+                </div>
+            ) : Number(course.discount_price) && Number(course.price) && Number(course.price) > Number(course.discount_price) ? (
                 <div className="flex flex-wrap items-center gap-2 mb-0.5 mt-1">
                     <span className="text-lg font-black text-slate-900 dark:text-white">₹{course.discount_price}</span>
                     <span className="text-sm font-semibold text-slate-400 line-through decoration-slate-400/70">₹{course.price}</span>
@@ -28,8 +37,8 @@ export default function CourseCard({ course, isEnrolled, className = "", variant
                 </div>
             ) : (
                 <div className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5 mt-1">
-                    <span>{course.price ? `₹${course.price}` : (course.is_free ? 'Free' : '₹1,999.00')}</span>
-                    {(course.bestseller || course.price) && (
+                    <span>₹{course.price || '1,999.00'}</span>
+                    {course.bestseller && (
                         <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">Popular</span>
                     )}
                 </div>
@@ -83,29 +92,7 @@ export default function CourseCard({ course, isEnrolled, className = "", variant
                             )}
                         </div>
 
-                        {variant === 'enrolled' ? (
-                            <div className="flex items-center justify-between mt-3 w-full">
-                                {priceDisplay}
-                                <div className="flex gap-2 shrink-0 ml-2">
-                                    {onCancel && (
-                                        <button
-                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(e); }}
-                                            className="bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/courses/${course.slug}`); }}
-                                        className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        Continue
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            priceDisplay
-                        )}
+                        {priceDisplay}
                     </div>
                     {variant !== 'enrolled' && user && (
                         <button

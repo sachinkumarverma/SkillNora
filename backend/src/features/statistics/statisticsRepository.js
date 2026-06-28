@@ -46,6 +46,48 @@ const getStats = async (userId, role) => {
     notes: notes.map(n => n.created_at)
   };
 
+  const sqlEnrollsWithProgress = `
+    SELECT e.id, e.course_id, e.progress, c.title as course_title, c.slug as course_slug
+    FROM enrollments e
+    JOIN courses c ON e.course_id = c.id
+    WHERE e.user_id = $1
+  `;
+  const { rows: enrollsWithProgress } = await query(sqlEnrollsWithProgress, [userId]);
+
+  const quizScores = [];
+  
+  if (enrollsWithProgress.length > 0) {
+    const lectureIds = new Set();
+    enrollsWithProgress.forEach(e => {
+        if (e.progress && e.progress.quizScores) {
+            Object.keys(e.progress.quizScores).forEach(id => lectureIds.add(id));
+        }
+    });
+
+    let lecturesMap = {};
+    if (lectureIds.size > 0) {
+        const placeholders = Array.from(lectureIds).map((_, i) => `$${i+1}`).join(',');
+        const { rows: lectures } = await query(`SELECT id, title FROM lectures WHERE id IN (${placeholders})`, Array.from(lectureIds));
+        lectures.forEach(l => { lecturesMap[l.id] = l.title; });
+    }
+
+    enrollsWithProgress.forEach(e => {
+        if (e.progress && e.progress.quizScores) {
+            Object.entries(e.progress.quizScores).forEach(([lId, score]) => {
+                if (lecturesMap[lId]) {
+                    quizScores.push({
+                        course_title: e.course_title,
+                        course_slug: e.course_slug,
+                        lecture_id: lId,
+                        lecture_title: lecturesMap[lId],
+                        score: Number(score)
+                    });
+                }
+            });
+        }
+    });
+  }
+
   return {
     isAdmin: false,
     courses: courses || [],
@@ -53,6 +95,7 @@ const getStats = async (userId, role) => {
     certificates: certs || [],
     wishlist: wishlist || [],
     notes: notes || [],
+    quizScores,
     activityData
   };
 };

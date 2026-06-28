@@ -69,7 +69,7 @@ export default function AdminCourseManagement() {
                     title: c.title || 'Untitled Course',
                     category: c.category || 'Uncategorized',
                     instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
-                    price: `₹${c.price || 0}`,
+                    price: Number(c.price) > 0 ? `₹${c.price}` : <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-2 py-1 rounded">Free</span>,
                     status: c.is_published ? 'Published' : 'Archived',
                     enrollments: Number(c.enrollment_count) || 0,
                     rating: c.average_rating || 0,

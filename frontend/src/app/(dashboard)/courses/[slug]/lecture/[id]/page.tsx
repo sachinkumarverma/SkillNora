@@ -31,7 +31,7 @@ const formatNoteContent = (html: string) => {
 export default function LecturePage({ params }: { params: Promise<{ slug: string, id: string }> }) {
     const { slug, id } = React.use(params)
     const { user } = useUser()
-    const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, instructor_id?: string, totalLectures: number, progress?: any } | null>(null)
+    const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, instructor_id?: string, totalLectures: number, progress?: any, price?: any, is_free?: boolean } | null>(null)
     const role = user?.user_metadata?.role || user?.app_metadata?.role || (user?.email === 'sachinverma1489@gmail.com' ? 'admin' : 'student');
     const isStaff = role === 'admin' || (role === 'instructor' && courseInfo?.instructor_id === user?.id);
     
@@ -259,7 +259,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             const course = res?.course || res
             if (mounted) {
                 if (course) {
-                    setCourseInfo({ id: course.id, title: course.title, instructor_id: course.instructor_id, slug: course.slug, totalLectures: course.lectures?.length || 1, progress: course.progress })
+                    setCourseInfo({ id: course.id, title: course.title, instructor_id: course.instructor_id, slug: course.slug, totalLectures: course.lectures?.length || 1, progress: course.progress, price: course.price, is_free: course.is_free })
                     const lecIndex = course.lectures?.findIndex((l: any) => String(l.id) === String(id))
                     const lec = course.lectures?.[lecIndex]
                     if (lec) {
@@ -426,7 +426,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                         <h1 className='text-3xl font-serif font-bold text-slate-900 dark:text-white mb-6'>{lecture.title}</h1>
 
                         <div className='overflow-hidden rounded-xl bg-slate-900 aspect-video relative shadow-lg group'>
-                            {!isEnrolled && !isStaff ? (
+                            {(!isEnrolled && !isStaff && (!courseInfo || (courseInfo.price && Number(courseInfo.price) > 0 && !courseInfo.is_free))) ? (
                                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-md">
                                     <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4">
                                         <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
@@ -438,7 +438,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                     </Link>
                                 </div>
                             ) : null}
-                            {(isEnrolled || isStaff) && (
+                            {(isEnrolled || isStaff || (courseInfo && (!courseInfo.price || Number(courseInfo.price) === 0 || courseInfo.is_free))) && (
                                 <>
                                     {(() => {
                                         const url = lecture.videoUrl || lecture.video_url || '';
@@ -486,8 +486,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                 </>
                             )}
                         </div>
-                        
-                        {isEnrolled && !isStaff && !showQuiz && (
+                        {(isEnrolled || (courseInfo && (!courseInfo.price || Number(courseInfo.price) === 0 || courseInfo.is_free))) && !isStaff && !showQuiz && (
                             <div className="mt-4 flex justify-end gap-3">
                                 {!videoCompleted && (
                                     <button
@@ -510,7 +509,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     </div>
 
                     {/* Quiz Section */}
-                    {isEnrolled && !isStaff && showQuiz && (
+                    {(isEnrolled || (courseInfo && (!courseInfo.price || Number(courseInfo.price) === 0 || courseInfo.is_free))) && !isStaff && showQuiz && (
                         <div className="mt-6 bg-slate-900 rounded-xl border border-slate-800 shadow-sm flex flex-col p-6 sm:p-10 relative">
                             {quizResult ? (
                                 <div className="flex-1 flex flex-col items-center justify-center text-center animate-in zoom-in py-8">
@@ -612,6 +611,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                 const result = { score, passed: score >= 70 };
                                                 setQuizResult(result);
                                                 setQuizCompleted(true);
+                                                setVideoCompleted(true);
                                                 localStorage.setItem(`quiz_result_${courseInfo?.id}_${id}`, JSON.stringify({ result, answers: quizAnswers }));
                                             }}
                                             className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg"
@@ -625,7 +625,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     )}
 
                     {/* Notes Section */}
-                    {isEnrolled && !isStaff && (
+                    {(isEnrolled || (courseInfo && (!courseInfo.price || Number(courseInfo.price) === 0 || courseInfo.is_free))) && !isStaff && (
                     <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">

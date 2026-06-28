@@ -157,6 +157,31 @@ export default function StatisticsPage() {
                     <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{stats?.createdCourses || 0}</div>
                     <div className="text-sm font-semibold text-slate-500">Courses Published</div>
                 </div>
+                {/* Quiz Overview Cards */}
+                {stats?.quizScores && stats.quizScores.length > 0 && (() => {
+                    const totalScore = stats.quizScores.reduce((acc: number, curr: any) => acc + curr.score, 0);
+                    const avgScore = Math.round(totalScore / stats.quizScores.length);
+                    const passedModules = stats.quizScores.filter((s: any) => s.score >= 75).length;
+                    
+                    return (
+                        <>
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-full flex items-center justify-center mb-4">
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002-2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                </div>
+                                <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{avgScore}%</div>
+                                <div className="text-sm font-semibold text-slate-500">Average Quiz Score</div>
+                            </div>
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-full flex items-center justify-center mb-4">
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                                </div>
+                                <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{passedModules} / {stats.quizScores.length}</div>
+                                <div className="text-sm font-semibold text-slate-500">Modules Mastered (≥ 75%)</div>
+                            </div>
+                        </>
+                    )
+                })()}
             </div>
 
             <div className="grid grid-cols-1 gap-8">
@@ -206,14 +231,15 @@ export default function StatisticsPage() {
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-lg shadow-sm overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Activity Heatmap (Last 12 Months)</h3>
 
-                    <div className="flex gap-2 w-full min-w-max items-end">
-                        <div className="flex flex-col justify-between text-[11px] font-semibold text-slate-400 mr-2 h-[145px] shrink-0">
+                    <div className="flex w-full min-w-max items-start">
+                        <div className="flex flex-col gap-1 text-[11px] font-semibold text-slate-400 mr-2 shrink-0">
+                            <div className="h-5 mb-1"></div>
                             {['', 'Mon', '', 'Wed', '', 'Fri', ''].map((day, i) => (
-                                <span key={i} className="flex items-center h-[15px] sm:h-[16px] md:h-[18px]">{day}</span>
+                                <span key={i} className="flex items-center h-[13px] sm:h-[14px] md:h-[15px]">{day}</span>
                             ))}
                         </div>
 
-                        <div className="flex flex-1 justify-between w-full">
+                        <div className="flex gap-1 md:gap-1.5">
                             {Array.from({ length: 52 }).map((_, colIndex) => {
                                 const colDays = Array.from({ length: 7 }).map((_, i) => {
                                     const dayIndex = colIndex * 7 + i;
@@ -228,7 +254,7 @@ export default function StatisticsPage() {
                                 const isNewMonth = prevColFirstDay ? firstDay.getMonth() !== prevColFirstDay.getMonth() : true;
 
                                 return (
-                                    <div key={colIndex} className={`flex flex-col ${isNewMonth && colIndex > 0 ? 'ml-2 md:ml-2' : ''}`}>
+                                    <div key={colIndex} className={`flex flex-col ${isNewMonth && colIndex > 0 ? 'ml-2 md:ml-3' : ''}`}>
                                         {/* Month Label Header */}
                                         <div className="h-5 mb-1 relative">
                                             {isNewMonth && (
@@ -239,9 +265,9 @@ export default function StatisticsPage() {
                                         </div>
 
                                         {/* 7 Days Column */}
-                                        <div className="flex flex-col justify-between h-[145px]">
+                                        <div className="flex flex-col gap-1">
                                             {colDays.map((d, i) => {
-                                                if (!d) return <div key={i} className="w-[15px] h-[15px] sm:w-[16px] sm:h-[16px] md:w-[18px] md:h-[18px] shrink-0 bg-transparent"></div>;
+                                                if (!d) return <div key={i} className="w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] md:w-[15px] md:h-[15px] shrink-0 bg-transparent"></div>;
                                                 
                                                 const key = formatDateKey(d);
                                                 const count = activityMap.get(key) || 0;
@@ -254,7 +280,7 @@ export default function StatisticsPage() {
                                                     <div
                                                         key={i}
                                                         title={`${d.toLocaleDateString()}: ${count} actions`}
-                                                        className="w-[15px] h-[15px] sm:w-[16px] sm:h-[16px] md:w-[18px] md:h-[18px] shrink-0 rounded-[3px] bg-emerald-500 cursor-pointer transition-opacity hover:opacity-100"
+                                                        className="w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] md:w-[15px] md:h-[15px] shrink-0 rounded-[3px] bg-emerald-500 cursor-pointer transition-opacity hover:opacity-100"
                                                         style={{ opacity: intensity === 0 ? 0.05 : intensity / 100 }}
                                                     ></div>
                                                 );
@@ -277,6 +303,53 @@ export default function StatisticsPage() {
                         <span>More</span>
                     </div>
                 </div>
+
+                {/* Quiz Performance Section */}
+                {stats?.quizScores && stats.quizScores.length > 0 && (
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-lg shadow-sm">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Module Quiz Performance</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-slate-200 dark:border-slate-800 text-sm text-slate-500">
+                                        <th className="py-3 px-4 font-semibold">Course</th>
+                                        <th className="py-3 px-4 font-semibold">Module</th>
+                                        <th className="py-3 px-4 font-semibold">Score</th>
+                                        <th className="py-3 px-4 font-semibold text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {stats.quizScores.map((scoreObj: any, index: number) => {
+                                        const needsRetake = scoreObj.score < 75;
+                                        return (
+                                            <tr key={index} className="border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                                                <td className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{scoreObj.course_title}</td>
+                                                <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{scoreObj.lecture_title}</td>
+                                                <td className="py-4 px-4">
+                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${needsRetake ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
+                                                        {scoreObj.score}%
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-4 text-right">
+                                                    <a 
+                                                        href={`/courses/${scoreObj.course_slug}/lecture/${scoreObj.lecture_id}`}
+                                                        title="View Module"
+                                                        className="inline-flex items-center justify-center w-8 h-8 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

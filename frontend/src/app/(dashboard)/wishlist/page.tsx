@@ -58,7 +58,8 @@ export default function WishlistPage() {
             const cart = await cartModule.cartService.getCart()
 
             for (const course of savedCourses) {
-                if (!activeEnrollments.has(course.id) && !cart.some((c: any) => c.id === course.id)) {
+                const isFree = course.is_free || course.price === '0' || course.price === 0;
+                if (!isFree && !activeEnrollments.has(course.id) && !cart.some((c: any) => c.id === course.id)) {
                     await cartModule.cartService.addToCart(course.id)
                 }
             }

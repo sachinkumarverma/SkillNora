@@ -75,6 +75,7 @@ export default function InstructorCourseBuilder() {
         thumbnail_url: '',
         instructor_id: 'myself', // 'myself', 'none', or a specific uuid
         provide_certificate: true,
+        is_free: false,
         is_published: false,
         is_archived: false,
         attachments: [] as {title: string, url: string}[]
@@ -139,6 +140,7 @@ export default function InstructorCourseBuilder() {
                             instructor_id: c.instructor_id || 'myself',
                             initial_instructor_name: c.instructor?.full_name || c.instructor?.email,
                             provide_certificate: true,
+                            is_free: c.is_free || false,
                             is_published: c.is_published || false,
                             is_archived: c.is_archived || false,
                             attachments: Array.isArray(c.attachments) ? c.attachments : (typeof c.attachments === 'string' ? (function(){ try { const p = JSON.parse(c.attachments); return Array.isArray(p) ? p : [] } catch(e){ return [] }})() : [])
@@ -211,8 +213,8 @@ export default function InstructorCourseBuilder() {
         if (e) e.preventDefault()
         
         if (isPublished) {
-            if (!courseData.title || !courseData.description || !courseData.price || !courseData.thumbnail_url) {
-                toast.error('Please fill in all required fields (Title, Description, Price, Thumbnail URL)')
+            if (!courseData.title || !courseData.description || (!courseData.is_free && !courseData.price) || !courseData.thumbnail_url) {
+                toast.error(`Please fill in all required fields (Title, Description, ${courseData.is_free ? '' : 'Price, '}Thumbnail URL)`)
                 return
             }
         } else {
@@ -227,7 +229,7 @@ export default function InstructorCourseBuilder() {
             return
         }
 
-        if (courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price)) {
+        if (!courseData.is_free && courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price)) {
             toast.error('Discount price must be less than the regular price')
             return
         }
@@ -274,6 +276,7 @@ export default function InstructorCourseBuilder() {
                 discount_price: courseData.discountPrice ? Number(courseData.discountPrice) : null,
                 attachments: courseData.attachments,
                 provide_certificate: courseData.provide_certificate,
+                is_free: courseData.is_free,
                 is_published: isPublished
             }
 
@@ -616,7 +619,7 @@ export default function InstructorCourseBuilder() {
                                     </div>
                                     <button 
                                         type="button"
-                                        onClick={() => setCourseData({...courseData, attachments: [...courseData.attachments, {title: '', url: ''}]})}
+                                        onClick={() => setCourseData({...courseData, attachments: [...courseData.attachments, {title: '', url: '', mode: 'upload'}]})}
                                         className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                                     >
                                         + Add Attachment
@@ -637,17 +640,75 @@ export default function InstructorCourseBuilder() {
                                                     placeholder="Attachment Title (e.g. Slide Deck PDF)" 
                                                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-500" 
                                                 />
-                                                <input 
-                                                    type="url" 
-                                                    value={att.url} 
-                                                    onChange={(e) => {
-                                                        const newAtt = [...courseData.attachments];
-                                                        newAtt[i].url = e.target.value;
-                                                        setCourseData({...courseData, attachments: newAtt});
-                                                    }}
-                                                    placeholder="Attachment URL (https://...)" 
-                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-500" 
-                                                />
+                                                <div className="flex items-center justify-between mt-2 mb-1">
+                                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">File Source</label>
+                                                    <div className="flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-1 rounded-md">
+                                                        <button type="button" onClick={() => { const newAtt = [...courseData.attachments]; newAtt[i].mode = 'upload'; setCourseData({...courseData, attachments: newAtt}); }} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${(att.mode || 'upload') === 'upload' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Upload</button>
+                                                        <button type="button" onClick={() => { const newAtt = [...courseData.attachments]; newAtt[i].mode = 'link'; setCourseData({...courseData, attachments: newAtt}); }} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${att.mode === 'link' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Link URL</button>
+                                                    </div>
+                                                </div>
+                                                {(att.mode || 'upload') === 'upload' ? (
+                                                    <div className="flex min-h-[80px] relative overflow-hidden cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 transition hover:border-blue-400 dark:hover:border-blue-500">
+                                                        <input 
+                                                            type="file" 
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (!file) return;
+                                                                let loadingToastId;
+                                                                try {
+                                                                    loadingToastId = toast.loading('Uploading attachment...');
+                                                                    const filePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                                                                    
+                                                                    const { data } = await apiClient.post('/api/upload/url', {
+                                                                        bucket: 'course-materials',
+                                                                        filePath
+                                                                    });
+                                                                    
+                                                                    if (!data.uploadUrl) throw new Error("Could not get upload url");
+                                                                    
+                                                                    const res = await fetch(data.uploadUrl, {
+                                                                        method: 'PUT',
+                                                                        headers: { 'Content-Type': file.type },
+                                                                        body: file
+                                                                    });
+                                                                    
+                                                                    if (!res.ok) throw new Error("Failed to upload to storage");
+                                                                    
+                                                                    const newAtt = [...courseData.attachments];
+                                                                    newAtt[i].url = data.publicUrl;
+                                                                    if (!newAtt[i].title) newAtt[i].title = file.name;
+                                                                    setCourseData({...courseData, attachments: newAtt});
+                                                                    toast.success('Uploaded successfully!', { id: loadingToastId });
+                                                                } catch(err: any) {
+                                                                    console.error(err);
+                                                                    if (loadingToastId) {
+                                                                        toast.error('Failed to upload file', { id: loadingToastId });
+                                                                    } else {
+                                                                        toast.error('Failed to upload file');
+                                                                    }
+                                                                }
+                                                            }}
+                                                        />
+                                                        {att.url ? (
+                                                            <span className="text-xs font-bold text-emerald-600 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> File Uploaded</span>
+                                                        ) : (
+                                                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg> Browse File (PDF, ZIP, etc)</span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <input 
+                                                        type="url" 
+                                                        value={att.url} 
+                                                        onChange={(e) => {
+                                                            const newAtt = [...courseData.attachments];
+                                                            newAtt[i].url = e.target.value;
+                                                            setCourseData({...courseData, attachments: newAtt});
+                                                        }}
+                                                        placeholder="Attachment URL (https://...)" 
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-500" 
+                                                    />
+                                                )}
                                             </div>
                                             <button 
                                                 type="button"
@@ -764,21 +825,33 @@ export default function InstructorCourseBuilder() {
 
                         <div className="space-y-6">
                             {modules.map((mod, index) => (
-                                <div key={mod.id} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50/50 dark:bg-slate-800/20 shadow-sm">
-                                    <div className="flex items-center justify-between p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
-                                        <div className="flex items-center gap-3 w-full">
+                                <details key={mod.id} open={index === 0} className="group border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50/50 dark:bg-slate-800/20 shadow-sm">
+                                    <summary 
+                                        className="flex items-center justify-between p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden"
+                                        onClick={(e: any) => {
+                                            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-3 w-full pr-4">
                                             <div className="cursor-move text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1">
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>
                                             </div>
-                                            <span className="text-sm font-black text-slate-900 dark:text-white">Module {index + 1}:</span>
+                                            <span className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">Module {index + 1}:</span>
                                             <input type="text" value={mod.title} onChange={(e) => updateModule(mod.id, 'title', e.target.value)} placeholder="Module Title" className="bg-transparent border-none outline-none font-bold text-slate-700 dark:text-slate-300 text-sm flex-1 focus:ring-0 p-0" />
                                         </div>
-                                        {modules.length > 1 && (
-                                            <button type="button" onClick={() => removeModule(mod.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1">
-                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                            </button>
-                                        )}
-                                    </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <div className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 group-open:rotate-180 transition-transform">
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+                                            {modules.length > 1 && (
+                                                <button type="button" onClick={() => removeModule(mod.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1">
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </summary>
                                     <div className="p-5 space-y-6">
                                         {/* Module Video */}
                                         <div>
@@ -790,8 +863,51 @@ export default function InstructorCourseBuilder() {
                                                 </div>
                                             </div>
                                             {mod.videoMode === 'upload' ? (
-                                                <div className="flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 transition hover:border-blue-400 dark:hover:border-blue-500">
-                                                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg> Browse Video</span>
+                                                <div className="flex min-h-[100px] relative overflow-hidden cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 transition hover:border-blue-400 dark:hover:border-blue-500">
+                                                    <input 
+                                                        type="file" 
+                                                        accept="video/*"
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            let loadingToastId;
+                                                            try {
+                                                                loadingToastId = toast.loading('Uploading video...');
+                                                                const filePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                                                                
+                                                                const { data } = await apiClient.post('/api/upload/url', {
+                                                                    bucket: 'course-materials',
+                                                                    filePath
+                                                                });
+                                                                
+                                                                if (!data.uploadUrl) throw new Error("Could not get upload url");
+                                                                
+                                                                const res = await fetch(data.uploadUrl, {
+                                                                    method: 'PUT',
+                                                                    headers: { 'Content-Type': file.type },
+                                                                    body: file
+                                                                });
+                                                                
+                                                                if (!res.ok) throw new Error("Failed to upload to storage");
+                                                                
+                                                                updateModule(mod.id, 'videoUrl', data.publicUrl);
+                                                                toast.success('Uploaded successfully!', { id: loadingToastId });
+                                                            } catch(err: any) {
+                                                                console.error(err);
+                                                                if (loadingToastId) {
+                                                                    toast.error('Failed to upload video', { id: loadingToastId });
+                                                                } else {
+                                                                    toast.error('Failed to upload video');
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                    {mod.videoUrl && !mod.videoUrl.includes('youtube.com') ? (
+                                                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Video Uploaded</span>
+                                                    ) : (
+                                                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg> Browse Video</span>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <input type="url" value={mod.videoUrl} onChange={(e) => updateModule(mod.id, 'videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=..." className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 transition-all" />
@@ -809,8 +925,51 @@ export default function InstructorCourseBuilder() {
                                                     </div>
                                                 </div>
                                                 {mod.thumbnailMode === 'upload' ? (
-                                                    <div className="flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 transition hover:border-purple-400 dark:hover:border-purple-500">
-                                                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Browse Image</span>
+                                                    <div className="flex min-h-[100px] relative overflow-hidden cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 transition hover:border-purple-400 dark:hover:border-purple-500">
+                                                        <input 
+                                                            type="file" 
+                                                            accept="image/*"
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (!file) return;
+                                                                let loadingToastId;
+                                                                try {
+                                                                    loadingToastId = toast.loading('Uploading thumbnail...');
+                                                                    const filePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                                                                    
+                                                                    const { data } = await apiClient.post('/api/upload/url', {
+                                                                        bucket: 'course-thumbnails',
+                                                                        filePath
+                                                                    });
+                                                                    
+                                                                    if (!data.uploadUrl) throw new Error("Could not get upload url");
+                                                                    
+                                                                    const res = await fetch(data.uploadUrl, {
+                                                                        method: 'PUT',
+                                                                        headers: { 'Content-Type': file.type },
+                                                                        body: file
+                                                                    });
+                                                                    
+                                                                    if (!res.ok) throw new Error("Failed to upload to storage");
+                                                                    
+                                                                    updateModule(mod.id, 'thumbnailUrl', data.publicUrl);
+                                                                    toast.success('Uploaded successfully!', { id: loadingToastId });
+                                                                } catch(err: any) {
+                                                                    console.error(err);
+                                                                    if (loadingToastId) {
+                                                                        toast.error('Failed to upload thumbnail', { id: loadingToastId });
+                                                                    } else {
+                                                                        toast.error('Failed to upload thumbnail');
+                                                                    }
+                                                                }
+                                                            }}
+                                                        />
+                                                        {mod.thumbnailUrl && !mod.thumbnailUrl.includes('images.unsplash.com') ? (
+                                                            <span className="text-xs font-bold text-emerald-600 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Thumbnail Uploaded</span>
+                                                        ) : (
+                                                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Browse Image</span>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <input type="url" value={mod.thumbnailUrl} onChange={(e) => updateModule(mod.id, 'thumbnailUrl', e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 transition-all" />
@@ -836,28 +995,30 @@ export default function InstructorCourseBuilder() {
                                                     <p className="text-xs text-slate-500">Add questions to test student knowledge after this module.</p>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <button 
-                                                        type="button" 
-                                                        onClick={() => generateMCQs(mod.id, mod.title)}
-                                                        disabled={generatingModuleMcqs === mod.id || !mod.title || mod.title === 'New Module'}
-                                                        className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all ${
-                                                            generatingModuleMcqs === mod.id 
-                                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800' 
-                                                                : 'bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'
-                                                        }`}
-                                                    >
-                                                        {generatingModuleMcqs === mod.id ? (
-                                                            <>
-                                                                <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                                Generating...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                                                AI Generate Quiz
-                                                            </>
-                                                        )}
-                                                    </button>
+                                                    <div title={(!mod.title || mod.title === 'New Module') ? "Please provide a descriptive module title first" : "Generate MCQs using AI"}>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => generateMCQs(mod.id, mod.title)}
+                                                            disabled={generatingModuleMcqs === mod.id || !mod.title || mod.title === 'New Module'}
+                                                            className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all ${
+                                                                generatingModuleMcqs === mod.id || !mod.title || mod.title === 'New Module'
+                                                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800' 
+                                                                    : 'bg-purple-100 text-purple-600 hover:bg-purple-200 cursor-pointer dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'
+                                                            }`}
+                                                        >
+                                                            {generatingModuleMcqs === mod.id ? (
+                                                                <>
+                                                                    <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                    Generating...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                                                    AI Generate Quiz
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
                                                     <button type="button" onClick={() => {
                                                         const newMcqs = [...(mod.mcqs || [])];
                                                         newMcqs.push({ question: '', options: ['', '', '', ''], correctIndex: 0 });
@@ -908,7 +1069,7 @@ export default function InstructorCourseBuilder() {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </details>
                             ))}
                         </div>
                     </motion.div>
@@ -922,28 +1083,59 @@ export default function InstructorCourseBuilder() {
                         transition={{ delay: 0.3 }}
                         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm"
                     >
-                        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-6">Pricing</h2>
-                        <div className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Price (₹) <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                                    <input required type="number" min="0" value={courseData.price} onChange={(e) => setCourseData({...courseData, price: e.target.value})} placeholder="4999" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 py-3 text-sm font-black text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Discount Price (₹)</label>
-                                <div className="relative">
-                                    <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-bold ${courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? 'text-red-400' : 'text-slate-400'}`}>₹</span>
-                                    <input type="number" min="0" value={courseData.discountPrice} onChange={(e) => setCourseData({...courseData, discountPrice: e.target.value})} placeholder="2999" className={`w-full bg-slate-50 dark:bg-slate-800/50 border rounded-xl pl-8 pr-4 py-3 text-sm font-black text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal outline-none transition-all ${courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'}`} />
-                                </div>
-                                {courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? (
-                                    <p className="text-xs font-bold text-red-500 mt-2">Discount price must be less than the regular price.</p>
-                                ) : (
-                                    <p className="text-xs font-medium text-slate-500 mt-2">Leave blank if no discount is offered.</p>
-                                )}
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Pricing</h2>
+                            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                                <button
+                                    type="button"
+                                    onClick={() => setCourseData({...courseData, is_free: false})}
+                                    className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${!courseData.is_free ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    Paid
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setCourseData({...courseData, is_free: true, price: '0', discountPrice: ''})}
+                                    className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${courseData.is_free ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    Free
+                                </button>
                             </div>
                         </div>
+
+                        {!courseData.is_free ? (
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Price (₹) <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                                        <input required type="number" min="0" value={courseData.price} onChange={(e) => setCourseData({...courseData, price: e.target.value})} placeholder="4999" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 py-3 text-sm font-black text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Discount Price (₹)</label>
+                                    <div className="relative">
+                                        <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-bold ${courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? 'text-red-400' : 'text-slate-400'}`}>₹</span>
+                                        <input type="number" min="0" value={courseData.discountPrice} onChange={(e) => setCourseData({...courseData, discountPrice: e.target.value})} placeholder="2999" className={`w-full bg-slate-50 dark:bg-slate-800/50 border rounded-xl pl-8 pr-4 py-3 text-sm font-black text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal outline-none transition-all ${courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'}`} />
+                                    </div>
+                                    {courseData.discountPrice && Number(courseData.discountPrice) >= Number(courseData.price) ? (
+                                        <p className="text-xs font-bold text-red-500 mt-2">Discount price must be less than the regular price.</p>
+                                    ) : (
+                                        <p className="text-xs font-medium text-slate-500 mt-2">Leave blank if no discount is offered.</p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-5 flex items-center gap-4">
+                                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-800/50 rounded-full flex items-center justify-center shrink-0">
+                                    <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-900 dark:text-white mb-1">Free Course</h3>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">This course will be available to all students for free. Enrollments will be automatically created when they start learning.</p>
+                                </div>
+                            </div>
+                        )}
 
                         <hr className="my-6 border-slate-200 dark:border-slate-800" />
 
@@ -974,10 +1166,58 @@ export default function InstructorCourseBuilder() {
                         </div>
                         
                         {thumbnailMode === 'upload' ? (
-                            <div className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50/50 transition hover:border-blue-400 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-blue-500/50 dark:hover:bg-blue-900/10">
-                                <svg className="mb-3 h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                <span className="text-sm font-bold text-slate-600 dark:text-slate-300 text-center px-4">Drag & drop image or click to browse</span>
-                                <span className="text-xs text-slate-400 mt-1">1920x1080 recommended</span>
+                            <div className="flex min-h-[160px] relative overflow-hidden cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50/50 transition hover:border-blue-400 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-blue-500/50 dark:hover:bg-blue-900/10">
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        let loadingToastId;
+                                        try {
+                                            loadingToastId = toast.loading('Uploading thumbnail...');
+                                            const filePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                                            
+                                            const { data } = await apiClient.post('/api/upload/url', {
+                                                bucket: 'course-thumbnails',
+                                                filePath
+                                            });
+                                            
+                                            if (!data.uploadUrl) throw new Error("Could not get upload url");
+                                            
+                                            const res = await fetch(data.uploadUrl, {
+                                                method: 'PUT',
+                                                headers: { 'Content-Type': file.type },
+                                                body: file
+                                            });
+                                            
+                                            if (!res.ok) throw new Error("Failed to upload to storage");
+                                            
+                                            setCourseData({...courseData, thumbnail_url: data.publicUrl});
+                                            toast.success('Uploaded successfully!', { id: loadingToastId });
+                                        } catch(err: any) {
+                                            console.error(err);
+                                            if (loadingToastId) {
+                                                toast.error('Failed to upload thumbnail', { id: loadingToastId });
+                                            } else {
+                                                toast.error('Failed to upload thumbnail');
+                                            }
+                                        }
+                                    }}
+                                />
+                                {courseData.thumbnail_url && !courseData.thumbnail_url.includes('images.unsplash.com') ? (
+                                    <div className="flex flex-col items-center">
+                                        <svg className="mb-2 h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Thumbnail Uploaded</span>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <svg className="mb-3 h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 text-center px-4">Drag & drop image or click to browse</span>
+                                        <span className="text-xs text-slate-400 mt-1">1920x1080 recommended</span>
+                                    </>
+                                )}
                             </div>
                         ) : (
                             <input required type="url" value={courseData.thumbnail_url} onChange={(e) => setCourseData({...courseData, thumbnail_url: e.target.value})} placeholder="https://images.unsplash.com/photo-..." className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />

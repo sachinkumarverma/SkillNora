@@ -18,7 +18,7 @@ const getUserByToken = async token => {
 };
 
 const getInstructors = async () => {
-    const res = await query('SELECT id, full_name, email, avatar_url FROM users WHERE role IN ($1, $2)', ['instructor', 'admin']);
+    const res = await query('SELECT id, full_name, email, avatar_url FROM users WHERE role = $1', ['instructor']);
     return res.rows;
 };
 

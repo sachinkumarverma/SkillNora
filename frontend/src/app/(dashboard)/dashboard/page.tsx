@@ -301,7 +301,11 @@ export default function DashboardPage() {
                                                             <h4 className="font-bold text-slate-900 dark:text-white line-clamp-2 text-sm mb-2">{course.title}</h4>
                                                             <div className="flex items-center justify-between">
                                                                 <span className="text-xs text-slate-500 font-medium">{course.instructor_name || 'Instructor'}</span>
-                                                                <span className="font-bold text-sm text-slate-900 dark:text-white">{parseFloat(course.price) > 0 ? `₹${course.price}` : 'Free'}</span>
+                                                                {parseFloat(course.price) > 0 ? (
+                                                                    <span className="font-bold text-sm text-slate-900 dark:text-white">₹{course.price}</span>
+                                                                ) : (
+                                                                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-2 py-0.5 rounded">Free</span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -325,7 +329,11 @@ export default function DashboardPage() {
                                                             <div className="text-xs text-slate-500 mt-1">{course.category}</div>
                                                             <div className="flex items-center gap-2 mt-1">
                                                                 {parseFloat(course.average_rating) > 0 && <span className="text-xs font-bold text-amber-600">⭐ {parseFloat(course.average_rating).toFixed(1)}</span>}
-                                                                <span className="text-xs font-bold text-slate-900 dark:text-white">{parseFloat(course.price) > 0 ? `₹${course.price}` : 'Free'}</span>
+                                                                {parseFloat(course.price) > 0 ? (
+                                                                    <span className="text-xs font-bold text-slate-900 dark:text-white">₹{course.price}</span>
+                                                                ) : (
+                                                                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-1.5 py-0.5 rounded">Free</span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>

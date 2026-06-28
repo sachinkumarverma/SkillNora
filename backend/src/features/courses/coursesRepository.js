@@ -92,7 +92,8 @@ const getAllPublished = async () => {
                 u.full_name as instructor_name,
                 COALESCE(AVG(r.rating), 0) as average_rating,
                 COUNT(DISTINCT r.id) as review_count,
-                (SELECT COUNT(*) FROM lectures l WHERE l.course_id = c.id) as lectures_count
+                (SELECT COUNT(*) FROM lectures l WHERE l.course_id = c.id) as lectures_count,
+                (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enrollment_count
             FROM courses c
             LEFT JOIN users u ON c.instructor_id = u.id
             LEFT JOIN reviews r ON c.id = r.course_id
@@ -104,7 +105,14 @@ const getAllPublished = async () => {
   const {
     rows
   } = await query(sql);
-  return rows;
+
+  const sorted = [...rows].sort((a, b) => parseInt(b.enrollment_count || 0) - parseInt(a.enrollment_count || 0));
+  const topIds = sorted.slice(0, 3).filter(c => parseInt(c.enrollment_count || 0) > 0).map(c => c.id);
+
+  return rows.map(r => ({
+    ...r,
+    bestseller: topIds.includes(r.id)
+  }));
 };
 
 const getBySlugOrId = async identifier => {

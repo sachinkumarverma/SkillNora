@@ -102,7 +102,16 @@ const deleteCourse = async (userId, courseId) => {
 const completeLecture = async (userId, courseId, slug, lectureId, totalLectures, quizScore) => {
   const isCertified = await coursesRepository.checkCertificate(userId, courseId);
   let certUnlocked = isCertified;
-  const enrollment = await coursesRepository.getEnrollment(userId, courseId);
+  let enrollment = await coursesRepository.getEnrollment(userId, courseId);
+  if (!enrollment) {
+    const price = await coursesRepository.getCoursePrice(courseId);
+    if (Number(price) === 0) {
+      const { enrollmentsService } = await import('../enrollments/enrollmentsService.js');
+      await enrollmentsService.forceCreateEnrollment(userId, courseId);
+      enrollment = await coursesRepository.getEnrollment(userId, courseId);
+    }
+  }
+
   if (enrollment) {
     const prog = enrollment.progress || {};
     if (!prog[slug]) prog[slug] = [];

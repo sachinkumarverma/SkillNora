@@ -174,7 +174,9 @@ export default function InstructorPage() {
                                 <div key={course.id} className='flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950'>
                                     <div>
                                         <div className='font-semibold text-slate-950 dark:text-white'>{course.title}</div>
-                                        <div className='text-xs text-slate-500 mt-1'>₹{course.price} • {course.enrollment_count || 0} students</div>
+                                        <div className='text-xs text-slate-500 mt-1'>
+                                            {parseFloat(course.price) > 0 ? `₹${course.price}` : <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-1.5 py-0.5 rounded">Free</span>} • {course.enrollment_count || 0} students
+                                        </div>
                                     </div>
                                     <div className={`rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${course.is_published ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>{course.is_published ? 'Published' : 'Draft'}</div>
                                 </div>

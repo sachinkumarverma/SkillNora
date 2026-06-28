@@ -25,6 +25,7 @@ const getDashboardStats = async (userId, role) => {
     createdCourses: raw.courses.length,
     totalWishlisted: raw.wishlist.length,
     totalNotes: raw.notes.length,
+    quizScores: raw.quizScores,
     activityData: {
       enrollments: raw.enrollments.map(e => e.created_at),
       certificates: raw.certificates.map(c => c.created_at),

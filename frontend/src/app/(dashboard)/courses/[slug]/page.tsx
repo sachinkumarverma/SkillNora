@@ -47,6 +47,16 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
             router.push('/auth')
             return
         }
+        
+        const isFree = !course.price || Number(course.price) === 0 || course.is_free;
+        if (isFree) {
+            const firstLecture = course.lectures?.[0];
+            if (firstLecture) {
+                router.push(`/courses/${slug}/lecture/${firstLecture.id}`);
+                return;
+            }
+        }
+        
         router.push(`/courses/${slug}/checkout`)
     }
 
@@ -153,7 +163,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             </div>
                         )}
                         {isEnrolled && (
-                            <div className="absolute top-4 right-4 z-20 bg-emerald-500 text-white text-[10px] font-black tracking-wider uppercase px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1" title="Enrolled">
+                            <div className="absolute top-4 right-4 z-10 bg-emerald-500 text-white text-[10px] font-black tracking-wider uppercase px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1" title="Enrolled">
                                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                 Enrolled
                             </div>
@@ -182,7 +192,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
                                 {!isEnrolled && !isStaff && (
                                     <button onClick={handleEnroll} className="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm transform transition active:scale-95">
-                                        Enroll Now
+                                        {(!course.price || Number(course.price) === 0 || course.is_free) ? 'Start Course (Free)' : 'Enroll Now'}
                                     </button>
                                 )}
                                 <button onClick={handlePreview} className="w-full sm:w-auto bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm transform transition active:scale-95">Preview Course</button>
@@ -315,7 +325,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                         </div>
                         <div className="p-6">
                             <div className="mb-6">
-                                {Number(course.discount_price) && Number(course.price) && Number(course.price) > Number(course.discount_price) ? (
+                                {course.is_free || course.price === '0' || course.price === 0 ? (
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-3 py-1.5 rounded">Free Course</span>
+                                    </div>
+                                ) : Number(course.discount_price) && Number(course.price) && Number(course.price) > Number(course.discount_price) ? (
                                     <div className="flex flex-wrap items-end gap-3">
                                         <span className="text-3xl font-black text-slate-900 dark:text-white">₹{course.discount_price}</span>
                                         <span className="text-lg font-semibold text-slate-400 line-through decoration-slate-400/70 mb-1">₹{course.price}</span>
@@ -323,7 +337,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                     </div>
                                 ) : (
                                     <div className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                                        <span>{course.price ? `₹${course.price}` : (course.is_free ? 'Free' : '₹1,999.00')}</span>
+                                        <span>₹{course.price || '1,999.00'}</span>
                                     </div>
                                 )}
                             </div>
@@ -361,10 +375,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                 </>
                             ) : (
                                 <button onClick={handleEnroll} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm mb-3">
-                                    Enroll Now
+                                    {(!course.price || Number(course.price) === 0 || course.is_free) ? 'Start Course (Free)' : 'Enroll Now'}
                                 </button>
                             )}
-                            {!isStaff && <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "Partial refund available within 30 days" : "30-Day Money-Back Guarantee"}</p>}
+                            {!isStaff && <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "Partial refund available within 30 days" : ((!course.price || Number(course.price) === 0 || course.is_free) ? "Free Lifetime Access" : "30-Day Money-Back Guarantee")}</p>}
                             
                             <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800 text-sm">
                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
