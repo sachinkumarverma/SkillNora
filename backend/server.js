@@ -39,6 +39,22 @@ app.use((req, res, next) => {
     express.json({ limit: '5mb' })(req, res, next);
 });
 
+app.use((req, res, next) => {
+    logger.info(`[API REQUEST] ${req.method} ${req.originalUrl}`);
+    if (req.method !== 'GET' && Object.keys(req.body || {}).length > 0) {
+        // avoid logging huge buffers or webhooks, just log stringified body safely
+        try {
+            const bodyStr = JSON.stringify(req.body);
+            if (bodyStr.length < 1000) {
+                logger.info(`[API BODY] ${bodyStr}`);
+            } else {
+                logger.info(`[API BODY] <Too Large to Log>`);
+            }
+        } catch(e) {}
+    }
+    next();
+});
+
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
 import { authApi } from './src/features/auth/authApi.js'

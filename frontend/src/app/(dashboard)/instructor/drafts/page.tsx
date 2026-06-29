@@ -48,7 +48,7 @@ export default function DraftsPage() {
         fetchDrafts()
     }, [])
 
-    if (loading) return <Loader />
+    if (loading) return <Loader type="draft-courses" />
 
     const timeAgo = (dateStr: string) => {
         if (!dateStr) return 'Unknown time'

@@ -31,7 +31,7 @@ export default function AdminStudentManagement() {
 
     const filtered = students.filter(s => s.name?.toLowerCase().includes(search.toLowerCase()) || s.email?.toLowerCase().includes(search.toLowerCase()))
 
-    if (loading && students.length === 0) return <Loader type="table" />
+    if (loading && students.length === 0) return <Loader type="management-table" />
 
     return (
         <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">

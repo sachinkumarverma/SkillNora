@@ -84,7 +84,7 @@ export default function InstructorCourseBuilder() {
     const [currentUser, setCurrentUser] = useState<any>(null)
     const [currentUserRole, setCurrentUserRole] = useState<string>('instructor')
     const [instructors, setInstructors] = useState<any[]>([])
-    const [isLoadingData, setIsLoadingData] = useState(!!editCourseId)
+    const [isLoadingData, setIsLoadingData] = useState(true)
     
     // Modules
     const [modules, setModules] = useState<any[]>([
@@ -113,12 +113,12 @@ export default function InstructorCourseBuilder() {
                     setCurrentUserRole(role);
 
                     if (role === 'admin') {
-                        // Fetch instructors asynchronously (doesn't need to block rendering if course exists)
-                        apiClient.get('/api/users/instructors')
-                            .then(res => {
-                                if (res.data.instructors) setInstructors(res.data.instructors);
-                            })
-                            .catch(e => console.error("Error fetching instructors", e));
+                        try {
+                            const res = await apiClient.get('/api/users/instructors');
+                            if (res.data.instructors) setInstructors(res.data.instructors);
+                        } catch (e) {
+                            console.error("Error fetching instructors", e);
+                        }
                     }
                 }
 
@@ -423,11 +423,7 @@ export default function InstructorCourseBuilder() {
     }
 
     if (isLoadingData) {
-        return (
-            <div className="flex justify-center items-center h-screen w-full">
-                <Loader />
-            </div>
-        )
+        return <Loader type="course-builder" />
     }
 
     return (

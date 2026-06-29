@@ -1,7 +1,15 @@
-import { Router } from 'express'
-import { statisticsController } from './statisticsController.js'
+import Joi from 'joi';
+import { statisticsController } from './statisticsController.js';
+import { buildApiRouter } from '../../utils/apiLoader.js';
 
-const statisticsApi = Router();
-statisticsApi.get('/', statisticsController.getStats);
+const apiDefinitions = {
+    getStats: {
+        path: '/',
+        verb: 'GET',
+        handler: { controller: statisticsController, method: 'getStats' },
+        request: {},
+        response: Joi.object()
+    }
+};
 
-export { statisticsApi };
+export const statisticsApi = buildApiRouter(apiDefinitions);

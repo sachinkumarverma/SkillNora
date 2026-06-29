@@ -31,7 +31,7 @@ export default function AdminReviewManagement() {
 
     const filtered = reviews.filter(r => r.course_title?.toLowerCase().includes(search.toLowerCase()) || r.user_name?.toLowerCase().includes(search.toLowerCase()))
 
-    if (loading && reviews.length === 0) return <Loader type="table" />
+    if (loading && reviews.length === 0) return <Loader type="management-table" />
 
     return (
         <>

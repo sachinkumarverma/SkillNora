@@ -1,9 +1,27 @@
-import { Router } from 'express';
+import Joi from 'joi';
 import { usersController } from '../users/usersController.js';
+import { buildApiRouter } from '../../utils/apiLoader.js';
 
-const authApi = Router();
+const apiDefinitions = {
+    logout: {
+        path: '/logout',
+        verb: 'POST',
+        handler: { controller: usersController, method: 'logout' },
+        request: {},
+        response: Joi.object()
+    },
 
-authApi.post('/logout', usersController.logout);
-authApi.post('/update-password', usersController.updatePassword);
+    updatePassword: {
+        path: '/update-password',
+        verb: 'POST',
+        handler: { controller: usersController, method: 'updatePassword' },
+        request: {
+            body: {
+                password: Joi.string().required()
+            }
+        },
+        response: Joi.object()
+    }
+};
 
-export { authApi };
+export const authApi = buildApiRouter(apiDefinitions);

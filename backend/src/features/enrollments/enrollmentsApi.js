@@ -1,10 +1,39 @@
-import { Router } from 'express';
+import Joi from 'joi';
 import { enrollmentsController } from './enrollmentsController.js';
+import { buildApiRouter } from '../../utils/apiLoader.js';
 
-const enrollmentsApi = Router();
+const apiDefinitions = {
+    createEnrollment: {
+        path: '/',
+        verb: 'POST',
+        handler: { controller: enrollmentsController, method: 'createEnrollment' },
+        request: {
+            body: {
+                course_id: Joi.string().required()
+            }
+        },
+        response: Joi.object()
+    },
 
-enrollmentsApi.post('/', enrollmentsController.createEnrollment);
-enrollmentsApi.get('/user', enrollmentsController.getUserEnrollments);
-enrollmentsApi.post('/cancel', enrollmentsController.cancelEnrollment);
+    getUserEnrollments: {
+        path: '/user',
+        verb: 'GET',
+        handler: { controller: enrollmentsController, method: 'getUserEnrollments' },
+        request: {},
+        response: Joi.object()
+    },
 
-export { enrollmentsApi };
+    cancelEnrollment: {
+        path: '/cancel',
+        verb: 'POST',
+        handler: { controller: enrollmentsController, method: 'cancelEnrollment' },
+        request: {
+            body: {
+                course_id: Joi.string().required()
+            }
+        },
+        response: Joi.object()
+    }
+};
+
+export const enrollmentsApi = buildApiRouter(apiDefinitions);

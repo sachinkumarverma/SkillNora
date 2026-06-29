@@ -1,8 +1,15 @@
-import express from 'express';
+import Joi from 'joi';
 import { cronController } from './cronController.js';
+import { buildApiRouter } from '../../utils/apiLoader.js';
 
-const router = express.Router();
+const apiDefinitions = {
+    sendDailyRecommendations: {
+        path: '/recommendations',
+        verb: 'POST',
+        handler: { controller: cronController, method: 'sendDailyRecommendations' },
+        request: {},
+        response: Joi.object()
+    }
+};
 
-router.post('/recommendations', cronController.sendDailyRecommendations);
-
-export { router as cronApi };
+export const cronApi = buildApiRouter(apiDefinitions);

@@ -24,8 +24,8 @@ const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'
 
 const StatCard = ({ title, value, icon, color, delay }: { title: string, value: string | number, icon: React.ReactNode, color: string, delay: number }) => (
     <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ delay, duration: 0.5, ease: "easeOut" }}
         className={`rounded-xl border p-6 ${color}`}
     >
@@ -140,15 +140,15 @@ export default function AdminOverviewPage() {
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <motion.h1 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight"
                     >
                         Dashboard Overview
                     </motion.h1>
                     <motion.p 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         transition={{ delay: 0.1 }}
                         className="text-slate-500 dark:text-slate-400 font-medium mt-2"
                     >
@@ -192,8 +192,8 @@ export default function AdminOverviewPage() {
             {/* Recent Transactions & All Courses */}
             <div className="grid grid-cols-1 gap-6">
                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
                     className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm"
                 >
@@ -240,8 +240,8 @@ export default function AdminOverviewPage() {
                 </motion.div>
 
                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 0.35 }}
                     className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm"
                 >

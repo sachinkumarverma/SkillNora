@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' }) {
+export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' | 'management-table' | 'course-builder' | 'draft-courses' }) {
     
     const Shimmer = () => (
         <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
@@ -63,27 +63,57 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
 
     if (type === 'dashboard') {
         return (
-            <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20 animate-pulse">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div className="space-y-3">
+                        <div className="w-64 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                        <div className="w-96 h-5 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                    </div>
+                </header>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden">
-                            <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4 relative overflow-hidden"><Shimmer /></div>
-                            <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded mb-2 relative overflow-hidden"><Shimmer /></div>
-                            <div className="w-16 h-8 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                        <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-800 p-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl relative overflow-hidden h-[120px] flex flex-col justify-between shadow-sm">
+                            <Shimmer />
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-5 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                            <div className="w-32 h-10 bg-slate-200 dark:bg-slate-800 rounded"></div>
                         </div>
                     ))}
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 h-96 relative overflow-hidden">
-                        <div className="w-48 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-8 relative overflow-hidden"><Shimmer /></div>
-                        <div className="w-full h-64 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 h-96 relative overflow-hidden">
-                        <div className="w-32 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-8 relative overflow-hidden"><Shimmer /></div>
-                        <div className="space-y-4">
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="w-full h-12 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
-                            ))}
+                
+                <div className="grid grid-cols-1 gap-6">
+                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm relative">
+                        <Shimmer />
+                        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-blue-50/50 dark:bg-blue-900/10">
+                            <div className="w-48 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            <div className="w-16 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                        </div>
+                        <div className="overflow-x-auto min-h-[300px]">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                        <th className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                        <th className="px-6 py-4"><div className="w-32 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                        <th className="px-6 py-4"><div className="w-20 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                        <th className="px-6 py-4"><div className="w-16 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <tr key={i}>
+                                            <td className="px-6 py-4"><div className="w-20 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
+                                            <td className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
+                                            <td className="px-6 py-4"><div className="w-40 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
+                                            <td className="px-6 py-4"><div className="w-16 h-6 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td>
+                                            <td className="px-6 py-4"><div className="w-20 h-6 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -117,6 +147,212 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
                             <div className="h-[350px] w-full bg-slate-100 dark:bg-slate-800/50 rounded"></div>
                         </section>
                     ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'receipt') {
+        return (
+            <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
+                <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 shadow-sm max-w-2xl mx-auto overflow-hidden">
+                    <Shimmer />
+                    <div className="relative z-10 border-b border-slate-200 dark:border-slate-800 pb-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-3">
+                            <div className="w-48 h-10 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            <div className="w-24 h-6 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+                        </div>
+                        <div className="w-32 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                    </div>
+
+                    <div className="relative z-10 bg-slate-100 dark:bg-slate-800 rounded-lg p-5 flex flex-col md:flex-row justify-between gap-4 mb-6">
+                        <div className="w-48 h-5 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                        <div className="w-48 h-5 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                    </div>
+
+                    <div className="relative z-10 border-b-2 border-dotted border-slate-300 dark:border-slate-700 mb-6"></div>
+
+                    <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <div className="w-32 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                            <div className="space-y-2">
+                                <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="w-32 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                            <div className="space-y-2">
+                                <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 mb-8">
+                        <div className="w-32 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div className="w-full h-12 bg-slate-100 dark:bg-slate-800"></div>
+                            <div className="w-full h-14 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800"></div>
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 flex justify-end mb-10">
+                        <div className="w-full md:w-1/2 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div className="w-full h-12 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700"></div>
+                            <div className="w-full h-14 bg-slate-200 dark:bg-slate-700"></div>
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                        <div>
+                            <div className="w-48 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                            <div className="space-y-2">
+                                <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="w-48 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                            <div className="space-y-2">
+                                <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-3/4 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 flex justify-end text-center mb-8">
+                        <div className="w-32 h-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                    </div>
+
+                    <div className="relative z-10 bg-slate-100 dark:bg-slate-800 rounded-lg p-4 flex flex-col sm:flex-row justify-between h-14">
+                        <div className="w-48 h-4 bg-slate-200 dark:bg-slate-700 rounded mt-1"></div>
+                        <div className="w-32 h-4 bg-slate-200 dark:bg-slate-700 rounded mt-1"></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'settings') {
+        return (
+            <div className="p-6 md:p-8 max-w-[1400px] mx-auto animate-pulse">
+                <div className="mb-8 space-y-3">
+                    <div className="w-64 h-8 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                    <div className="w-96 h-4 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                </div>
+
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Sidebar Navigation Skeleton */}
+                    <div className="w-full lg:w-64 shrink-0">
+                        <div className="flex flex-col space-y-2">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
+                                    <Shimmer />
+                                    <div className="w-5 h-5 bg-slate-300 dark:bg-slate-700 rounded-md"></div>
+                                    <div className="w-32 h-4 bg-slate-300 dark:bg-slate-700 rounded"></div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Content Area Skeleton */}
+                    <div className="flex-1 relative">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm relative overflow-hidden">
+                            <Shimmer />
+                            <div className="w-48 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-8"></div>
+                            
+                            <div className="flex flex-col sm:flex-row items-center gap-6 mb-10">
+                                <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                                <div className="space-y-3">
+                                    <div className="w-48 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    <div className="w-20 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6 max-w-lg">
+                                <div>
+                                    <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded mb-2"></div>
+                                    <div className="w-full h-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                                </div>
+                                <div className="w-32 h-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'admin-profile') {
+        return (
+            <div className="w-full p-6 lg:p-8 space-y-8 pb-20">
+                {/* Header / Actions Skeleton */}
+                <div className="flex items-center justify-between">
+                    <div className="w-32 h-5 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                </div>
+                
+                {/* Profile Card Skeleton */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm relative overflow-hidden">
+                    <Shimmer />
+                    <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 relative z-10">
+                        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 lg:gap-8 w-full">
+                            <div className="relative">
+                                {/* Avatar */}
+                                <div className="w-32 h-32 rounded-full border-4 border-slate-50 dark:border-slate-800 bg-slate-200 dark:bg-slate-800 shrink-0"></div>
+                            </div>
+                            <div className="text-center md:text-left space-y-4 pt-2 flex-1 w-full">
+                                <div>
+                                    <div className="w-64 h-9 bg-slate-200 dark:bg-slate-800 rounded mb-2 mx-auto md:mx-0"></div>
+                                    <div className="w-48 h-5 bg-slate-200 dark:bg-slate-800 rounded mx-auto md:mx-0"></div>
+                                </div>
+                                <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-2">
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div key={i} className="px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl w-28 h-[60px]"></div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        {/* Platform logo graphic Skeleton */}
+                        <div className="hidden lg:block w-48 h-32 bg-slate-50 dark:bg-slate-800/50 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 shrink-0"></div>
+                    </div>
+                </div>
+
+                {/* Table Skeleton */}
+                <div className="mt-8">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col relative">
+                        <Shimmer />
+                        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                            <div className="w-48 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                        </div>
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                                    <tr>
+                                        <th className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded"></div></th>
+                                        <th className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded"></div></th>
+                                        <th className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded"></div></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {[1, 2, 3].map(i => (
+                                        <tr key={i}>
+                                            <td className="px-6 py-4"><div className="w-48 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
+                                            <td className="px-6 py-4"><div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
+                                            <td className="px-6 py-4"><div className="w-24 h-6 bg-slate-200 dark:bg-slate-800 rounded-md"></div></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-center">
+                            <div className="w-48 h-[42px] bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -203,6 +439,161 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
                             <div key={i} className="w-full h-16 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
                         ))}
                     </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'management-table') {
+        return (
+            <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20 animate-pulse">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div className="space-y-3">
+                        <div className="w-64 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                        <div className="w-96 h-5 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                    </div>
+                </header>
+
+                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
+                    <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 flex items-center justify-between gap-4">
+                        <div className="w-full max-w-md h-10 bg-slate-100 dark:bg-slate-800 rounded-full relative overflow-hidden"><Shimmer /></div>
+                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                    </div>
+
+                    <div className="overflow-x-auto min-h-[300px]">
+                        <table className="w-full text-left text-sm whitespace-nowrap">
+                            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                                <tr>
+                                    <th className="px-6 py-4"><div className="w-20 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                    <th className="px-6 py-4"><div className="w-16 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                    <th className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                    <th className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                    <th className="px-6 py-4"><div className="w-16 h-4 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden"><Shimmer /></div></th>
+                                    <th className="px-6 py-4 text-right"><div className="w-16 h-4 bg-slate-200 dark:bg-slate-700 rounded ml-auto relative overflow-hidden"><Shimmer /></div></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                {[1, 2, 3, 4, 5].map(i => (
+                                    <tr key={i}>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 relative overflow-hidden"><Shimmer /></div>
+                                                <div className="space-y-2">
+                                                    <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                                                    <div className="w-24 h-3 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4"><div className="w-20 h-6 bg-slate-200 dark:bg-slate-800 rounded-full relative overflow-hidden"><Shimmer /></div></td>
+                                        <td className="px-6 py-4"><div className="w-8 h-4 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div></td>
+                                        <td className="px-6 py-4"><div className="w-8 h-4 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div></td>
+                                        <td className="px-6 py-4"><div className="w-20 h-4 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div></td>
+                                        <td className="px-6 py-4 text-right"><div className="w-20 h-4 bg-slate-200 dark:bg-slate-800 rounded ml-auto relative overflow-hidden"><Shimmer /></div></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 flex items-center justify-between">
+                        <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                        <div className="flex gap-2">
+                            <div className="w-20 h-8 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                            <div className="w-10 h-8 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                            <div className="w-20 h-8 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'course-builder') {
+        return (
+            <div className="w-full mx-auto p-6 lg:p-8 pb-32 animate-pulse">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                    <div className="w-64 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                    <div className="flex gap-3 items-center">
+                        <div className="w-32 h-10 bg-slate-200 dark:bg-slate-800 rounded-md relative overflow-hidden"><Shimmer /></div>
+                        <div className="w-36 h-10 bg-slate-200 dark:bg-slate-800 rounded-md relative overflow-hidden"><Shimmer /></div>
+                    </div>
+                </header>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-8">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 md:p-8 shadow-sm relative overflow-hidden">
+                            <Shimmer />
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="w-48 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-36 h-8 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                            </div>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    <div className="w-full h-12 bg-slate-200 dark:bg-slate-800/50 rounded-xl"></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    <div className="w-full h-24 bg-slate-200 dark:bg-slate-800/50 rounded-xl"></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="w-40 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    <div className="w-full h-32 bg-slate-200 dark:bg-slate-800/50 rounded-xl"></div>
+                                </div>
+                                <div className="pt-4 border-t border-slate-200 dark:border-slate-800 mt-4">
+                                    <div className="w-56 h-4 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {[1, 2, 3, 4].map(i => (
+                                            <div key={i} className="space-y-2">
+                                                <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                                <div className="w-full h-12 bg-slate-200 dark:bg-slate-800/50 rounded-xl"></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm relative overflow-hidden">
+                                <Shimmer />
+                                <div className="w-32 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                                <div className="space-y-4">
+                                    <div className="w-full h-12 bg-slate-200 dark:bg-slate-800/50 rounded-xl"></div>
+                                    <div className="w-full h-12 bg-slate-200 dark:bg-slate-800/50 rounded-xl"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'draft-courses') {
+        return (
+            <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20 animate-pulse">
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-3">
+                        <div className="w-64 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                        <div className="w-96 h-5 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                    </div>
+                    <div className="w-36 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                </header>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 relative overflow-hidden h-[180px]">
+                            <Shimmer />
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="w-24 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                            <div className="w-3/4 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-2"></div>
+                            <div className="w-1/2 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                            <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded mt-auto pt-4 border-t border-slate-100 dark:border-slate-800"></div>
+                        </div>
+                    ))}
                 </div>
             </div>
         );

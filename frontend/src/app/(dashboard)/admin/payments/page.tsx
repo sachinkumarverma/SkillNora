@@ -65,7 +65,7 @@ export default function AdminPaymentsPage() {
         document.body.removeChild(link);
     };
 
-    if (loading && payments.length === 0) return <Loader type="table" />
+    if (loading && payments.length === 0) return <Loader type="management-table" />
 
     return (
         <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">
@@ -95,7 +95,7 @@ export default function AdminPaymentsPage() {
                 >
                     <button 
                         onClick={exportToCSV}
-                        className="px-5 py-2.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow-sm text-sm hover:opacity-90 transition-opacity"
+                        className="inline-flex items-center justify-center px-5 h-10 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow-sm text-sm leading-none hover:opacity-90 transition-opacity pt-[2px]"
                     >
                         Export CSV
                     </button>
@@ -152,7 +152,7 @@ export default function AdminPaymentsPage() {
                                     <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{p.user_name}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{p.instructor_name || p.instructor_email || <span className="text-slate-400 italic">Unassigned</span>}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{p.course_title}</td>
-                                    <td className="px-6 py-4 font-black text-slate-900 dark:text-white">Rs. {p.amount}</td>
+                                    <td className="px-6 py-4 font-black text-slate-900 dark:text-white">Rs. {Math.abs(Number(p.amount))}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-max gap-1.5 ${
                                             p.status === 'created' || p.status === 'paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 

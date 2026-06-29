@@ -1,7 +1,20 @@
-import { Router } from 'express';
+import Joi from 'joi';
 import { uploadController } from './uploadController.js';
+import { buildApiRouter } from '../../utils/apiLoader.js';
 
-const uploadApi = Router();
-uploadApi.post('/url', uploadController.getUrl);
+const apiDefinitions = {
+    getUrl: {
+        path: '/url',
+        verb: 'POST',
+        handler: { controller: uploadController, method: 'getUrl' },
+        request: {
+            body: {
+                bucket: Joi.string().optional(),
+                filePath: Joi.string().required()
+            }
+        },
+        response: Joi.object()
+    }
+};
 
-export { uploadApi };
+export const uploadApi = buildApiRouter(apiDefinitions);

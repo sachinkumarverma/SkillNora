@@ -7,6 +7,7 @@ import apiClient from '@/lib/apiClient'
 import ConfirmDeleteModal from '@/components/views/ConfirmDeleteModal'
 import AdminCourseTable from '@/components/views/AdminCourseTable'
 import Pagination from '@/components/ui/Pagination'
+import Loader from '@/components/ui/Loader'
 import toast from 'react-hot-toast'
 
 const CustomDropdown = ({ value, options, onChange }: { value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) => {
@@ -96,6 +97,8 @@ export default function AdminCourseManagement() {
     useEffect(() => {
         fetchCourses()
     }, [])
+
+    if (loading && courses.length === 0) return <Loader type="management-table" />
 
     const confirmDeleteCourse = async () => {
         if (!courseToDelete) return

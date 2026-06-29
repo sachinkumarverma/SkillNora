@@ -27,4 +27,12 @@ export const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-export const query = (text, params) => pool.query(text, params);
+import { logger } from '../utils/logger.js';
+
+export const query = (text, params) => {
+    logger.info(`[DB QUERY] Executing: ${text}`);
+    if (params && params.length > 0) {
+        logger.info(`[DB PARAMS] ${JSON.stringify(params)}`);
+    }
+    return pool.query(text, params);
+};

@@ -31,7 +31,7 @@ export default function AdminInstructorManagement() {
 
     const filtered = instructors.filter(i => i.name?.toLowerCase().includes(search.toLowerCase()) || i.email?.toLowerCase().includes(search.toLowerCase()))
 
-    if (loading && instructors.length === 0) return <Loader type="table" />
+    if (loading && instructors.length === 0) return <Loader type="management-table" />
 
     return (
         <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">
