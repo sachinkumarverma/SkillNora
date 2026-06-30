@@ -196,7 +196,7 @@ export default function AdminSupportPage() {
                             onChange={(e) => setResolveMessage(e.target.value)}
                             rows={5}
                             placeholder="Type your response here..."
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 outline-none focus:border-blue-500 resize-none mb-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 outline-none focus:border-blue-500 resize-none mb-6 custom-scrollbar"
                         ></textarea>
                         
                         <div className="flex justify-end gap-3">

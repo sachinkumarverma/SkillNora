@@ -72,7 +72,7 @@ export default function ContactPage() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Message</label>
-                            <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent outline-none focus:border-blue-500 resize-y [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full" placeholder="How can we help?"></textarea>
+                            <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent outline-none focus:border-blue-500 resize-y custom-scrollbar" placeholder="How can we help?"></textarea>
                         </div>
                         <button disabled={loading} type="submit" className="w-full py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
                             {loading ? 'Sending...' : 'Send Message'}

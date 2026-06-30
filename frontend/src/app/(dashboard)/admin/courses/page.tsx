@@ -30,7 +30,7 @@ const CustomDropdown = ({ value, options, onChange }: { value: string, options: 
                         animate={{ opacity: 1, y: 0 }}
                         className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
                     >
-                        <div className="max-h-60 overflow-y-auto py-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full">
+                        <div className="max-h-60 overflow-y-auto py-2 custom-scrollbar">
                             {options.map(opt => (
                                 <div 
                                     key={opt.value}

@@ -322,7 +322,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </Link>
                 </div>
 
-                <nav className="flex-1 space-y-1 overflow-y-auto p-3 mt-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+                <nav className="flex-1 space-y-1 overflow-y-auto p-3 mt-4 custom-scrollbar">
                     {sidebarItems.map(([path, label, iconPath]) => {
                         const isActive = pathname === path || (path !== '/' && path !== '/dashboard' && path !== '/admin' && path !== '/instructor' && pathname.startsWith(path + '/'))
                         const isExternal = path.startsWith('http')
@@ -567,7 +567,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full flex flex-col relative">
+                <main className="flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
                     <div className="flex-1">
                         {children}
                     </div>

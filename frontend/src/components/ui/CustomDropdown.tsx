@@ -28,7 +28,7 @@ const CustomDropdown = ({ label, value, options, onChange, required, placeholder
                             transition={{ duration: 0.15 }}
                             className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
                         >
-                            <div className="max-h-60 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full py-2">
+                            <div className="max-h-60 overflow-y-auto custom-scrollbar py-2">
                                 {placeholder && (
                                     <div 
                                         onClick={() => { onChange(''); setIsOpen(false) }}
