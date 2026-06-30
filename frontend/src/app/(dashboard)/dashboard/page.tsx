@@ -240,7 +240,7 @@ export default function DashboardPage() {
                                                 <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
                                                     <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300 mb-2">🎯 Almost There!</div>
                                                     {nearCompletion.map(c => (
-                                                        <div key={c.id} className="flex items-center justify-between py-1 cursor-pointer hover:opacity-80" onClick={() => router.push(`/courses/${c.slug}`)}>
+                                                        <div key={c.id} className="flex items-center justify-between py-1 cursor-pointer hover:opacity-80" onClick={() => router.push(`/courses/${c.slug}/${c.id}`)}>
                                                             <span className="text-sm text-emerald-800 dark:text-emerald-200 font-medium line-clamp-1 flex-1">{c.title}</span>
                                                             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 ml-2 shrink-0">{c.percent}%</span>
                                                         </div>
@@ -252,7 +252,7 @@ export default function DashboardPage() {
                                                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mt-3">
                                                     <div className="text-sm font-bold text-amber-700 dark:text-amber-300 mb-2">⏸️ Needs Attention</div>
                                                     {stalledCourses.slice(0, 2).map(c => (
-                                                        <div key={c.id} className="flex items-center justify-between py-1 cursor-pointer hover:opacity-80" onClick={() => router.push(`/courses/${c.slug}`)}>
+                                                        <div key={c.id} className="flex items-center justify-between py-1 cursor-pointer hover:opacity-80" onClick={() => router.push(`/courses/${c.slug}/${c.id}`)}>
                                                             <span className="text-sm text-amber-800 dark:text-amber-200 font-medium line-clamp-1 flex-1">{c.title}</span>
                                                             <span className="text-xs font-bold text-amber-600 dark:text-amber-400 ml-2 shrink-0">{c.percent}%</span>
                                                         </div>
@@ -288,7 +288,7 @@ export default function DashboardPage() {
                                             </h3>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                                 {(sameCategory.length > 0 ? sameCategory : topRatedNotEnrolled).map(course => (
-                                                    <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => router.push(`/courses/${course.slug}`)}>
+                                                    <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => router.push(`/courses/${course.slug}/${course.id}`)}>
                                                         <div className="aspect-[16/10] bg-slate-100 dark:bg-slate-800 overflow-hidden relative">
                                                             <img src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                                             <div className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-md">Recommended</div>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                                             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 font-serif">Top Rated Courses You Haven't Tried</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                                 {topRatedNotEnrolled.map(course => (
-                                                    <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
+                                                    <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}/${course.id}`)}>
                                                         <div className="w-20 h-20 shrink-0 rounded-lg bg-slate-100 overflow-hidden">
                                                             <img src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover" />
                                                         </div>
@@ -373,7 +373,7 @@ export default function DashboardPage() {
                                         const totalLectures = course.lectures?.length || parseInt(course.lectures_count) || 1;
                                         const percent = Math.min(100, Math.round((progList.length / totalLectures) * 100));
                                         return (
-                                        <div key={idx} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
+                                        <div key={idx} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/courses/${course.slug}/${course.id}`)}>
                                             <div className="w-24 h-24 shrink-0 rounded-xl bg-slate-100 overflow-hidden relative">
                                                 <img src={course.thumbnail_url || course.image_url || course.image || 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80'} alt={course.title} className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

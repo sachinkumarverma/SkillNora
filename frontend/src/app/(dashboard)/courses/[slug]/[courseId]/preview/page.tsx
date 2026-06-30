@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation'
 import { coursesService } from '@/services/coursesService'
 import Loader from '@/components/ui/Loader'
 
-export default function PreviewPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = React.use(params)
+export default function PreviewPage({ params }: { params: Promise<{ slug: string, courseId: string }> }) {
+    const { slug, courseId } = React.use(params)
     const router = useRouter()
     const [course, setCourse] = useState<any | null>(null)
     const [loading, setLoading] = useState(true)
@@ -13,7 +13,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
     useEffect(() => {
         let mounted = true
         const fetchCourse = async () => {
-            const res = await coursesService.getOne(slug as string)
+            const res = await coursesService.getOne(courseId as string)
             const data = res?.course || res
             if (mounted) {
                 if (data) {
@@ -32,9 +32,9 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
         fetchCourse()
 
         return () => { mounted = false }
-    }, [slug])
+    }, [slug, courseId])
 
-    if (loading) return <Loader />
+    if (loading) return <Loader type="course-preview" />
 
     if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
 
@@ -42,10 +42,6 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
 
     return (
         <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8 md:py-12">
-            <button onClick={() => router.back()} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                Back to Course
-            </button>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
                 {course.image && (

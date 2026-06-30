@@ -113,7 +113,7 @@ const apiDefinitions = {
                 slug: Joi.string().required(),
                 lectureId: Joi.string().required(),
                 totalLectures: Joi.number().required(),
-                quizScore: Joi.number().optional()
+                quizScore: Joi.number().optional().allow(null)
             }
         },
         response: Joi.object()

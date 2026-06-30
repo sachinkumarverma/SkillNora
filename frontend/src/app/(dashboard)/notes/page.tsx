@@ -165,7 +165,7 @@ export default function NotesPage() {
                                        </button>
                                        <Link 
                                            onClick={e => e.stopPropagation()}
-                                           href={`/courses/${note.courseSlug}/lecture/${note.lectureId}`}
+                                           href={`/courses/${note.courseSlug}/${note.courseId}/lecture/${note.lectureId}`}
                                            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold text-sm flex items-center gap-1 transition-colors"
                                        >
                                            Go to Video

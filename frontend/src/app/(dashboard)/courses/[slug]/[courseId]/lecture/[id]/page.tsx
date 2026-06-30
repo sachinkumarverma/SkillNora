@@ -28,8 +28,8 @@ const formatNoteContent = (html: string) => {
     });
 };
 
-export default function LecturePage({ params }: { params: Promise<{ slug: string, id: string }> }) {
-    const { slug, id } = React.use(params)
+export default function LecturePage({ params }: { params: Promise<{ slug: string, courseId: string, id: string }> }) {
+    const { slug, courseId, id } = React.use(params)
     const { user } = useUser()
     const [courseInfo, setCourseInfo] = useState<{ id: string, title: string, slug: string, instructor_id?: string, totalLectures: number, progress?: any, price?: any, is_free?: boolean } | null>(null)
     const role = user?.user_metadata?.role || user?.app_metadata?.role || (user?.email === 'sachinverma1489@gmail.com' ? 'admin' : 'student');
@@ -85,7 +85,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             }
         }
         fetchComments()
-    }, [slug, id])
+    }, [slug, courseId, id])
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -257,7 +257,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         if (!id || !slug) return
         let mounted = true
         const fetchLecture = async () => {
-            const res = await coursesService.getOne(slug as string)
+            const res = await coursesService.getOne(courseId as string)
             const course = res?.course || res
             if (mounted) {
                 if (course) {
@@ -289,7 +289,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         }
         fetchLecture()
         return () => { mounted = false }
-    }, [slug, id])
+    }, [slug, courseId, id])
     useEffect(() => {
         if (!slug || !id) return
         const loadNotes = async () => {
@@ -312,7 +312,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                 setQuizAnswers(parsed.answers);
             } catch (e) {}
         }
-    }, [slug, id, user, courseInfo])
+    }, [slug, courseId, id, user, courseInfo])
 
     const saveNote = async () => {
         if (!courseInfo || !lecture) return
@@ -414,7 +414,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             </div>
                             <div className="flex items-center gap-3">
                                 {(() => {
-                                    const displayedScore = quizResult?.score ?? courseInfo?.progress?.quizScores?.[id];
+                                    const quizData = quizResult?.score ?? courseInfo?.progress?.quizScores?.[id];
+                                    const displayedScore = typeof quizData === 'object' && quizData !== null ? quizData.score : quizData;
                                     if (displayedScore !== undefined && displayedScore !== null) {
                                         return (
                                             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-full text-xs font-bold border border-indigo-100 dark:border-indigo-800">
@@ -437,7 +438,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                     </div>
                                     <h2 className="text-2xl font-bold text-white mb-2">Unlock to Watch</h2>
                                     <p className="text-slate-300 text-sm mb-6 max-w-md text-center">You need to be enrolled in this course to access the video lectures and resources.</p>
-                                    <Link href={`/courses/${slug}/checkout`} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition-transform transform active:scale-95 shadow-lg">
+                                    <Link href={`/courses/${slug}/${courseId}/checkout`} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition-transform transform active:scale-95 shadow-lg">
                                         Enroll Now
                                     </Link>
                                 </div>

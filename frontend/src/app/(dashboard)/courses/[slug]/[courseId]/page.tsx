@@ -9,8 +9,8 @@ import { coursesService } from '@/services/coursesService'
 import apiClient from '@/lib/apiClient'
 import { toast } from 'react-hot-toast'
 
-export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = React.use(params)
+export default function CourseDetailPage({ params }: { params: Promise<{ slug: string, courseId: string }> }) {
+    const { slug, courseId } = React.use(params)
     const [course, setCourse] = useState<any | null>(null)
     const [loading, setLoading] = useState(true)
     const [imageError, setImageError] = useState(false)
@@ -52,23 +52,23 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         if (isFree) {
             const firstLecture = course.lectures?.[0];
             if (firstLecture) {
-                router.push(`/courses/${slug}/lecture/${firstLecture.id}`);
+                router.push(`/courses/${slug}/${courseId}/lecture/${firstLecture.id}`);
                 return;
             }
         }
         
-        router.push(`/courses/${slug}/checkout`)
+        router.push(`/courses/${slug}/${courseId}/checkout`)
     }
 
     const handlePreview = () => {
-        router.push(`/courses/${slug}/preview`)
+        router.push(`/courses/${slug}/${courseId}/preview`)
     }
 
     useEffect(() => {
         if (!slug) return
         let mounted = true
         const fetchCourse = async () => {
-            const res = await coursesService.getOne(slug as string)
+            const res = await coursesService.getOne(courseId as string)
             const data = res?.course || res
             if (mounted) {
                 if (data) {
@@ -96,7 +96,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         fetchCourse()
 
         return () => { mounted = false }
-    }, [slug, user])
+    }, [slug, courseId, user])
 
     const submitReview = async () => {
         if (!rating) return alert('Please select a rating')
@@ -108,7 +108,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
             } else {
                 await apiClient.post(`/api/courses/${course.id}/reviews`, { rating, review_text: reviewText })
             }
-            const res = await coursesService.getOne(slug as string)
+            const res = await coursesService.getOne(courseId as string)
             const data = res?.course || res
             if (data) {
                 setCourse({
@@ -226,7 +226,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                             </div>
                                         </div>
                                     </div>
-                                    <Link href={`/courses/${course.slug}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:underline shrink-0">Watch</Link>
+                                    <Link href={`/courses/${course.slug}/${course.id}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:underline shrink-0">Watch</Link>
                                 </div>
                             )) : (
                                 <div className="text-center py-10 text-slate-500 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
@@ -344,7 +344,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             {/* AI Matrix Recommendation */}
                             {isEnrolled && course?.progress?.quizScores && (() => {
                                 const scores = Object.values(course.progress.quizScores);
-                                const avg = scores.length ? Number(scores.reduce((a: any, b: any) => Number(a) + Number(b), 0)) / scores.length : 100;
+                                const avg = scores.length ? Number(scores.reduce((a: any, b: any) => {
+                                    const bScore = typeof b === 'object' && b !== null ? b.score : b;
+                                    return Number(a) + Number(bScore);
+                                }, 0)) / scores.length : 100;
                                 if (avg < 75) {
                                     return (
                                         <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
@@ -361,7 +364,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
                             {isEnrolled || isStaff ? (
                                 <>
-                                    <button onClick={() => router.push(`/courses/${course.slug}/lecture/${course.lectures?.[0]?.id || '1'}`)} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm mb-3 hover:bg-blue-700">
+                                    <button onClick={() => router.push(`/courses/${course.slug}/${course.id}/lecture/${course.lectures?.[0]?.id || '1'}`)} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm mb-3 hover:bg-blue-700">
                                         Go to Course
                                     </button>
                                     {isEnrolled && !isStaff && (

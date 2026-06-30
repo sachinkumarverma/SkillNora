@@ -12,44 +12,7 @@ import Confetti from 'react-confetti'
 import { useWindowSize } from 'react-use'
 import toast from 'react-hot-toast'
 
-const CustomDropdown = ({ label, value, options, onChange, required }: { label: string, value: string, options: {value: string, label: string}[], onChange: (val: string) => void, required?: boolean }) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const selectedLabel = options.find(o => o.value === value)?.label || 'Select...'
-    return (
-        <div className="relative">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{label} {required && <span className="text-red-500">*</span>}</label>
-            <div 
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white cursor-pointer transition-colors"
-            >
-                <span>{selectedLabel}</span>
-                <svg className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </div>
-            {isOpen && (
-                <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-                    <motion.div 
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
-                    >
-                        <div className="max-h-60 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full py-2">
-                            {options.map(opt => (
-                                <div 
-                                    key={opt.value}
-                                    onClick={() => { onChange(opt.value); setIsOpen(false) }}
-                                    className={`px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors ${value === opt.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
-                                >
-                                    {opt.label}
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-                </>
-            )}
-        </div>
-    )
-}
+import CustomDropdown from '@/components/ui/CustomDropdown'
 
 export default function InstructorCourseBuilder() {
     const { width, height } = useWindowSize()
@@ -90,7 +53,7 @@ export default function InstructorCourseBuilder() {
     const [modules, setModules] = useState<any[]>([
         { id: 1, title: 'Introduction to the Course', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '', mcqs: [], attachments: [] }
     ])
-    const [openModuleIds, setOpenModuleIds] = useState<Set<number>>(new Set([1]))
+    const [openModuleIds, setOpenModuleIds] = useState<Set<number>>(new Set())
 
     const [localDraftTime, setLocalDraftTime] = useState<string | null>(null)
 
@@ -254,9 +217,6 @@ export default function InstructorCourseBuilder() {
             }
 
             let slug = courseData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
-            if (!editCourseId && !isPublished) {
-                slug = `${slug}-${Math.floor(Date.now() / 1000)}`
-            }
 
             let finalInstructorId: string | null = user.id
             if (currentUserRole === 'admin') {
@@ -296,6 +256,7 @@ export default function InstructorCourseBuilder() {
 
             if (course && course.id) {
                 const lecturesToInsert = modules.map((mod, index) => ({
+                    id: typeof mod.id === 'string' ? mod.id : undefined,
                     course_id: course.id,
                     title: mod.title,
                     video_url: mod.videoUrl,
@@ -345,7 +306,11 @@ export default function InstructorCourseBuilder() {
     const addModule = () => {
         const newId = Date.now();
         setModules([...modules, { id: newId, title: 'New Module', videoMode: 'upload', videoUrl: '', thumbnailMode: 'upload', thumbnailUrl: '', mcqs: [], attachments: [] }]);
-        setOpenModuleIds(prev => new Set([...prev, newId]));
+        setOpenModuleIds(prev => {
+            const next = new Set(prev);
+            next.add(newId);
+            return next;
+        });
     }
 
     const removeModule = (id: number) => {

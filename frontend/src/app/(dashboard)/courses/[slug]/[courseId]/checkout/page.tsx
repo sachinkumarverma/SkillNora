@@ -6,8 +6,8 @@ import Loader from '@/components/ui/Loader'
 import { coursesService } from '@/services/coursesService'
 import { enrollmentsService } from '@/services/enrollmentsService'
 
-export default function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = React.use(params)
+export default function CheckoutPage({ params }: { params: Promise<{ slug: string, courseId: string }> }) {
+    const { slug, courseId } = React.use(params)
     const { user, loading: userLoading } = useUser()
     const router = useRouter()
     const [course, setCourse] = useState<any | null>(null)
@@ -24,7 +24,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
 
         let mounted = true
         const fetchCourse = async () => {
-            const res = await coursesService.getOne(slug as string)
+            const res = await coursesService.getOne(courseId as string)
             const data = res?.course || res
             if (mounted) {
                 if (data) {
@@ -158,7 +158,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                         </div>
                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Payment Successful!</h3>
                         <p className="text-slate-500 mb-8">Welcome to the course. You now have full 1-year access.</p>
-                        <button onClick={() => router.push(`/courses/${slug}`)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
+                        <button onClick={() => router.push(`/courses/${slug}/${courseId}`)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
                             Start Learning
                         </button>
                     </div>

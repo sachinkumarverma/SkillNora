@@ -48,7 +48,7 @@ export default function CourseCard({ course, isEnrolled, className = "", variant
 
     return (
         <Link
-            href={`/courses/${course.slug}`}
+            href={`/courses/${course.slug}/${course.id}`}
             className={`group flex flex-col bg-white dark:bg-slate-900 rounded-[1.25rem] border border-slate-200/80 dark:border-slate-800/80 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 cursor-pointer relative ${className}`}
         >
             <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border-b border-slate-100 dark:border-slate-800/50">

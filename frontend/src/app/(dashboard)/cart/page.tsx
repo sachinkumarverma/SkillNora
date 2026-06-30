@@ -122,12 +122,12 @@ export default function CartPage() {
                     <div className="lg:col-span-2 space-y-4">
                         {cart.map((item, index) => (
                             <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-                                <Link href={`/courses/${item.slug}`} className="w-32 h-24 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 block">
+                                <Link href={`/courses/${item.slug}/${item.id}`} className="w-32 h-24 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 block">
                                     <img src={item.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600'} alt="" className="w-full h-full object-cover" />
                                 </Link>
                                 <div className="flex-1 flex flex-col justify-between py-1">
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:gap-4">
-                                        <Link href={`/courses/${item.slug}`} className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-base sm:text-lg line-clamp-2 mb-1 sm:mb-0">{item.title}</Link>
+                                        <Link href={`/courses/${item.slug}/${item.id}`} className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-base sm:text-lg line-clamp-2 mb-1 sm:mb-0">{item.title}</Link>
                                         <div className="font-black text-slate-900 dark:text-white shrink-0 text-base sm:text-lg">{item.price}</div>
                                     </div>
                                     <div className="flex justify-between items-end">

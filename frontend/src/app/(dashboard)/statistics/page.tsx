@@ -314,6 +314,7 @@ export default function StatisticsPage() {
                                     <tr className="border-b border-slate-200 dark:border-slate-800 text-sm text-slate-500">
                                         <th className="py-3 px-4 font-semibold">Course</th>
                                         <th className="py-3 px-4 font-semibold">Module</th>
+                                        <th className="py-3 px-4 font-semibold">Date</th>
                                         <th className="py-3 px-4 font-semibold">Score</th>
                                         <th className="py-3 px-4 font-semibold text-right">Action</th>
                                     </tr>
@@ -325,6 +326,9 @@ export default function StatisticsPage() {
                                             <tr key={index} className="border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
                                                 <td className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{scoreObj.course_title}</td>
                                                 <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{scoreObj.lecture_title}</td>
+                                                <td className="py-4 px-4 text-sm text-slate-500 font-medium">
+                                                    {scoreObj.date ? new Date(scoreObj.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
+                                                </td>
                                                 <td className="py-4 px-4">
                                                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${needsRetake ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
                                                         {scoreObj.score}%
@@ -332,7 +336,7 @@ export default function StatisticsPage() {
                                                 </td>
                                                 <td className="py-4 px-4 text-right">
                                                     <a 
-                                                        href={`/courses/${scoreObj.course_slug}/lecture/${scoreObj.lecture_id}`}
+                                                        href={`/courses/${scoreObj.course_slug}/${scoreObj.course_id}/lecture/${scoreObj.lecture_id}`}
                                                         title="View Module"
                                                         className="inline-flex items-center justify-center w-8 h-8 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                                                     >

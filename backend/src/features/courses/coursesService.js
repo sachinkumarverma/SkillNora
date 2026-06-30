@@ -122,7 +122,7 @@ const completeLecture = async (userId, courseId, slug, lectureId, totalLectures,
     // Save quiz score if provided
     if (quizScore !== undefined && quizScore !== null) {
       if (!prog.quizScores) prog.quizScores = {};
-      prog.quizScores[lectureId] = quizScore;
+      prog.quizScores[lectureId] = { score: quizScore, date: new Date().toISOString() };
     }
     
     await coursesRepository.updateProgress(userId, courseId, prog);

@@ -88,7 +88,7 @@ const updatePublishStatus = async (ids, status) => {
 const getAllPublished = async () => {
   const sql = `
             SELECT 
-                c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
+                c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill, c.is_free, c.certificate_type, c.provide_certificate,
                 u.full_name as instructor_name,
                 COALESCE(AVG(r.rating), 0) as average_rating,
                 COUNT(DISTINCT r.id) as review_count,
@@ -272,11 +272,29 @@ const deleteMultiple = async ids => {
 };
 
 const updateLectures = async (courseId, lectures) => {
-  await query(`DELETE FROM lectures WHERE course_id = $1`, [courseId]);
+  const existingLecturesSql = `SELECT id FROM lectures WHERE course_id = $1`;
+  const { rows: existingRows } = await query(existingLecturesSql, [courseId]);
+  const existingIds = existingRows.map(r => r.id);
+  
+  const incomingIds = lectures.filter(l => l.id).map(l => l.id);
+  
+  // Delete lectures that are no longer present
+  const idsToDelete = existingIds.filter(id => !incomingIds.includes(id));
+  if (idsToDelete.length > 0) {
+    const placeholders = idsToDelete.map((_, i) => '$' + (i + 1)).join(',');
+    await query(`DELETE FROM lectures WHERE id IN (${placeholders})`, idsToDelete);
+  }
+  
+  // Insert or Update remaining
   if (lectures && lectures.length > 0) {
     for (const lec of lectures) {
-      const sql = `INSERT INTO lectures (course_id, title, video_url, thumbnail_url, position, mcqs, attachments) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
-      await query(sql, [courseId, lec.title, lec.video_url, lec.thumbnail_url, lec.position, JSON.stringify(lec.mcqs || []), JSON.stringify(lec.attachments || [])]);
+      if (lec.id && existingIds.includes(lec.id)) {
+        const sql = `UPDATE lectures SET title = $1, video_url = $2, thumbnail_url = $3, position = $4, mcqs = $5, attachments = $6 WHERE id = $7 AND course_id = $8`;
+        await query(sql, [lec.title, lec.video_url, lec.thumbnail_url, lec.position, JSON.stringify(lec.mcqs || []), JSON.stringify(lec.attachments || []), lec.id, courseId]);
+      } else {
+        const sql = `INSERT INTO lectures (course_id, title, video_url, thumbnail_url, position, mcqs, attachments) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+        await query(sql, [courseId, lec.title, lec.video_url, lec.thumbnail_url, lec.position, JSON.stringify(lec.mcqs || []), JSON.stringify(lec.attachments || [])]);
+      }
     }
   }
   return true;
@@ -285,7 +303,7 @@ const updateLectures = async (courseId, lectures) => {
 const getAll = async () => {
   const sql = `
             SELECT 
-                c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill,
+                c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill, c.is_free, c.certificate_type, c.provide_certificate,
                 u.full_name as instructor_name,
                 COALESCE(AVG(r.rating), 0) as average_rating,
                 COUNT(DISTINCT r.id) as review_count,

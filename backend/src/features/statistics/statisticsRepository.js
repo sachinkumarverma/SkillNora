@@ -47,7 +47,7 @@ const getStats = async (userId, role) => {
   };
 
   const sqlEnrollsWithProgress = `
-    SELECT e.id, e.course_id, e.progress, c.title as course_title, c.slug as course_slug
+    SELECT e.id, e.course_id, e.progress, e.last_accessed_at, c.title as course_title, c.slug as course_slug
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
     WHERE e.user_id = $1
@@ -73,14 +73,18 @@ const getStats = async (userId, role) => {
 
     enrollsWithProgress.forEach(e => {
         if (e.progress && e.progress.quizScores) {
-            Object.entries(e.progress.quizScores).forEach(([lId, score]) => {
+            Object.entries(e.progress.quizScores).forEach(([lId, quizData]) => {
                 if (lecturesMap[lId]) {
+                    const score = typeof quizData === 'object' && quizData !== null ? quizData.score : quizData;
+                    const date = typeof quizData === 'object' && quizData !== null ? quizData.date : e.last_accessed_at;
                     quizScores.push({
                         course_title: e.course_title,
+                        course_id: e.course_id,
                         course_slug: e.course_slug,
                         lecture_id: lId,
                         lecture_title: lecturesMap[lId],
-                        score: Number(score)
+                        score: Number(score),
+                        date: date
                     });
                 }
             });

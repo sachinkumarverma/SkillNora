@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' | 'management-table' | 'course-builder' | 'draft-courses' }) {
+export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' | 'management-table' | 'course-builder' | 'draft-courses' | 'certificate' | 'course-preview' | 'receipt' | 'settings' | 'admin-profile' }) {
     
     const Shimmer = () => (
         <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
@@ -236,6 +236,24 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
         );
     }
 
+    if (type === 'certificate') {
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 relative overflow-hidden animate-pulse">
+                <div className="max-w-5xl mx-auto flex items-center justify-end mb-8">
+                    <div className="flex gap-3">
+                        <div className="w-32 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl relative overflow-hidden"><Shimmer /></div>
+                        <div className="w-36 h-10 bg-blue-200 dark:bg-blue-900/50 rounded-xl relative overflow-hidden"><Shimmer /></div>
+                    </div>
+                </div>
+                <div className="w-full flex justify-center">
+                    <div className="w-full max-w-[1000px] h-[707px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl relative overflow-hidden">
+                        <Shimmer />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (type === 'settings') {
         return (
             <div className="p-6 md:p-8 max-w-[1400px] mx-auto animate-pulse">
@@ -424,20 +442,93 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
 
     if (type === 'lecture') {
         return (
-            <div className="grid grid-cols-1 lg:grid-cols-4 h-[calc(100vh-73px)]">
-                <div className="lg:col-span-3 bg-black flex items-center justify-center relative overflow-hidden">
+            <div className="w-full mx-auto px-4 md:px-8 lg:px-12 py-8 relative animate-pulse">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                    <main className="lg:col-span-2">
+                        <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-6 relative overflow-hidden">
+                            <Shimmer />
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-24 h-6 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+                            </div>
+                            <div className="w-3/4 h-8 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                            <div className="w-full aspect-video bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                        </div>
+                    </main>
+                    <aside className="lg:col-span-1 space-y-6">
+                        <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden h-[150px]">
+                            <Shimmer />
+                            <div className="w-32 h-5 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                            <div className="w-full h-12 bg-slate-100 dark:bg-slate-800/50 rounded-lg"></div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden min-h-[250px]">
+                            <Shimmer />
+                            <div className="w-40 h-5 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+                            <div className="space-y-3">
+                                <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-3/4 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'course-preview') {
+        return (
+            <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8 md:py-12 animate-pulse">
+                
+                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8 relative">
                     <Shimmer />
-                    <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center">
-                        <div className="w-0 h-0 border-t-8 border-t-transparent border-l-[16px] border-l-slate-600 border-b-8 border-b-transparent ml-1"></div>
+                    <div className="w-full min-h-[400px] md:min-h-[500px] bg-slate-200 dark:bg-slate-800 flex flex-col justify-end p-8 md:p-12">
+                        <div className="w-32 h-6 bg-slate-300 dark:bg-slate-700 rounded-full mb-4"></div>
+                        <div className="w-3/4 h-10 md:h-12 bg-slate-300 dark:bg-slate-700 rounded mb-4"></div>
+                        <div className="w-full h-6 bg-slate-300 dark:bg-slate-700 rounded mb-2"></div>
+                        <div className="w-5/6 h-6 bg-slate-300 dark:bg-slate-700 rounded"></div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 p-6 space-y-6 relative overflow-hidden">
-                    <Shimmer />
-                    <div className="w-3/4 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                    <div className="space-y-4">
-                        {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className="w-full h-16 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-                        ))}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="md:col-span-2 space-y-8">
+                        <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden min-h-[300px]">
+                            <Shimmer />
+                            <div className="w-64 h-8 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                            <div className="space-y-4">
+                                <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-3/4 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="md:col-span-1 space-y-6">
+                        <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden min-h-[200px]">
+                            <Shimmer />
+                            <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                            <div className="space-y-4">
+                                {[1, 2, 3, 4, 5].map(i => (
+                                    <div key={i} className="flex gap-3 items-center">
+                                        <div className="w-5 h-5 bg-slate-200 dark:bg-slate-800 rounded shrink-0"></div>
+                                        <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden min-h-[250px]">
+                            <Shimmer />
+                            <div className="w-40 h-4 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                            <div className="space-y-4">
+                                {[1, 2, 3, 4, 5, 6].map(i => (
+                                    <div key={i} className="flex gap-3 items-center">
+                                        <div className="w-4 h-4 bg-slate-200 dark:bg-slate-800 rounded shrink-0"></div>
+                                        <div className="w-full h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

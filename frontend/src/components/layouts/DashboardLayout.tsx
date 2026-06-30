@@ -62,99 +62,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const crumbs: {label: string, href?: string}[] = []
         let currentPath = ''
 
-        const isRole = pathname.startsWith('/instructor') ? 'instructor' : pathname.startsWith('/admin') ? 'admin' : null;
+        // Special handling if the path is exactly /admin or /instructor
+        if (pathname === '/admin') return [{ label: 'Overview' }]
+        if (pathname === '/instructor') return [{ label: 'Instructor Studio' }]
 
-        if (isRole) {
-            if (pathname === `/${isRole}`) {
-                return [{ label: isRole === 'instructor' ? 'Instructor Studio' : 'Overview' }]
-            }
-
-            let parentLabel = ''
-            let parentHref = ''
-
-            if (pathname.startsWith(`/${isRole}/courses`) || pathname.startsWith(`/${isRole}/new`) || pathname.startsWith(`/${isRole}/drafts`)) {
-                parentLabel = 'Course Management'
-                parentHref = `/${isRole}/courses`
-            } else if (pathname.startsWith(`/${isRole}/instructors`)) {
-                parentLabel = 'Instructor Management'
-                parentHref = `/${isRole}/instructors`
-            } else if (pathname.startsWith(`/${isRole}/students`)) {
-                parentLabel = 'Student Management'
-                parentHref = `/${isRole}/students`
-            } else if (pathname.startsWith(`/${isRole}/payments`)) {
-                parentLabel = 'Payments & Enrollments'
-                parentHref = `/${isRole}/payments`
-            } else if (pathname.startsWith(`/${isRole}/ai`)) {
-                parentLabel = isRole === 'instructor' ? 'AI Studio' : 'AI Content'
-                parentHref = `/${isRole}/ai`
-            } else if (pathname.startsWith(`/${isRole}/certificates`)) {
-                parentLabel = 'Certificates'
-                parentHref = `/${isRole}/certificates`
-            } else if (pathname.startsWith(`/${isRole}/reviews`)) {
-                parentLabel = 'Reviews & Ratings'
-                parentHref = `/${isRole}/reviews`
-            } else if (pathname.startsWith(`/${isRole}/support`)) {
-                parentLabel = 'Support Tickets'
-                parentHref = `/${isRole}/support`
-            } else if (pathname.startsWith(`/${isRole}/promotions`)) {
-                parentLabel = 'Promotions'
-                parentHref = `/${isRole}/promotions`
-            } else if (pathname.startsWith(`/${isRole}/audit-logs`)) {
-                parentLabel = 'Audit Logs'
-                parentHref = `/${isRole}/audit-logs`
-            } else if (pathname.startsWith(`/${isRole}/notifications`)) {
-                parentLabel = 'Notifications'
-                parentHref = `/${isRole}/notifications`
-            } else if (pathname.startsWith(`/${isRole}/settings`)) {
-                parentLabel = 'System Settings'
-                parentHref = `/${isRole}/settings`
-            } else {
-                const firstPart = pathname.split('/')[2];
-                if (firstPart) {
-                    parentLabel = firstPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    parentHref = `/${isRole}/${firstPart}`;
-                }
-            }
-
-            if (parentLabel) {
-                crumbs.push({ label: parentLabel, href: parentHref })
-            }
-
-            if (pathname === `/${isRole}/new`) {
-                crumbs.push({ label: 'Course Builder', href: pathname })
-            } else if (pathname === `/${isRole}/drafts`) {
-                crumbs.push({ label: 'Draft Courses', href: pathname })
-            } else {
-                const remainingPath = pathname.replace(parentHref, '')
-                const remainingParts = remainingPath.split('/').filter(Boolean)
-                let currentExt = parentHref
-                for (const part of remainingParts) {
-                    currentExt += `/${part}`
-                    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part) || /^\d+$/.test(part)) {
-                        if (parentHref.endsWith('/payments')) {
-                            crumbs.push({ label: 'View Receipt', href: currentExt })
-                        } else if (parentHref.endsWith('/instructors') || parentHref.endsWith('/students')) {
-                            crumbs.push({ label: 'View Profile', href: currentExt })
-                        } else if (parentHref.endsWith('/courses')) {
-                            crumbs.push({ label: 'Course Details', href: currentExt })
-                        } else {
-                            crumbs.push({ label: 'Details', href: currentExt })
-                        }
-                        continue
-                    }
-                    const label = PATH_LABELS[currentExt] || part.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                    crumbs.push({ label, href: currentExt })
-                }
-            }
-
-            if (crumbs.length > 0) delete crumbs[crumbs.length - 1].href
-            return crumbs
-        }
-
-        // Student/default path handling
-        parts.forEach((part) => {
+        parts.forEach((part, index) => {
             currentPath += `/${part}`
-            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part)) return
+            
+            // Skip the root 'admin' or 'instructor' part from breadcrumbs if there are more parts
+            if ((part === 'admin' || part === 'instructor') && parts.length > 1 && index === 0) {
+                return
+            }
+
+            // Handle UUIDs and numeric IDs
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part) || /^\d+$/.test(part)) {
+                // For student paths, ignore UUIDs as per original behavior
+                if (!currentPath.includes('/admin') && !currentPath.includes('/instructor')) {
+                    if (crumbs.length > 0 && crumbs[crumbs.length - 1].href) {
+                        crumbs[crumbs.length - 1].href += `/${part}`
+                    }
+                    return
+                }
+                
+                let label = 'Details'
+                if (currentPath.includes('/payments/')) label = 'View Receipt'
+                else if (currentPath.includes('/instructors/') || currentPath.includes('/students/')) label = 'View Profile'
+                else if (currentPath.includes('/courses/edit/')) label = 'Edit Course'
+                else if (currentPath.includes('/courses/')) label = 'Course Details'
+                else if (currentPath.includes('/drafts/')) label = 'Draft Details'
+                crumbs.push({ label, href: currentPath })
+                return
+            }
+
             let label = part
             if (PATH_LABELS[currentPath]) {
                 label = PATH_LABELS[currentPath]
@@ -545,7 +484,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                         <ul>
                                             {suggestions.map(c => (
                                                 <li key={c.id}>
-                                                    <Link href={`/courses/${c.slug}`} onClick={() => setShowSuggestions(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                                    <Link href={`/courses/${c.slug}/${c.id}`} onClick={() => setShowSuggestions(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0">
                                                         <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0">
                                                             <img src={c.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop'} alt="" className="w-full h-full object-cover" />
                                                         </div>
