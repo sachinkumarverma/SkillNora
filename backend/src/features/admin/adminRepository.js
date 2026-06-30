@@ -1,7 +1,7 @@
-import { query } from '../../config/db.js';
+import { query } from "../../config/db.js";
 
 const getStudents = async () => {
-    const sql = `
+  const sql = `
         SELECT 
             u.id, 
             u.full_name as name, 
@@ -15,18 +15,22 @@ const getStudents = async () => {
         WHERE u.role = 'student'
         ORDER BY u.created_at DESC
     `;
-    const { rows } = await query(sql);
-    return rows.map(r => ({
-        ...r,
-        status: 'Active',
-        joined: new Date(r.joined).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }),
-        enrolled: parseInt(r.enrolled) || 0,
-        completed: parseInt(r.completed) || 0
-    }));
+  const { rows } = await query(sql);
+  return rows.map((r) => ({
+    ...r,
+    status: "Active",
+    joined: new Date(r.joined).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }),
+    enrolled: parseInt(r.enrolled) || 0,
+    completed: parseInt(r.completed) || 0,
+  }));
 };
 
 const getPayments = async () => {
-    const sql = `
+  const sql = `
         SELECT 
             o.id as id,
             o.razorpay_order_id as transaction_id,
@@ -43,16 +47,20 @@ const getPayments = async () => {
         LEFT JOIN users i ON c.instructor_id = i.id
         ORDER BY o.created_at DESC
     `;
-    const { rows } = await query(sql);
-    return rows.map(r => ({
-        ...r,
-        amount: parseInt(r.amount),
-        date: new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-    }));
+  const { rows } = await query(sql);
+  return rows.map((r) => ({
+    ...r,
+    amount: parseInt(r.amount),
+    date: new Date(r.date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }),
+  }));
 };
 
 const getEnrollments = async () => {
-    const sql = `
+  const sql = `
         SELECT 
             e.id,
             e.enrolled_at as date,
@@ -65,15 +73,19 @@ const getEnrollments = async () => {
         JOIN courses c ON e.course_id = c.id
         ORDER BY e.enrolled_at DESC
     `;
-    const { rows } = await query(sql);
-    return rows.map(r => ({
-        ...r,
-        date: new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-    }));
+  const { rows } = await query(sql);
+  return rows.map((r) => ({
+    ...r,
+    date: new Date(r.date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }),
+  }));
 };
 
 const getCertificates = async () => {
-    const sql = `
+  const sql = `
         SELECT 
             c.id,
             c.issued_at as date,
@@ -84,15 +96,19 @@ const getCertificates = async () => {
         JOIN courses crs ON c.course_id = crs.id
         ORDER BY c.issued_at DESC
     `;
-    const { rows } = await query(sql);
-    return rows.map(r => ({
-        ...r,
-        date: new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-    }));
+  const { rows } = await query(sql);
+  return rows.map((r) => ({
+    ...r,
+    date: new Date(r.date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }),
+  }));
 };
 
 const getInstructors = async () => {
-    const sql = `
+  const sql = `
         SELECT 
             u.id, 
             u.full_name as name, 
@@ -107,19 +123,23 @@ const getInstructors = async () => {
         WHERE u.role = 'instructor'
         ORDER BY u.created_at DESC
     `;
-    const { rows } = await query(sql);
-    return rows.map(r => ({
-        ...r,
-        status: 'Approved',
-        joined: new Date(r.joined).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }),
-        courses: parseInt(r.courses) || 0,
-        students: parseInt(r.students) || 0,
-        revenue: `Rs. ${parseInt(r.revenue)}`
-    }));
+  const { rows } = await query(sql);
+  return rows.map((r) => ({
+    ...r,
+    status: "Approved",
+    joined: new Date(r.joined).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }),
+    courses: parseInt(r.courses) || 0,
+    students: parseInt(r.students) || 0,
+    revenue: `Rs. ${parseInt(r.revenue)}`,
+  }));
 };
 
 const getReviews = async () => {
-    const sql = `
+  const sql = `
         SELECT 
             r.id,
             r.rating,
@@ -134,16 +154,20 @@ const getReviews = async () => {
         JOIN courses c ON r.course_id = c.id
         ORDER BY r.created_at DESC
     `;
-    const { rows } = await query(sql);
-    return rows.map(r => ({
-        ...r,
-        date: new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-    }));
+  const { rows } = await query(sql);
+  return rows.map((r) => ({
+    ...r,
+    date: new Date(r.date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }),
+  }));
 };
 
 const getNotifications = async () => {
-    // Assuming notifications table exists
-    const sql = `
+  // Assuming notifications table exists
+  const sql = `
         SELECT n.*, u.full_name as user_name 
         FROM notifications n
         LEFT JOIN users u ON n.user_id = u.id
@@ -151,21 +175,25 @@ const getNotifications = async () => {
         ORDER BY n.created_at DESC
         LIMIT 100
     `;
-    try {
-        const { rows } = await query(sql);
-        return rows.map(r => ({
-            ...r,
-            date: new Date(r.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
-        }));
-    } catch (e) {
-        // Table might not exist in some environments
-        return [];
-    }
+  try {
+    const { rows } = await query(sql);
+    return rows.map((r) => ({
+      ...r,
+      date: new Date(r.created_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      }),
+    }));
+  } catch (e) {
+    // Table might not exist in some environments
+    return [];
+  }
 };
 
 const getCategories = async () => {
-    // We group by category column in courses if categories table doesn't exist
-    const sql = `
+  // We group by category column in courses if categories table doesn't exist
+  const sql = `
         SELECT 
             category as name,
             COUNT(*) as courses_count,
@@ -174,17 +202,17 @@ const getCategories = async () => {
         WHERE category IS NOT NULL
         GROUP BY category
     `;
-    const { rows } = await query(sql);
-    return rows.map((r, i) => ({
-        id: i.toString(),
-        name: r.name,
-        courses_count: parseInt(r.courses_count) || 0,
-        total_reviews: parseInt(r.total_reviews) || 0
-    }));
+  const { rows } = await query(sql);
+  return rows.map((r, i) => ({
+    id: i.toString(),
+    name: r.name,
+    courses_count: parseInt(r.courses_count) || 0,
+    total_reviews: parseInt(r.total_reviews) || 0,
+  }));
 };
 
 const getAuditLogs = async () => {
-    const sql = `
+  const sql = `
         (
             SELECT 'Payment Processed' as action,
                    'system' as user_email,
@@ -249,42 +277,42 @@ const getAuditLogs = async () => {
         ORDER BY created_at DESC
         LIMIT 60
     `;
-    const { rows } = await query(sql);
-    
-    // timeAgo helper
-    const timeAgo = (date) => {
-        const seconds = Math.floor((new Date() - date) / 1000);
-        let interval = seconds / 31536000;
-        if (interval > 1) return Math.floor(interval) + " years ago";
-        interval = seconds / 2592000;
-        if (interval > 1) return Math.floor(interval) + " months ago";
-        interval = seconds / 86400;
-        if (interval > 1) return Math.floor(interval) + " days ago";
-        interval = seconds / 3600;
-        if (interval > 1) return Math.floor(interval) + " hours ago";
-        interval = seconds / 60;
-        if (interval > 1) return Math.floor(interval) + " mins ago";
-        return Math.floor(seconds) + " seconds ago";
-    };
+  const { rows } = await query(sql);
 
-    return rows.map((r, i) => ({
-        id: i + 1,
-        action: r.action,
-        user: r.user_email,
-        details: r.details,
-        time: timeAgo(new Date(r.created_at)),
-        type: r.type
-    }));
+  // timeAgo helper
+  const timeAgo = (date) => {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " mins ago";
+    return Math.floor(seconds) + " seconds ago";
+  };
+
+  return rows.map((r, i) => ({
+    id: i + 1,
+    action: r.action,
+    user: r.user_email,
+    details: r.details,
+    time: timeAgo(new Date(r.created_at)),
+    type: r.type,
+  }));
 };
 
 export const adminRepository = {
-    getStudents,
-    getPayments,
-    getEnrollments,
-    getCertificates,
-    getInstructors,
-    getReviews,
-    getNotifications,
-    getCategories,
-    getAuditLogs
+  getStudents,
+  getPayments,
+  getEnrollments,
+  getCertificates,
+  getInstructors,
+  getReviews,
+  getNotifications,
+  getCategories,
+  getAuditLogs,
 };

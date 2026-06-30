@@ -1,4 +1,4 @@
-import { adminRepository } from './adminRepository.js';
+import { adminRepository } from "./adminRepository.js";
 
 const getStudents = async () => adminRepository.getStudents();
 const getPayments = async () => adminRepository.getPayments();
@@ -11,13 +11,13 @@ const getCategories = async () => adminRepository.getCategories();
 const getAuditLogs = async () => adminRepository.getAuditLogs();
 
 export const adminService = {
-    getStudents,
-    getPayments,
-    getEnrollments,
-    getCertificates,
-    getInstructors,
-    getReviews,
-    getNotifications,
-    getCategories,
-    getAuditLogs
+  getStudents,
+  getPayments,
+  getEnrollments,
+  getCertificates,
+  getInstructors,
+  getReviews,
+  getNotifications,
+  getCategories,
+  getAuditLogs,
 };

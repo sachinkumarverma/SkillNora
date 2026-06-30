@@ -5,7 +5,9 @@ const getProfile = async (req, res) => {
   try {
     const auth = req.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.split(' ')[1] : null;
-    if (!token) return res.status(401).json({ error: 'Missing token' });
+    if (!token) {
+      return res.status(401).json({ error: 'Missing token' });
+    }
     const user = await usersService.getProfile(token);
     res.json({ user });
   } catch (err) { logger.error('Error in usersController.js:', err); 
@@ -37,7 +39,9 @@ const updateProfile = async (req, res) => {
     try {
         const auth = req.headers.authorization || '';
         const token = auth.startsWith('Bearer ') ? auth.split(' ')[1] : null;
-        if (!token) return res.status(401).json({ error: 'Missing token' });
+        if (!token) {
+      return res.status(401).json({ error: 'Missing token' });
+    }
         
         // Get user from token
         const user = await usersService.getProfile(token);
@@ -54,7 +58,9 @@ const updatePassword = async (req, res) => {
     try {
         const auth = req.headers.authorization || '';
         const token = auth.startsWith('Bearer ') ? auth.split(' ')[1] : null;
-        if (!token) return res.status(401).json({ error: 'Missing token' });
+        if (!token) {
+      return res.status(401).json({ error: 'Missing token' });
+    }
         
         const user = await usersService.getProfile(token);
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -83,7 +89,9 @@ const sendPromotionalEmail = async (req, res) => {
     try {
         const auth = req.headers.authorization || '';
         const token = auth.startsWith('Bearer ') ? auth.split(' ')[1] : null;
-        if (!token) return res.status(401).json({ error: 'Missing token' });
+        if (!token) {
+      return res.status(401).json({ error: 'Missing token' });
+    }
         
         // Ensure sender is admin or has permissions
         const sender = await usersService.getProfile(token);

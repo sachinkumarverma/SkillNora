@@ -1,94 +1,114 @@
-import { logger } from '../../utils/logger.js';
-import { paymentsService } from './paymentsService.js';
-import { enrollmentsService } from '../enrollments/enrollmentsService.js';
-import { paymentsRepository } from './paymentsRepository.js';
-import { supabaseServer, query } from '../../config/db.js';
-import nodemailer from 'nodemailer';
-import puppeteer from 'puppeteer';
+import { logger } from "../../utils/logger.js";
+import { paymentsService } from "./paymentsService.js";
+import { enrollmentsService } from "../enrollments/enrollmentsService.js";
+import { paymentsRepository } from "./paymentsRepository.js";
+import { supabaseServer, query } from "../../config/db.js";
+import nodemailer from "nodemailer";
+import puppeteer from "puppeteer";
 
 const createOrder = async (req, res) => {
   try {
     const {
       amount,
-      currency = 'INR',
+      currency = "INR",
       receipt,
       user_id = null,
-      course_id = null
+      course_id = null,
     } = req.body;
-    const order = await paymentsService.createRazorpayOrder(amount, currency, receipt, user_id, course_id);
+    const order = await paymentsService.createRazorpayOrder(
+      amount,
+      currency,
+      receipt,
+      user_id,
+      course_id,
+    );
     res.json({
-      order
+      order,
     });
-  } catch (err) { logger.error('Error in paymentsController.js:', err); 
+  } catch (err) {
+    logger.error("Error in paymentsController.js:", err);
     res.status(500).json({
-      error: err.message
+      error: err.message,
     });
   }
 };
 
 const webhook = async (req, res) => {
   try {
-    await paymentsService.verifyWebhook(req.body, req.headers['x-razorpay-signature'] || '');
+    await paymentsService.verifyWebhook(
+      req.body,
+      req.headers["x-razorpay-signature"] || "",
+    );
     res.json({
-      ok: true
+      ok: true,
     });
-  } catch (err) { logger.error('Error in paymentsController.js:', err); 
+  } catch (err) {
+    logger.error("Error in paymentsController.js:", err);
     res.status(400).json({
-      error: err.message
+      error: err.message,
     });
   }
 };
 
 const recordOrderAndEnroll = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "Missing token" });
+    }
+    const { data: userData } = await supabaseServer.auth.getUser(token);
+    if (!userData.user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    let fullName = "Learner";
     try {
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) return res.status(401).json({ error: 'Missing token' });
-        const { data: userData } = await supabaseServer.auth.getUser(token);
-        if (!userData.user) return res.status(401).json({ error: 'Invalid token' });
-        
-        let fullName = 'Learner';
-        try {
-            const userRes = await query('SELECT full_name FROM users WHERE id = $1', [userData.user.id]);
-            if (userRes.rows.length > 0 && userRes.rows[0].full_name) {
-                fullName = userRes.rows[0].full_name;
-            } else if (userData.user.user_metadata?.full_name) {
-                fullName = userData.user.user_metadata.full_name;
-            }
-        } catch (e) {
-            console.error('Error fetching user full name:', e);
-        }
-        
-        const { orderId, totalAmount, enrollments } = req.body;
-        
-        for (const item of enrollments) {
-            await enrollmentsService.forceCreateEnrollment(userData.user.id, item.course_id);
-            await paymentsRepository.createOrder({
-                razorpay_order_id: orderId,
-                user_id: userData.user.id,
-                course_id: item.course_id,
-                amount: item.price,
-                currency: 'INR',
-                status: 'paid',
-                receipt: `rcpt_${Date.now()}`
-            });
-        }
-        
-        res.json({ success: true });
-        
-        // Run PDF and Email generation asynchronously so it doesn't block the frontend
-        (async () => {
-            try {
-                const transporter = nodemailer.createTransport({
-                    host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
-                    port: process.env.SMTP_PORT || 587,
-                    secure: false, 
-                    auth: { 
-                        user: process.env.SMTP_USER, 
-                        pass: process.env.SMTP_PASS 
-                    },
-                });
-                
-                const htmlReceipt = `
+      const userRes = await query("SELECT full_name FROM users WHERE id = $1", [
+        userData.user.id,
+      ]);
+      if (userRes.rows.length > 0 && userRes.rows[0].full_name) {
+        fullName = userRes.rows[0].full_name;
+      } else if (userData.user.user_metadata?.full_name) {
+        fullName = userData.user.user_metadata.full_name;
+      }
+    } catch (e) {
+      console.error("Error fetching user full name:", e);
+    }
+
+    const { orderId, totalAmount, enrollments } = req.body;
+
+    for (const item of enrollments) {
+      await enrollmentsService.forceCreateEnrollment(
+        userData.user.id,
+        item.course_id,
+      );
+      await paymentsRepository.createOrder({
+        razorpay_order_id: orderId,
+        user_id: userData.user.id,
+        course_id: item.course_id,
+        amount: item.price,
+        currency: "INR",
+        status: "paid",
+        receipt: `rcpt_${Date.now()}`,
+      });
+    }
+
+    res.json({ success: true });
+
+    // Run PDF and Email generation asynchronously so it doesn't block the frontend
+    (async () => {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
+          port: process.env.SMTP_PORT || 587,
+          secure: false,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        });
+
+        const htmlReceipt = `
                     <!DOCTYPE html>
                     <html>
                     <head>
@@ -137,7 +157,7 @@ const recordOrderAndEnroll = async (req, res) => {
                             
                             <div class="dark-bar">
                                 <div><strong>Invoice Number:</strong> ${orderId}</div>
-                                <div><strong>Invoice Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                <div><strong>Invoice Date:</strong> ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
                             </div>
                             
                             <div class="dotted-line"></div>
@@ -172,14 +192,18 @@ const recordOrderAndEnroll = async (req, res) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${enrollments.map((e, index) => `
+                                    ${enrollments
+                                      .map(
+                                        (e, index) => `
                                     <tr>
                                         <td>${index + 1}</td>
                                         <td>Course Enrollment (ID: ${e.course_id})</td>
                                         <td>1 Year Access</td>
                                         <td>₹${e.price}</td>
                                         <td>₹${e.price}</td>
-                                    </tr>`).join('')}
+                                    </tr>`,
+                                      )
+                                      .join("")}
                                 </tbody>
                             </table>
                             
@@ -213,7 +237,7 @@ const recordOrderAndEnroll = async (req, res) => {
                             </div>
                             
                             <div class="signature-section">
-                                <div class="info-text">Date : ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                <div class="info-text">Date : ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
                                 <div class="signature">Skillnora</div>
                                 <div class="info-text" style="border-top: 1px solid #333; display: inline-block; padding-top: 5px; width: 150px; text-align: center;">Skillnora Inc.</div>
                             </div>
@@ -227,20 +251,33 @@ const recordOrderAndEnroll = async (req, res) => {
                     </html>
                 `;
 
-                // Generate PDF
-                logger.info(`Starting PDF generation for Order ID: ${orderId}...`);
-                const browser = await puppeteer.launch({ 
-                    headless: true,
-                    timeout: 15000, 
-                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote', '--single-process'] 
-                });
-                const page = await browser.newPage();
-                await page.setContent(htmlReceipt, { waitUntil: 'domcontentloaded' });
-                const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
-                await browser.close();
-                logger.info(`PDF generated successfully for Order ID: ${orderId}. Preparing to send email...`);
+        // Generate PDF
+        logger.info(`Starting PDF generation for Order ID: ${orderId}...`);
+        const browser = await puppeteer.launch({
+          headless: true,
+          timeout: 15000,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--no-zygote",
+            "--single-process",
+          ],
+        });
+        const page = await browser.newPage();
+        await page.setContent(htmlReceipt, { waitUntil: "domcontentloaded" });
+        const pdfBuffer = await page.pdf({
+          format: "A4",
+          printBackground: true,
+          margin: { top: "20px", bottom: "20px", left: "20px", right: "20px" },
+        });
+        await browser.close();
+        logger.info(
+          `PDF generated successfully for Order ID: ${orderId}. Preparing to send email...`,
+        );
 
-                const beautifulEmail = `
+        const beautifulEmail = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                         <div style="text-align: center; padding: 20px 0;">
                             <h1 style="color: #2563eb; margin: 0;">Congratulations! 🎉</h1>
@@ -250,39 +287,43 @@ const recordOrderAndEnroll = async (req, res) => {
                             <p style="font-size: 16px; line-height: 1.5;">We are thrilled to have you on board. Your payment of <strong>₹${totalAmount}</strong> was successful, and you now have full 1-year access to your enrolled courses.</p>
                             <p style="font-size: 16px; line-height: 1.5;">Dive right in and start learning at your own pace. If you have any questions, our support team is always here to help.</p>
                             <div style="text-align: center; margin-top: 30px;">
-                                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/courses" style="background-color: #2563eb; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to My Courses</a>
+                                <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/courses" style="background-color: #2563eb; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to My Courses</a>
                             </div>
                         </div>
                         <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 20px;">Your official PDF receipt is attached to this email.</p>
                     </div>
                 `;
 
-                const info = await transporter.sendMail({
-                    from: process.env.SMTP_FROM || '"Skillnora Billing" <sachinv1410@gmail.com>',
-                    to: userData.user.email,
-                    subject: "🎉 Congratulations on your Skillnora enrollment! (Receipt Attached)",
-                    text: `Thank you for your purchase. Total amount: ₹${totalAmount}. Please find your PDF receipt attached.`,
-                    html: beautifulEmail,
-                    attachments: [
-                        {
-                            filename: `Receipt_${orderId}.pdf`,
-                            content: pdfBuffer,
-                            contentType: 'application/pdf'
-                        }
-                    ]
-                });
-                logger.info("Receipt email sent! Message ID: %s", info.messageId);
-            } catch(emailErr) {
-                logger.error("Failed to generate PDF or send email:", emailErr);
-            }
-        })();
-    } catch (err) { logger.error('Error in paymentsController.js:', err); 
-        res.status(500).json({ error: err.message });
-    }
-}
+        const info = await transporter.sendMail({
+          from:
+            process.env.SMTP_FROM ||
+            '"Skillnora Billing" <sachinv1410@gmail.com>',
+          to: userData.user.email,
+          subject:
+            "🎉 Congratulations on your Skillnora enrollment! (Receipt Attached)",
+          text: `Thank you for your purchase. Total amount: ₹${totalAmount}. Please find your PDF receipt attached.`,
+          html: beautifulEmail,
+          attachments: [
+            {
+              filename: `Receipt_${orderId}.pdf`,
+              content: pdfBuffer,
+              contentType: "application/pdf",
+            },
+          ],
+        });
+        logger.info("Receipt email sent! Message ID: %s", info.messageId);
+      } catch (emailErr) {
+        logger.error("Failed to generate PDF or send email:", emailErr);
+      }
+    })();
+  } catch (err) {
+    logger.error("Error in paymentsController.js:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
 
 export const paymentsController = {
   createOrder,
   webhook,
-  recordOrderAndEnroll
+  recordOrderAndEnroll,
 };

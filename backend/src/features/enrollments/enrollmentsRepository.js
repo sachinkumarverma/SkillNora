@@ -11,26 +11,20 @@ const insertEnrollment = async (userId, courseId) => {
             VALUES ($1, $2)
             RETURNING *
         `;
-  const {
-    rows
-  } = await query(sql, [userId, courseId]);
+  const { rows } = await query(sql, [userId, courseId]);
   return rows[0];
 };
 
 const getCoursePrice = async courseId => {
   const sql = `SELECT price FROM courses WHERE id = $1 LIMIT 1`;
-  const {
-    rows
-  } = await query(sql, [courseId]);
+  const { rows } = await query(sql, [courseId]);
   if (rows.length === 0) throw new Error('Course not found');
   return rows[0].price;
 };
 
 const findEnrollmentsByUserId = async userId => {
   const sql = `SELECT * FROM enrollments WHERE user_id = $1`;
-  const {
-    rows
-  } = await query(sql, [userId]);
+  const { rows } = await query(sql, [userId]);
   return rows;
 };
 

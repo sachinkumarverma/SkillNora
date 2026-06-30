@@ -1,4 +1,4 @@
-import { query } from '../../config/db.js';
+import { query } from "../../config/db.js";
 
 const getCommentsByLecture = async (slug, lectureId) => {
   const sql = `
@@ -6,24 +6,20 @@ const getCommentsByLecture = async (slug, lectureId) => {
             WHERE course_slug = $1 AND lecture_id = $2
             ORDER BY created_at ASC
         `;
-  const {
-    rows
-  } = await query(sql, [slug, String(lectureId)]);
+  const { rows } = await query(sql, [slug, String(lectureId)]);
   return rows;
 };
 
-const insertComment = async payload => {
+const insertComment = async (payload) => {
   const keys = Object.keys(payload);
   const values = Object.values(payload);
-  const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+  const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
   const sql = `
-            INSERT INTO lecture_comments (${keys.join(', ')})
+            INSERT INTO lecture_comments (${keys.join(", ")})
             VALUES (${placeholders})
             RETURNING *
         `;
-  const {
-    rows
-  } = await query(sql, values);
+  const { rows } = await query(sql, values);
   return rows[0];
 };
 
@@ -50,5 +46,5 @@ export const commentsRepository = {
   insertComment,
   deleteComment,
   getCommentById,
-  updateReactions
+  updateReactions,
 };

@@ -1,10 +1,12 @@
-import { query } from '../../config/db.js';
+import { query } from "../../config/db.js";
 
 const getStats = async (userId, role) => {
-  if (role === 'admin') {
-    const { rows: users } = await query(`SELECT id FROM users WHERE role = 'student'`);
+  if (role === "admin") {
+    const { rows: users } = await query(
+      `SELECT id FROM users WHERE role = 'student'`,
+    );
     const { rows: courses } = await query(`SELECT id FROM courses`);
-    
+
     const { rows: orders } = await query(`
       SELECT o.id as transaction_id, o.amount, o.created_at, o.status, COALESCE(u.full_name, split_part(u.email, '@', 1)) as user_name, c.title as course_title 
       FROM orders o
@@ -12,38 +14,40 @@ const getStats = async (userId, role) => {
       LEFT JOIN courses c ON o.course_id = c.id
       ORDER BY o.created_at DESC
     `);
-    
-    const { rows: enrolls } = await query(`SELECT id, enrolled_at as created_at FROM enrollments`);
-    
+
+    const { rows: enrolls } = await query(
+      `SELECT id, enrolled_at as created_at FROM enrollments`,
+    );
+
     return {
       isAdmin: true,
       activeStudents: users.length,
       publishedCourses: courses.length,
       orders: orders || [],
-      enrollments: enrolls || []
+      enrollments: enrolls || [],
     };
   }
 
   const sqlCourses = `SELECT id FROM courses WHERE instructor_id = $1`;
   const { rows: courses } = await query(sqlCourses, [userId]);
-  
+
   const sqlEnrolls = `SELECT id, enrolled_at as created_at FROM enrollments WHERE user_id = $1`;
   const { rows: enrolls } = await query(sqlEnrolls, [userId]);
-  
+
   const sqlCerts = `SELECT id, issued_at as created_at FROM certificates WHERE user_id = $1`;
   const { rows: certs } = await query(sqlCerts, [userId]);
-  
+
   const sqlWishlist = `SELECT id, created_at FROM wishlist_items WHERE user_id = $1`;
   const { rows: wishlist } = await query(sqlWishlist, [userId]);
-  
+
   const sqlNotes = `SELECT id, updated_at as created_at FROM notes WHERE user_id = $1`;
   const { rows: notes } = await query(sqlNotes, [userId]);
 
   const activityData = {
-    enrollments: enrolls.map(e => e.created_at),
-    certificates: certs.map(c => c.created_at),
-    wishlist: wishlist.map(w => w.created_at),
-    notes: notes.map(n => n.created_at)
+    enrollments: enrolls.map((e) => e.created_at),
+    certificates: certs.map((c) => c.created_at),
+    wishlist: wishlist.map((w) => w.created_at),
+    notes: notes.map((n) => n.created_at),
   };
 
   const sqlEnrollsWithProgress = `
@@ -52,43 +56,58 @@ const getStats = async (userId, role) => {
     JOIN courses c ON e.course_id = c.id
     WHERE e.user_id = $1
   `;
-  const { rows: enrollsWithProgress } = await query(sqlEnrollsWithProgress, [userId]);
+  const { rows: enrollsWithProgress } = await query(sqlEnrollsWithProgress, [
+    userId,
+  ]);
 
   const quizScores = [];
-  
+
   if (enrollsWithProgress.length > 0) {
     const lectureIds = new Set();
-    enrollsWithProgress.forEach(e => {
-        if (e.progress && e.progress.quizScores) {
-            Object.keys(e.progress.quizScores).forEach(id => lectureIds.add(id));
-        }
+    enrollsWithProgress.forEach((e) => {
+      if (e.progress && e.progress.quizScores) {
+        Object.keys(e.progress.quizScores).forEach((id) => lectureIds.add(id));
+      }
     });
 
     let lecturesMap = {};
     if (lectureIds.size > 0) {
-        const placeholders = Array.from(lectureIds).map((_, i) => `$${i+1}`).join(',');
-        const { rows: lectures } = await query(`SELECT id, title FROM lectures WHERE id IN (${placeholders})`, Array.from(lectureIds));
-        lectures.forEach(l => { lecturesMap[l.id] = l.title; });
+      const placeholders = Array.from(lectureIds)
+        .map((_, i) => `$${i + 1}`)
+        .join(",");
+      const { rows: lectures } = await query(
+        `SELECT id, title FROM lectures WHERE id IN (${placeholders})`,
+        Array.from(lectureIds),
+      );
+      lectures.forEach((l) => {
+        lecturesMap[l.id] = l.title;
+      });
     }
 
-    enrollsWithProgress.forEach(e => {
-        if (e.progress && e.progress.quizScores) {
-            Object.entries(e.progress.quizScores).forEach(([lId, quizData]) => {
-                if (lecturesMap[lId]) {
-                    const score = typeof quizData === 'object' && quizData !== null ? quizData.score : quizData;
-                    const date = typeof quizData === 'object' && quizData !== null ? quizData.date : e.last_accessed_at;
-                    quizScores.push({
-                        course_title: e.course_title,
-                        course_id: e.course_id,
-                        course_slug: e.course_slug,
-                        lecture_id: lId,
-                        lecture_title: lecturesMap[lId],
-                        score: Number(score),
-                        date: date
-                    });
-                }
+    enrollsWithProgress.forEach((e) => {
+      if (e.progress && e.progress.quizScores) {
+        Object.entries(e.progress.quizScores).forEach(([lId, quizData]) => {
+          if (lecturesMap[lId]) {
+            const score =
+              typeof quizData === "object" && quizData !== null
+                ? quizData.score
+                : quizData;
+            const date =
+              typeof quizData === "object" && quizData !== null
+                ? quizData.date
+                : e.last_accessed_at;
+            quizScores.push({
+              course_title: e.course_title,
+              course_id: e.course_id,
+              course_slug: e.course_slug,
+              lecture_id: lId,
+              lecture_title: lecturesMap[lId],
+              score: Number(score),
+              date: date,
             });
-        }
+          }
+        });
+      }
     });
   }
 
@@ -100,10 +119,10 @@ const getStats = async (userId, role) => {
     wishlist: wishlist || [],
     notes: notes || [],
     quizScores,
-    activityData
+    activityData,
   };
 };
 
 export const statisticsRepository = {
-  getStats
+  getStats,
 };

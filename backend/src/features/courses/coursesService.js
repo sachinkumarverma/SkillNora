@@ -1,49 +1,51 @@
-import { coursesRepository } from './coursesRepository.js';
-import { enrollmentsService } from '../enrollments/enrollmentsService.js';
-import { query } from '../../config/db.js';
-import crypto from 'crypto';
+import { coursesRepository } from "./coursesRepository.js";
+import { enrollmentsService } from "../enrollments/enrollmentsService.js";
+import { query } from "../../config/db.js";
+import crypto from "crypto";
 
-const listAdminCourses = async userId => {
+const listAdminCourses = async (userId) => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'admin' && role !== 'instructor') throw new Error('Forbidden');
-  
-  const instructorId = role === 'instructor' ? userId : null;
+  if (role !== "admin" && role !== "instructor") throw new Error("Forbidden");
+
+  const instructorId = role === "instructor" ? userId : null;
   const courses = await coursesRepository.getAllAdmin(instructorId);
-  const total_unique_students = await coursesRepository.getUniqueStudentsCount(instructorId);
-  const recent_transactions = await coursesRepository.getInstructorTransactions(instructorId);
-  
+  const total_unique_students =
+    await coursesRepository.getUniqueStudentsCount(instructorId);
+  const recent_transactions =
+    await coursesRepository.getInstructorTransactions(instructorId);
+
   return { courses, total_unique_students, recent_transactions };
 };
 
 const bulkPublish = async (userId, ids, status) => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'admin') {
-      if (role !== 'instructor') throw new Error('Forbidden');
-      for (const id of ids) {
-          const instructorId = await coursesRepository.checkInstructor(id);
-          if (instructorId !== userId) throw new Error('Forbidden');
-      }
+  if (role !== "admin") {
+    if (role !== "instructor") throw new Error("Forbidden");
+    for (const id of ids) {
+      const instructorId = await coursesRepository.checkInstructor(id);
+      if (instructorId !== userId) throw new Error("Forbidden");
+    }
   }
   return await coursesRepository.updatePublishStatus(ids, status);
 };
 
 const bulkDelete = async (userId, ids) => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'admin') {
-      if (role !== 'instructor') throw new Error('Forbidden');
-      for (const id of ids) {
-          const instructorId = await coursesRepository.checkInstructor(id);
-          if (instructorId !== userId) throw new Error('Forbidden');
-      }
+  if (role !== "admin") {
+    if (role !== "instructor") throw new Error("Forbidden");
+    for (const id of ids) {
+      const instructorId = await coursesRepository.checkInstructor(id);
+      if (instructorId !== userId) throw new Error("Forbidden");
+    }
   }
   return await coursesRepository.deleteMultiple(ids);
 };
 
 const updateLectures = async (userId, courseId, lectures) => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'admin') {
+  if (role !== "admin") {
     const instructorId = await coursesRepository.checkInstructor(courseId);
-    if (instructorId !== userId) throw new Error('Forbidden');
+    if (instructorId !== userId) throw new Error("Forbidden");
   }
   return await coursesRepository.updateLectures(courseId, lectures);
 };
@@ -59,51 +61,65 @@ const getCourse = async (identifier, userId = null) => {
   let has_certificate = false;
   if (userId) {
     isEnrolled = await coursesRepository.checkEnrollment(userId, course.id);
-    has_certificate = await coursesRepository.checkCertificate(userId, course.id);
+    has_certificate = await coursesRepository.checkCertificate(
+      userId,
+      course.id,
+    );
   }
   return {
     ...course,
-    instructor_name: course.instructor?.full_name || 'Instructor',
+    instructor_name: course.instructor?.full_name || "Instructor",
     image: course.thumbnail_url,
     priceFormatted: `₹${course.price}`,
     isEnrolled: !!isEnrolled,
     has_certificate: has_certificate,
-    progress: isEnrolled?.progress || {}
+    progress: isEnrolled?.progress || {},
   };
 };
 
 const createCourse = async (userId, payload) => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'instructor' && role !== 'admin') throw new Error('Only instructors can create courses');
-  
+  if (role !== "instructor" && role !== "admin")
+    throw new Error("Only instructors can create courses");
+
   let finalInstructorId = userId;
-  if (role === 'admin' && payload.instructor_id !== undefined) {
-      finalInstructorId = payload.instructor_id;
+  if (role === "admin" && payload.instructor_id !== undefined) {
+    finalInstructorId = payload.instructor_id;
   }
 
   return await coursesRepository.create({
     ...payload,
-    instructor_id: finalInstructorId
+    instructor_id: finalInstructorId,
   });
 };
 
 const updateCourse = async (userId, courseId, payload) => {
   const role = await coursesRepository.getUserRole(userId);
-  if (role !== 'admin') {
+  if (role !== "admin") {
     const instructorId = await coursesRepository.checkInstructor(courseId);
-    if (instructorId !== userId) throw new Error('Forbidden');
+    if (instructorId !== userId) throw new Error("Forbidden");
   }
   return await coursesRepository.update(courseId, payload);
 };
 
 const deleteCourse = async (userId, courseId) => {
   const instructorId = await coursesRepository.checkInstructor(courseId);
-  if (instructorId !== userId) throw new Error('Forbidden');
+  if (instructorId !== userId) throw new Error("Forbidden");
   return await coursesRepository.delete(courseId);
 };
 
-const completeLecture = async (userId, courseId, slug, lectureId, totalLectures, quizScore) => {
-  const isCertified = await coursesRepository.checkCertificate(userId, courseId);
+const completeLecture = async (
+  userId,
+  courseId,
+  slug,
+  lectureId,
+  totalLectures,
+  quizScore,
+) => {
+  const isCertified = await coursesRepository.checkCertificate(
+    userId,
+    courseId,
+  );
   let certUnlocked = isCertified;
   let enrollment = await coursesRepository.getEnrollment(userId, courseId);
   if (!enrollment) {
@@ -120,28 +136,35 @@ const completeLecture = async (userId, courseId, slug, lectureId, totalLectures,
     if (!prog[slug].includes(String(lectureId))) {
       prog[slug].push(String(lectureId));
     }
-    
+
     // Save quiz score if provided
     if (quizScore !== undefined && quizScore !== null) {
       if (!prog.quizScores) prog.quizScores = {};
-      prog.quizScores[lectureId] = { score: quizScore, date: new Date().toISOString() };
+      prog.quizScores[lectureId] = {
+        score: quizScore,
+        date: new Date().toISOString(),
+      };
     }
-    
+
     await coursesRepository.updateProgress(userId, courseId, prog);
-    
+
     if (!isCertified && prog[slug].length >= totalLectures) {
       // Check if course provides certificate
       const courseCheckSql = `SELECT certificate_type FROM courses WHERE id = $1 LIMIT 1`;
       const { rows } = await query(courseCheckSql, [courseId]);
-      
+
       if (rows.length > 0 && rows[0].certificate_type) {
-        await coursesRepository.issueCertificate(userId, courseId, crypto.randomUUID().slice(0, 8).toUpperCase());
+        await coursesRepository.issueCertificate(
+          userId,
+          courseId,
+          crypto.randomUUID().slice(0, 8).toUpperCase(),
+        );
         certUnlocked = true;
       }
     }
   }
   return {
-    certUnlocked
+    certUnlocked,
   };
 };
 
@@ -157,9 +180,19 @@ export const coursesService = {
   deleteCourse,
   completeLecture,
   addReview: async (userId, courseId, rating, reviewText) => {
-    return await coursesRepository.addReview(userId, courseId, rating, reviewText);
+    return await coursesRepository.addReview(
+      userId,
+      courseId,
+      rating,
+      reviewText,
+    );
   },
   updateReview: async (userId, reviewId, rating, reviewText) => {
-    return await coursesRepository.updateReview(userId, reviewId, rating, reviewText);
-  }
+    return await coursesRepository.updateReview(
+      userId,
+      reviewId,
+      rating,
+      reviewText,
+    );
+  },
 };

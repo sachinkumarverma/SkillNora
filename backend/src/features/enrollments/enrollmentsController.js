@@ -9,15 +9,17 @@ import puppeteer from 'puppeteer';
 const createEnrollment = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({
+    if (!token) {
+      return res.status(401).json({
       error: 'Missing token'
     });
-    const {
-      data: userData
-    } = await supabaseServer.auth.getUser(token);
-    if (!userData.user) return res.status(401).json({
+    }
+    const { data: userData } = await supabaseServer.auth.getUser(token);
+    if (!userData.user) {
+      return res.status(401).json({
       error: 'Invalid token'
     });
+    }
     if (!req.body.course_id) return res.status(400).json({
       error: 'course_id required'
     });
@@ -269,15 +271,17 @@ const createEnrollment = async (req, res) => {
 const getUserEnrollments = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({
+    if (!token) {
+      return res.status(401).json({
       error: 'Missing token'
     });
-    const {
-      data: userData
-    } = await supabaseServer.auth.getUser(token);
-    if (!userData.user) return res.status(401).json({
+    }
+    const { data: userData } = await supabaseServer.auth.getUser(token);
+    if (!userData.user) {
+      return res.status(401).json({
       error: 'Invalid token'
     });
+    }
     const data = await enrollmentsService.getUserEnrollmentsList(userData.user.id);
     res.json({
       enrolledIds: data.enrolledIds,
@@ -294,9 +298,13 @@ const getUserEnrollments = async (req, res) => {
 const cancelEnrollment = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
-        if (!token) return res.status(401).json({ error: 'Missing token' });
+        if (!token) {
+      return res.status(401).json({ error: 'Missing token' });
+    }
         const { data: userData } = await supabaseServer.auth.getUser(token);
-        if (!userData.user) return res.status(401).json({ error: 'Invalid token' });
+        if (!userData.user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
         
         // Fetch full_name from the users table
         let fullName = 'Learner';

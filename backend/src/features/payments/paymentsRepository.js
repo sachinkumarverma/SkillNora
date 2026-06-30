@@ -1,10 +1,10 @@
-import { query } from '../../config/db.js';
+import { query } from "../../config/db.js";
 
-const createOrder = async data => {
+const createOrder = async (data) => {
   const keys = Object.keys(data);
   const values = Object.values(data);
-  const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-  const sql = `INSERT INTO orders (${keys.join(', ')}) VALUES (${placeholders})`;
+  const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
+  const sql = `INSERT INTO orders (${keys.join(", ")}) VALUES (${placeholders})`;
   await query(sql, values);
   return true;
 };
@@ -33,5 +33,5 @@ const getOrderDetailsWithEmail = async (orderId) => {
 export const paymentsRepository = {
   createOrder,
   updateOrder,
-  getOrderDetailsWithEmail
+  getOrderDetailsWithEmail,
 };
