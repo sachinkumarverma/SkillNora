@@ -1,8 +1,8 @@
 import { logger } from "../../utils/logger.js";
-import * as service from "./supportService.js";
+import { supportService as service } from "./supportService.js";
 import { sendEmail, buildEmailHtml } from "../../utils/email.js";
 
-export const createTicket = async (req, res) => {
+const createTicket = async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
     // if user is authenticated, req.user might exist. we can optionally attach it.
@@ -30,7 +30,7 @@ export const createTicket = async (req, res) => {
   }
 };
 
-export const getAdminTickets = async (req, res) => {
+const getAdminTickets = async (req, res) => {
   try {
     const tickets = await service.getAdminTickets();
     res.status(200).json({ success: true, tickets });
@@ -40,7 +40,7 @@ export const getAdminTickets = async (req, res) => {
   }
 };
 
-export const resolveTicket = async (req, res) => {
+const resolveTicket = async (req, res) => {
   try {
     const { id } = req.params;
     const { adminMessage } = req.body;
@@ -77,4 +77,10 @@ export const resolveTicket = async (req, res) => {
       .status(500)
       .json({ success: false, error: "Failed to resolve ticket." });
   }
+};
+
+export const supportController = {
+  createTicket,
+  getAdminTickets,
+  resolveTicket,
 };

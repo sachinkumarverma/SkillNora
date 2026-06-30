@@ -1,17 +1,21 @@
-import nodemailer from 'nodemailer';
-import { logger } from './logger.js';
+import nodemailer from "nodemailer";
+import { logger } from "./logger.js";
 
 // Configure standard transporter (use valid SMTP in .env for production)
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
 
-export const buildEmailHtml = (content, title = 'Skillnora Notification', gradient = 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)') => `
+export const buildEmailHtml = (
+  content,
+  title = "Skillnora Notification",
+  gradient = "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -56,60 +60,62 @@ export const buildEmailHtml = (content, title = 'Skillnora Notification', gradie
 `;
 
 export const sendEmail = async ({ to, subject, html, bcc, attachments }) => {
-    try {
-        // Use Brevo REST API if the API key is provided (bypasses SMTP port blocking in production)
-        if (process.env.BREVO_API_KEY) {
-            const payload = {
-                sender: { name: "Skillnora", email: "sachinv1410@gmail.com" },
-                to: [{ email: to }],
-                subject: subject,
-                htmlContent: html
-            };
+  try {
+    // Use Brevo REST API if the API key is provided (bypasses SMTP port blocking in production)
+    if (process.env.BREVO_API_KEY) {
+      const payload = {
+        sender: { name: "Skillnora", email: "sachinv1410@gmail.com" },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: html,
+      };
 
-            if (bcc) {
-                payload.bcc = Array.isArray(bcc) ? bcc.map(email => ({ email })) : [{ email: bcc }];
-            }
+      if (bcc) {
+        payload.bcc = Array.isArray(bcc)
+          ? bcc.map((email) => ({ email }))
+          : [{ email: bcc }];
+      }
 
-            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json',
-                    'api-key': process.env.BREVO_API_KEY,
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "api-key": process.env.BREVO_API_KEY,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-            if (!response.ok) {
-                const errorData = await response.text();
-                throw new Error(`Brevo API error: ${response.status} ${errorData}`);
-            }
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Brevo API error: ${response.status} ${errorData}`);
+      }
 
-            const data = await response.json();
-            logger.info('Email sent via Brevo API: %s', data.messageId);
-            return { success: true, messageId: data.messageId };
-        }
-
-        // Fallback to standard SMTP (Nodemailer) for local dev or if no API key is set
-        const mailOptions = {
-            from: '"Skillnora Billing" <sachinv1410@gmail.com>',
-            to,
-            subject,
-            html,
-        };
-        if (bcc) mailOptions.bcc = bcc;
-        if (attachments) mailOptions.attachments = attachments;
-
-        const info = await transporter.sendMail(mailOptions);
-        logger.info('Email sent via SMTP: %s', info.messageId);
-        
-        if (info.messageId && process.env.SMTP_HOST === 'smtp.ethereal.email') {
-            logger.info('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-        }
-        
-        return { success: true, messageId: info.messageId };
-    } catch (error) {
-        logger.error('Error sending email:', error);
-        return { success: false, error };
+      const data = await response.json();
+      logger.info("Email sent via Brevo API: %s", data.messageId);
+      return { success: true, messageId: data.messageId };
     }
+
+    // Fallback to standard SMTP (Nodemailer) for local dev or if no API key is set
+    const mailOptions = {
+      from: '"Skillnora Billing" <sachinv1410@gmail.com>',
+      to,
+      subject,
+      html,
+    };
+    if (bcc) mailOptions.bcc = bcc;
+    if (attachments) mailOptions.attachments = attachments;
+
+    const info = await transporter.sendMail(mailOptions);
+    logger.info("Email sent via SMTP: %s", info.messageId);
+
+    if (info.messageId && process.env.SMTP_HOST === "smtp.ethereal.email") {
+      logger.info("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    }
+
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    logger.error("Error sending email:", error);
+    return { success: false, error };
+  }
 };

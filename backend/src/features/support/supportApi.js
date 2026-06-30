@@ -1,5 +1,5 @@
 import Joi from "joi";
-import * as supportController from "./supportController.js";
+import { supportController } from "./supportController.js";
 import { buildApiRouter } from "../../utils/apiLoader.js";
 
 const apiDefinitions = {

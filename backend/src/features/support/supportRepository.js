@@ -1,18 +1,18 @@
-import { query } from '../../config/db.js';
+import { query } from "../../config/db.js";
 
-export const createTicket = async ({ userId, name, email, subject, message }) => {
-    const text = `
+const createTicket = async ({ userId, name, email, subject, message }) => {
+  const text = `
         INSERT INTO support_tickets (user_id, name, email, subject, message)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *
     `;
-    const values = [userId || null, name, email, subject, message];
-    const res = await query(text, values);
-    return res.rows[0];
+  const values = [userId || null, name, email, subject, message];
+  const res = await query(text, values);
+  return res.rows[0];
 };
 
-export const getAdminTickets = async () => {
-    const text = `
+const getAdminTickets = async () => {
+  const text = `
         SELECT 
             id,
             subject,
@@ -26,27 +26,33 @@ export const getAdminTickets = async () => {
         FROM support_tickets
         ORDER BY created_at DESC
     `;
-    const res = await query(text);
-    return res.rows;
+  const res = await query(text);
+  return res.rows;
 };
 
-export const updateTicketStatus = async (id, status, resolutionMessage = null) => {
-    let text;
-    if (status === 'Closed') {
-        text = `
+const updateTicketStatus = async (id, status, resolutionMessage = null) => {
+  let text;
+  if (status === "Closed") {
+    text = `
             UPDATE support_tickets
             SET status = $1, resolution_message = $2, resolved_at = CURRENT_TIMESTAMP
             WHERE id = $3
             RETURNING *
         `;
-    } else {
-        text = `
+  } else {
+    text = `
             UPDATE support_tickets
             SET status = $1, resolution_message = $2
             WHERE id = $3
             RETURNING *
         `;
-    }
-    const res = await query(text, [status, resolutionMessage, id]);
-    return res.rows[0];
+  }
+  const res = await query(text, [status, resolutionMessage, id]);
+  return res.rows[0];
+};
+
+export const supportRepository = {
+  createTicket,
+  getAdminTickets,
+  updateTicketStatus,
 };
