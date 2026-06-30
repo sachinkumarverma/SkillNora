@@ -282,7 +282,7 @@ export default function InstructorCourseBuilder() {
                     } else {
                         router.push('/instructor')
                     }
-                }, 6000)
+                }, editCourseId ? 3000 : 6000)
             } else {
                 toast.success('Draft saved successfully!')
                 setTimeout(() => {
@@ -396,7 +396,7 @@ export default function InstructorCourseBuilder() {
             <AnimatePresence>
                 {showSuccessModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                        <Confetti width={width} height={height} recycle={false} numberOfPieces={800} gravity={0.15} />
+                        {!editCourseId && <Confetti width={width} height={height} recycle={false} numberOfPieces={800} gravity={0.15} />}
                         <motion.div 
                             initial={{ scale: 0.8, opacity: 0, y: 50 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -421,7 +421,7 @@ export default function InstructorCourseBuilder() {
                                 transition={{ delay: 0.3 }}
                                 className="text-3xl font-black text-slate-900 dark:text-white mb-2"
                             >
-                                Congratulations!
+                                {editCourseId ? "Course Updated!" : "Congratulations!"}
                             </motion.h2>
                             
                             <motion.p 
@@ -430,7 +430,11 @@ export default function InstructorCourseBuilder() {
                                 transition={{ delay: 0.4 }}
                                 className="text-slate-500 dark:text-slate-400 font-medium mb-8"
                             >
-                                Your course <strong className="text-slate-900 dark:text-white">"{courseData.title}"</strong> has been successfully published to the platform! 🚀
+                                {editCourseId ? (
+                                    <>Your course <strong className="text-slate-900 dark:text-white">"{courseData.title}"</strong> has been successfully updated.</>
+                                ) : (
+                                    <>Your course <strong className="text-slate-900 dark:text-white">"{courseData.title}"</strong> has been successfully published to the platform! 🚀</>
+                                )}
                             </motion.p>
                             
                             <motion.div
@@ -438,7 +442,7 @@ export default function InstructorCourseBuilder() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.6 }}
                             >
-                                <button type="button" onClick={() => router.push('/admin/courses')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-blue-500/30 transition-transform active:scale-95">
+                                <button type="button" onClick={() => router.push(currentUserRole === 'admin' ? '/admin/courses' : '/instructor')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-blue-500/30 transition-transform active:scale-95">
                                     Go to Course Management
                                 </button>
                                 <p className="text-xs text-slate-400 font-bold mt-4 animate-pulse">Redirecting automatically in a few seconds...</p>
