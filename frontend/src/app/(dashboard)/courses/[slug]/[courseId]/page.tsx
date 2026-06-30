@@ -407,7 +407,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                             </div>
                             <h3 className="text-xl font-bold mb-2 text-emerald-900 dark:text-emerald-100">Certificate Unlocked!</h3>
                             <p className="text-sm mb-6 opacity-90">Congratulations! You have completed this course and earned your certificate.</p>
-                            <Link href={`/certificates/${course.slug}`} className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-md text-sm">
+                            <Link href={`/certificates/${course.slug}/${typeof course.has_certificate === 'string' ? course.has_certificate : 'view'}`} className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-md text-sm">
                                 View Certificate
                             </Link>
                         </div>

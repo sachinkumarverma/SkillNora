@@ -64,7 +64,7 @@ const getCourse = async (identifier, userId = null) => {
     image: course.thumbnail_url,
     priceFormatted: `₹${course.price}`,
     isEnrolled: !!isEnrolled,
-    has_certificate: !!has_certificate,
+    has_certificate: has_certificate,
     progress: isEnrolled?.progress || {}
   };
 };

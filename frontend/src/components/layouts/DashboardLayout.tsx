@@ -76,8 +76,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 return
             }
 
-            // Handle UUIDs and numeric IDs
-            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part) || /^\d+$/.test(part)) {
+            // Handle UUIDs, numeric IDs, and 8-character hex strings (like cert IDs)
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part) || /^\d+$/.test(part) || /^[0-9a-f]{8}$/i.test(part)) {
                 // For student paths, ignore UUIDs as per original behavior
                 if (!currentPath.includes('/admin') && !currentPath.includes('/instructor')) {
                     if (crumbs.length > 0 && crumbs[crumbs.length - 1].href) {

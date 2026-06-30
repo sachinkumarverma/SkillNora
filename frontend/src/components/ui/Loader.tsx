@@ -402,34 +402,53 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-8">
                         {/* Header Card Skeleton */}
-                        <div className="bg-slate-900 rounded-3xl p-8 md:p-12 relative overflow-hidden min-h-[300px] border border-slate-800">
+                        <div className="bg-slate-900 rounded-3xl p-8 md:p-12 relative overflow-hidden min-h-[300px] border border-slate-800 shadow-2xl">
                             <Shimmer />
                             <div className="w-32 h-6 bg-slate-800/80 rounded-full mb-6"></div>
                             <div className="w-3/4 h-10 md:h-12 bg-slate-800/80 rounded-xl mb-6"></div>
                             <div className="w-full h-20 bg-slate-800/80 rounded-xl mb-8"></div>
                             <div className="flex gap-4">
-                                <div className="w-32 h-11 bg-blue-600/50 rounded-xl"></div>
                                 <div className="w-32 h-11 bg-slate-800/80 rounded-xl"></div>
                             </div>
                         </div>
                         {/* Course Content Skeleton */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 relative overflow-hidden">
+                        <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                             <Shimmer />
-                            <div className="w-48 h-8 bg-slate-800/80 rounded-xl mb-8"></div>
-                            <div className="space-y-4">
-                                {[1, 2, 3].map(i => <div key={i} className="w-full h-20 bg-slate-800/50 rounded-2xl"></div>)}
+                            <div className="w-48 h-8 bg-slate-200 dark:bg-slate-800/80 rounded-xl mb-6"></div>
+                            <div className="space-y-3">
+                                {[1, 2, 3].map(i => <div key={i} className="w-full h-16 bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>)}
+                            </div>
+                        </div>
+                        {/* Reviews Skeleton */}
+                        <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden mt-8">
+                            <Shimmer />
+                            <div className="w-48 h-8 bg-slate-200 dark:bg-slate-800/80 rounded-xl mb-6"></div>
+                            <div className="flex gap-4">
+                                <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800/80 shrink-0"></div>
+                                <div className="space-y-2 flex-1">
+                                    <div className="w-32 h-5 bg-slate-200 dark:bg-slate-800/80 rounded-lg"></div>
+                                    <div className="w-24 h-4 bg-amber-100 dark:bg-amber-900/30 rounded-lg mb-2"></div>
+                                    <div className="w-full h-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg"></div>
+                                    <div className="w-3/4 h-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     {/* Sidebar Skeleton */}
                     <div className="lg:col-span-1">
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
                             <Shimmer />
-                            <div className="w-full h-48 bg-slate-800/80 rounded-2xl mb-6"></div>
-                            <div className="w-32 h-8 bg-slate-800/80 rounded-xl mb-6"></div>
-                            <div className="w-full h-12 bg-blue-600/50 rounded-xl mb-6"></div>
-                            <div className="space-y-4 pt-4 border-t border-slate-800">
-                                {[1, 2, 3].map(i => <div key={i} className="w-full h-5 bg-slate-800/80 rounded-lg"></div>)}
+                            <div className="w-full aspect-video bg-slate-200 dark:bg-slate-800/80 rounded-2xl mb-6"></div>
+                            <div className="w-32 h-8 bg-slate-200 dark:bg-slate-800/80 rounded-xl mb-6"></div>
+                            <div className="w-full h-12 bg-blue-100 dark:bg-blue-600/50 rounded-xl mb-4"></div>
+                            <div className="w-full h-12 bg-slate-100 dark:bg-slate-800/80 rounded-xl mb-6 border border-slate-200 dark:border-slate-700"></div>
+                            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="flex justify-between">
+                                        <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800/80 rounded-lg"></div>
+                                        <div className="w-8 h-4 bg-slate-200 dark:bg-slate-800/80 rounded-lg"></div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>

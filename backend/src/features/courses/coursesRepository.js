@@ -256,11 +256,11 @@ const getEnrollment = async (userId, courseId) => {
 };
 
 const checkCertificate = async (userId, courseId) => {
-  const sql = `SELECT id FROM certificates WHERE user_id = $1 AND course_id = $2 LIMIT 1`;
+  const sql = `SELECT verification_code FROM certificates WHERE user_id = $1 AND course_id = $2 LIMIT 1`;
   const {
     rows
   } = await query(sql, [userId, courseId]);
-  return rows.length > 0;
+  return rows.length > 0 ? rows[0].verification_code : false;
 };
 
 const deleteMultiple = async ids => {

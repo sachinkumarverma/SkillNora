@@ -8,8 +8,8 @@ import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import toast from 'react-hot-toast'
 
-export default function CertificateViewPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params)
+export default function CertificateViewPage({ params }: { params: Promise<{ slug: string, id: string }> }) {
+    const { slug, id } = use(params)
     const { user, loading: userLoading } = useUser()
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -94,7 +94,7 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
 
     const handleShare = () => {
         if (!cert) return
-        const url = `${window.location.origin}/certificates/${cert.id}`
+        const url = `${window.location.origin}/certificates/${slug || cert.courseSlug || 'cert'}/${cert.id}`
         navigator.clipboard.writeText(url)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
