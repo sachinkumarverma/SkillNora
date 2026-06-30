@@ -10,29 +10,51 @@ export default function useUser() {
     useEffect(() => {
         let active = true
 
+        async function fetchFullProfile(sessionUser: any) {
+            if (!sessionUser) return null;
+            try {
+                const res = await apiClient.get('/api/users/me');
+                if (res.data?.user && active) {
+                    return { 
+                        ...sessionUser, 
+                        ...res.data.user,
+                        user_metadata: { 
+                            ...sessionUser.user_metadata, 
+                            ...(res.data.user.user_metadata || {}) 
+                        } 
+                    };
+                }
+            } catch (e) {
+                console.error("Failed to fetch full user profile", e);
+            }
+            return sessionUser;
+        }
+
         async function init() {
             const { data } = await supabase.auth.getSession()
             if (!active) return
             let sessionUser = data.session?.user ?? null;
             if (sessionUser) {
-                try {
-                    const res = await apiClient.get('/api/users/me');
-                    if (res.data?.user) {
-                        sessionUser = { ...sessionUser, user_metadata: { ...sessionUser.user_metadata, ...res.data.user } };
-                    }
-                } catch (e) {
-                    console.error("Failed to fetch full user profile", e);
-                }
+                sessionUser = await fetchFullProfile(sessionUser);
             }
-            setUser(sessionUser)
-            setLoading(false)
+            if (active) {
+                setUser(sessionUser)
+                setLoading(false)
+            }
         }
 
         init()
 
-        const { data: listener } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
-            setUser(session?.user ?? null)
-            setLoading(false)
+        const { data: listener } = supabase.auth.onAuthStateChange(async (_event: string, session: any) => {
+            if (!active) return;
+            let sessionUser = session?.user ?? null;
+            if (sessionUser) {
+                sessionUser = await fetchFullProfile(sessionUser);
+            }
+            if (active) {
+                setUser(sessionUser)
+                setLoading(false)
+            }
         })
 
         return () => {

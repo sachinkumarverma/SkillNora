@@ -57,7 +57,7 @@ export default function NotificationsPage() {
         }
     }
 
-    if (loading) return <Loader />
+    if (loading) return <Loader type="notifications" />
 
     return (
         <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">
@@ -94,8 +94,16 @@ export default function NotificationsPage() {
                         placeholder="Search notifications..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3.5 pl-12 pr-10 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
                     />
+                    {search && (
+                        <button
+                            onClick={() => setSearch('')}
+                            className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                        >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    )}
                 </motion.div>
             </header>
 
@@ -103,12 +111,12 @@ export default function NotificationsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
+                className="bg-blue-50 dark:bg-slate-900/60 backdrop-blur-xl border border-blue-100 dark:border-slate-800 rounded-xl p-6 lg:p-8 shadow-sm"
             >
                 <div className="space-y-4">
                     {filtered.length === 0 ? (
                         <div className="text-center py-12">
-                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 dark:border-slate-700">
                                 <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No notifications found</h3>
@@ -119,47 +127,47 @@ export default function NotificationsPage() {
                             <div 
                                 key={notif.id}
                                 onClick={() => handleNotificationClick(notif)}
-                                className={`flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-xl border transition-all cursor-pointer ${
+                                className={`group flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl border transition-all cursor-pointer shadow-sm hover:shadow-md ${
                                     !notif.is_read 
-                                        ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30' 
-                                        : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                        ? 'bg-blue-50/60 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 hover:bg-blue-100/50 dark:hover:bg-blue-900/20' 
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600'
                                 }`}
                             >
-                                <div className="flex items-start gap-4">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${getTypeColor(notif.type)}`}>
-                                        <span className="font-bold text-sm">
+                                <div className="flex items-start gap-3">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-sm ${getTypeColor(notif.type)}`}>
+                                        <span className="font-bold text-base font-serif">
                                             {notif.user_name ? notif.user_name.charAt(0).toUpperCase() : 'S'}
                                         </span>
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <h4 className={`font-bold ${!notif.is_read ? 'text-blue-900 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>
+                                            <h4 className={`font-bold font-serif text-base ${!notif.is_read ? 'text-blue-950 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>
                                                 {notif.title}
                                             </h4>
-                                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${getTypeColor(notif.type)}`}>
+                                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${getTypeColor(notif.type)}`}>
                                                 {notif.type.replace('_', ' ')}
                                             </span>
                                             {!notif.is_read && (
-                                                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                                <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
                                             )}
                                         </div>
-                                        <p className={`text-sm ${!notif.is_read ? 'text-blue-800 dark:text-blue-200' : 'text-slate-600 dark:text-slate-400'}`}>
+                                        <p className={`text-sm font-medium leading-relaxed ${!notif.is_read ? 'text-blue-800 dark:text-blue-200' : 'text-slate-600 dark:text-slate-400'}`}>
                                             {notif.message}
                                         </p>
-                                        <div className="flex items-center gap-4 mt-2">
+                                        <div className="flex items-center gap-3 mt-1.5">
                                             {notif.user_name && (
                                                 <span className="text-xs font-semibold text-slate-500">From: {notif.user_name}</span>
                                             )}
-                                            <span className="text-xs font-medium text-slate-400">
-                                                {new Date(notif.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}
+                                            <span className="text-[11px] font-medium text-slate-400">
+                                                {new Date(notif.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-2">
                                     {notif.link && (
-                                        <div className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline">
-                                            View Details &rarr;
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-100 dark:group-hover:text-blue-400 dark:group-hover:bg-blue-900/50 transition-colors">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                                         </div>
                                     )}
                                 </div>

@@ -35,7 +35,12 @@ const postComment = async (req, res) => {
 
     // Notification Logic
     try {
-      const link = `/courses/${payload.course_slug}/lecture/${payload.lecture_id}`;
+      const course = await coursesRepository.getBySlugOrId(
+        payload.course_slug,
+      );
+      const courseIdStr = course ? course.id : payload.course_slug;
+      const link = `/courses/${payload.course_slug}/${courseIdStr}/lecture/${payload.lecture_id}`;
+
       if (payload.parent_id) {
         // It's a reply
         const parentComment = await commentsRepository.getCommentById(
@@ -52,9 +57,6 @@ const postComment = async (req, res) => {
         }
       } else {
         // Top level comment, notify instructor
-        const course = await coursesRepository.getBySlugOrId(
-          payload.course_slug,
-        );
         if (
           course &&
           course.instructor_id &&

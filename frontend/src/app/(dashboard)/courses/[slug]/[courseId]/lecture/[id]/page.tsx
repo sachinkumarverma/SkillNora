@@ -62,6 +62,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [replyText, setReplyText] = useState("")
     const [loadingComments, setLoadingComments] = useState(true)
     const [isPostingComment, setIsPostingComment] = useState(false)
+    const [isPostingReply, setIsPostingReply] = useState(false)
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [replyImageFile, setReplyImageFile] = useState<File | null>(null)
     const [replyingTo, setReplyingTo] = useState<any | null>(null)
@@ -102,7 +103,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         if ((!textToPost.trim() && !fileToPost) || !user) return
         if (isReply && !parentId) return;
 
-        setIsPostingComment(true)
+        if (isReply) setIsPostingReply(true);
+        else setIsPostingComment(true);
         try {
             let uploadedImageUrl = null;
             if (fileToPost) {
@@ -162,7 +164,8 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             const backendError = err.response?.data?.error || err.response?.data?.message
             alert("Failed to post comment. " + (backendError || err.message || 'Please try again.'))
         } finally {
-            setIsPostingComment(false)
+            if (isReply) setIsPostingReply(false);
+            else setIsPostingComment(false);
         }
     }
 
@@ -827,10 +830,10 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                         </div>
                                                         <button 
                                                             onClick={() => handlePostComment(true)}
-                                                            disabled={(!replyText.trim() && !replyImageFile) || isPostingComment}
+                                                            disabled={(!replyText.trim() && !replyImageFile) || isPostingReply}
                                                             className="px-4 py-1.5 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors text-xs shadow-sm"
                                                         >
-                                                            {isPostingComment ? 'Posting...' : 'Reply'}
+                                                            {isPostingReply ? 'Posting...' : 'Reply'}
                                                         </button>
                                                     </div>
                                                 </div>

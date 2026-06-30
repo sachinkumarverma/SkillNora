@@ -122,7 +122,19 @@ export default function AdminCourseManagement() {
             setCourses(courses.map(c => c.id === courseId ? { ...c, status: 'Archived' } : c))
             toast.success('Course archived successfully.')
         } catch (error: any) {
-            alert('Failed to archive course: ' + error.message)
+            toast.error('Failed to archive course: ' + error.message)
+        }
+        setLoading(false)
+    }
+
+    const handlePublishCourse = async (courseId: string) => {
+        setLoading(true)
+        try {
+            await coursesService.bulkPublish([courseId], true);
+            setCourses(courses.map(c => c.id === courseId ? { ...c, status: 'Published' } : c))
+            toast.success('Course published successfully.')
+        } catch (error: any) {
+            toast.error('Failed to publish course: ' + error.message)
         }
         setLoading(false)
     }
@@ -283,8 +295,16 @@ export default function AdminCourseManagement() {
                                 placeholder="Search by title or instructor..." 
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-lg py-2 pl-10 pr-4 text-sm font-medium outline-none transition-all"
+                                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-lg py-2 pl-10 pr-10 text-sm font-medium outline-none transition-all"
                             />
+                        {search && (
+                            <button
+                                onClick={() => setSearch('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                            >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        )}
                         </div>
                         <CustomDropdown 
                             value={filterStatus}
@@ -318,9 +338,10 @@ export default function AdminCourseManagement() {
                     toggleSelect={toggleSelect}
                     toggleSelectAll={toggleSelectAll}
                     handleArchiveCourse={handleArchiveCourse}
+                    handlePublishCourse={handlePublishCourse}
                     setCourseToDelete={setCourseToDelete}
                     getStatusBadge={getStatusBadge}
-                    editBasePath="/instructor/new"
+                    editBasePath="/instructor/courses/new"
                 />
 
                 {/* Pagination */}

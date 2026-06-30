@@ -1,4 +1,4 @@
-export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' | 'management-table' | 'course-builder' | 'draft-courses' | 'certificate' | 'course-preview' | 'receipt' | 'settings' | 'admin-profile' }) {
+export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' | 'management-table' | 'course-builder' | 'draft-courses' | 'certificate' | 'course-preview' | 'receipt' | 'settings' | 'admin-profile' | 'notifications' }) {
     
     const Shimmer = () => (
         <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
@@ -702,6 +702,45 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
                             <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded mt-auto pt-4 border-t border-slate-100 dark:border-slate-800"></div>
                         </div>
                     ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'notifications') {
+        return (
+            <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20 animate-pulse">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div className="space-y-3">
+                        <div className="w-64 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg relative overflow-hidden"><Shimmer /></div>
+                        <div className="w-96 h-5 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
+                    </div>
+                    <div className="w-full md:w-96 h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl relative overflow-hidden"><Shimmer /></div>
+                </header>
+
+                <div className="bg-slate-50 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-100 dark:border-slate-800 rounded-xl p-6 lg:p-8 shadow-sm">
+                    <div className="space-y-4">
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 shadow-sm relative overflow-hidden">
+                                <Shimmer />
+                                <div className="flex items-start gap-4 w-full">
+                                    <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 border-2 border-slate-100 dark:border-slate-600"></div>
+                                    <div className="flex-1 space-y-3 pt-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-48 h-5 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                                            <div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                                        </div>
+                                        <div className="w-full max-w-xl h-4 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                                        <div className="flex items-center gap-4 mt-2">
+                                            <div className="w-32 h-3 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                                            <div className="w-24 h-3 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="hidden md:block w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         );
