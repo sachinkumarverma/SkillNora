@@ -2,6 +2,7 @@ import { certificatesRepository } from './certificatesRepository.js';
 
 const getUserCertificates = async userId => {
   const certs = await certificatesRepository.getCertificatesByUserId(userId);
+
   return certs.map(c => ({
     id: c.verification_code,
     dbId: c.id,
@@ -15,6 +16,7 @@ const getUserCertificates = async userId => {
 const getCertificateDetail = async code => {
   const cert = await certificatesRepository.getCertificateByCode(code);
   if (!cert) return null;
+
   return {
     id: cert.verification_code,
     studentName: cert.users?.full_name || cert.users?.email?.split('@')[0] || 'Student',

@@ -10,9 +10,9 @@ const getCertificatesByUserId = async userId => {
             LEFT JOIN users u ON c.user_id = u.id
             WHERE c.user_id = $1
         `;
-  const {
-    rows
-  } = await query(sql, [userId]);
+
+  const { rows } = await query(sql, [userId]);
+
   return rows.map(r => ({
     id: r.db_id,
     date: r.issued_at,
@@ -39,10 +39,11 @@ const getCertificateByCode = async code => {
             WHERE c.verification_code = $1
             LIMIT 1
         `;
-  const {
-    rows
-  } = await query(sql, [code]);
+        
+  const { rows } = await query(sql, [code]);
+
   if (rows.length === 0) return null;
+  
   const r = rows[0];
   return {
     id: r.db_id,

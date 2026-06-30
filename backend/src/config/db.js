@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import pg from 'pg'
 import dotenv from 'dotenv'
+import { logger } from '../utils/logger.js';
 
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -27,7 +28,6 @@ export const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-import { logger } from '../utils/logger.js';
 
 export const query = (text, params) => {
     logger.info(`[DB QUERY] Executing: ${text}`);

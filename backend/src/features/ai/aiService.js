@@ -13,6 +13,7 @@ const summarize = async (text, key) => {
     max_tokens: 250,
     temperature: 0.2
   };
+
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -21,6 +22,7 @@ const summarize = async (text, key) => {
     },
     body: JSON.stringify(body)
   });
+
   if (!r.ok) throw new Error(await r.text());
   return await r.json();
 };
@@ -40,6 +42,7 @@ const chat = async (messages, key) => {
       }, ...messages]
     })
   });
+
   if (!r.ok) throw new Error(await r.text());
   return await r.json();
 };
