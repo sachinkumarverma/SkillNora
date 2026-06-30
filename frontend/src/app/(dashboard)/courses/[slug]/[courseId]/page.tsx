@@ -5,6 +5,7 @@ import useUser from '@/lib/useUser'
 import Loader from '@/components/ui/Loader'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { cartService } from '@/services/cartService'
 import { coursesService } from '@/services/coursesService'
 import apiClient from '@/lib/apiClient'
 import { toast } from 'react-hot-toast'
@@ -32,11 +33,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
     useEffect(() => {
         if (course && user) {
-            import('@/services/cartService').then(({ cartService }) => {
-                cartService.getCart().then(cart => {
-                    setInCart(cart.some((c: any) => c.id === course.id || c.course_id === course.id))
-                }).catch(() => setInCart(false))
-            })
+            cartService.getCart().then(cart => {
+                setInCart(cart.some((c: any) => c.id === course.id || c.course_id === course.id))
+            }).catch(() => setInCart(false))
         } else {
             setInCart(false)
         }

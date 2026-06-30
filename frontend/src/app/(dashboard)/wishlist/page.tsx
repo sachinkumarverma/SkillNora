@@ -3,7 +3,7 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { useWishlist } from '@/hooks/useWishlist'
 import useUser from '@/lib/useUser'
-import { enrollmentsService } from '@/services/enrollmentsService'
+import { cartService } from '@/services/cartService'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
 import CourseCard from '@/components/CourseCard'
@@ -54,13 +54,12 @@ export default function WishlistPage() {
         try {
             const activeEnrollments = new Set(enrolledIds)
 
-            const cartModule = await import('@/services/cartService')
-            const cart = await cartModule.cartService.getCart()
+            const cart = await cartService.getCart()
 
             for (const course of savedCourses) {
                 const isFree = course.is_free || course.price === '0' || course.price === 0;
                 if (!isFree && !activeEnrollments.has(course.id) && !cart.some((c: any) => c.id === course.id)) {
-                    await cartModule.cartService.addToCart(course.id)
+                    await cartService.addToCart(course.id)
                 }
             }
 

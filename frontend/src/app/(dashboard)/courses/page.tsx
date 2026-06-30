@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import apiClient from '@/lib/apiClient'
 import { useWishlist } from '@/hooks/useWishlist'

@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react'
 import useUser from '@/lib/useUser'
 import dynamic from 'next/dynamic'
-
-const ReactPlayer: any = dynamic(() => import('react-player'), { ssr: false })
+import supabase from '@/lib/supabaseClient'
+import { notesService } from '@/services/notesService'
+import { certificatesService } from '@/services/certificatesService'
 import { coursesService } from '@/services/coursesService'
 import Loader from '@/components/ui/Loader'
 import { commentsService } from '@/services/commentsService'
@@ -112,9 +113,6 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     filePath: fileName
                 })
                 if (data.uploadUrl && data.token) {
-                    const supabaseModule = await import('@/lib/supabaseClient')
-                    const supabase = supabaseModule.default
-                    
                     const { error: uploadError } = await supabase.storage
                         .from('course-thumbnails')
                         .uploadToSignedUrl(fileName, data.token, fileToPost)
@@ -290,12 +288,12 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         fetchLecture()
         return () => { mounted = false }
     }, [slug, courseId, id])
+    
     useEffect(() => {
         if (!slug || !id) return
         const loadNotes = async () => {
             if (user) {
-                const notesModule = await import('@/services/notesService')
-                const notes = await notesModule.notesService.getNotes()
+                const notes = await notesService.getNotes()
                 const existingNotes = notes.filter((n: any) => String(n.course_id) === String(courseInfo?.id) && String(n.lecture_id) === String(id))
                 setSavedNotes(existingNotes)
             } else {
@@ -318,8 +316,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         if (!courseInfo || !lecture) return
         if (user) {
             setIsSavingNote(true)
-            const notesModule = await import('@/services/notesService')
-            const newNote = await notesModule.notesService.saveNote(courseInfo.id, lecture.id, noteText)
+            const newNote = await notesService.saveNote(courseInfo.id, lecture.id, noteText)
             setSavedNotes(prev => [newNote, ...prev])
             setNoteText('')
             setNoteSaved(true)
@@ -347,8 +344,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         // Certificates logic should be fetched from DB 
         const loadCert = async () => {
             if (user) {
-                const certModule = await import('@/services/certificatesService')
-                const certs = await certModule.certificatesService.getMyCertificates()
+                const certs = await certificatesService.getMyCertificates()
                 const certList = Array.isArray(certs) ? certs : (certs.certificates || [])
                 if (certList.find((c: any) => c.course_id === courseInfo.id)) {
                     setCertUnlocked(true)

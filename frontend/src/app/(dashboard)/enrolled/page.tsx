@@ -1,7 +1,6 @@
 "use client"
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { enrollmentsService } from '@/services/enrollmentsService'
 import CourseCard from '@/components/CourseCard'
 import api from '@/lib/api'
 import apiClient from '@/lib/apiClient'

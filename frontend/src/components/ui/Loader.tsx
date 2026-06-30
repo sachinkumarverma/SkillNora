@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' | 'management-table' | 'course-builder' | 'draft-courses' | 'certificate' | 'course-preview' | 'receipt' | 'settings' | 'admin-profile' }) {
     
     const Shimmer = () => (

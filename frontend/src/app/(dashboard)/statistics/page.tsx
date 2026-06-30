@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'

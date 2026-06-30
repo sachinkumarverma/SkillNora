@@ -1,7 +1,6 @@
 "use client"
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { coursesService } from '@/services/coursesService'
 import apiClient from '@/lib/apiClient'

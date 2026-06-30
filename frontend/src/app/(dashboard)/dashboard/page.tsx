@@ -1,12 +1,9 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import api from '@/lib/api'
 import useUser from '@/lib/useUser'
 import apiClient from '@/lib/apiClient'
-
-
 import CourseCarousel from '@/components/CourseCarousel'
 import HeroCarousel from '@/components/HeroCarousel'
 

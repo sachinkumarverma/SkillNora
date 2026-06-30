@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import useUser from '@/lib/useUser'
 import { authService } from '@/services/authService'
+import { cartService } from '@/services/cartService'
+import apiClient from '@/lib/apiClient'
 import AskieBot from '@/components/AskieBot'
 import Loader from '@/components/ui/Loader'
 
@@ -132,8 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const updateCart = async () => {
             if (user) {
                 try {
-                    const cartModule = await import('@/services/cartService')
-                    const cart = await cartModule.cartService.getCart()
+                    const cart = await cartService.getCart()
                     setCartCount(cart.length)
                 } catch { setCartCount(0) }
             } else {
@@ -148,22 +149,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     useEffect(() => {
         if (user) {
-            import('@/lib/apiClient').then(({ default: apiClient }) => {
-                apiClient.get('/api/notifications/user').then(res => {
-                    if (res && res.data && res.data.notifications) {
-                        setNotifications(res.data.notifications)
-                    }
-                }).catch(console.error)
-            })
+            apiClient.get('/api/notifications/user').then(res => {
+                if (res && res.data && res.data.notifications) {
+                    setNotifications(res.data.notifications)
+                }
+            }).catch(console.error)
         }
     }, [user])
 
     const markNotificationsRead = () => {
-        import('@/lib/apiClient').then(({ default: apiClient }) => {
-            apiClient.post('/api/notifications/read').then(() => {
-                setNotifications(notifications.map(n => ({ ...n, is_read: true })))
-            }).catch(console.error)
-        })
+        apiClient.post('/api/notifications/read').then(() => {
+            setNotifications(notifications.map(n => ({ ...n, is_read: true })))
+        }).catch(console.error)
     }
 
     const suggestions = useMemo(() => {

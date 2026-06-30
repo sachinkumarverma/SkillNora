@@ -1,6 +1,5 @@
 "use client"
-import React, { useRef } from 'react'
-import Link from 'next/link'
+import { useRef } from 'react'
 import CourseCard from '@/components/CourseCard'
 import { useWishlist } from '@/hooks/useWishlist'
 

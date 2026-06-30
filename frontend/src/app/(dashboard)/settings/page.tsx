@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import useUser from '@/lib/useUser'
 import { authService } from '@/services/authService'
 import apiClient from '@/lib/apiClient'
+import supabase from '@/lib/supabaseClient'
 import toast from 'react-hot-toast'
 import Loader from '@/components/ui/Loader'
 
@@ -101,9 +102,6 @@ export default function SettingsPage() {
             })
             
             if (data.uploadUrl && data.token) {
-                const supabaseModule = await import('@/lib/supabaseClient')
-                const supabase = supabaseModule.default
-                
                 const { error: uploadError } = await supabase.storage
                     .from('public')
                     .uploadToSignedUrl(filePath, data.token, file)

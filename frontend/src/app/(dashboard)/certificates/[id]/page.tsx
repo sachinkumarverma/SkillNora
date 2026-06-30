@@ -3,6 +3,7 @@ import React, { useEffect, useState, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useUser from '@/lib/useUser'
 import Loader from '@/components/ui/Loader'
+import { certificatesService } from '@/services/certificatesService'
 import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import toast from 'react-hot-toast'
@@ -33,17 +34,16 @@ export default function CertificateViewPage({ params }: { params: Promise<{ id: 
 
         const fetchCert = async () => {
             try {
-                const certModule = await import('@/services/certificatesService')
                 let found = null;
                 
                 if (user) {
-                    const response = await certModule.certificatesService.getMyCertificates()
+                    const response = await certificatesService.getMyCertificates()
                     const certs = Array.isArray(response) ? response : response.certificates || []
                     found = certs.find((c: any) => c.id === id || c.dbId === id || c.courseSlug === id)
                 }
                 
                 if (!found) {
-                    const publicRes = await certModule.certificatesService.getCertificate(id)
+                    const publicRes = await certificatesService.getCertificate(id)
                     found = publicRes.certificate || publicRes;
                 }
                 

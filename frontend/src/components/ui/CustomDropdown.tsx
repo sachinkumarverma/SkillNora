@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const CustomDropdown = ({ label, value, options, onChange, required, placeholder }: { label?: string, value: string, options: {value: string, label: string}[], onChange: (val: string) => void, required?: boolean, placeholder?: string }) => {

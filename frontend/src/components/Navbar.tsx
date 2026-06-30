@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import useUser from '@/lib/useUser'
 import Link from 'next/link'
 import { authService } from '@/services/authService'
