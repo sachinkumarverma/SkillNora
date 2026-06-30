@@ -2,6 +2,7 @@ import { logger } from '../../utils/logger.js';
 import { enrollmentsService } from './enrollmentsService.js';
 import { supabaseServer, query } from '../../config/db.js';
 import { enrollmentsRepository } from './enrollmentsRepository.js';
+import { paymentsRepository } from '../payments/paymentsRepository.js';
 import nodemailer from 'nodemailer';
 import puppeteer from 'puppeteer';
 
@@ -26,11 +27,9 @@ const createEnrollment = async (req, res) => {
 
     try {
       // Simulate Razorpay order insertion to update statistics
-      const { query } = await import('../../config/db.js');
       const { rows } = await query('SELECT price FROM courses WHERE id = $1', [req.body.course_id]);
       const amount = rows.length > 0 ? rows[0].price : 0;
       
-      const { paymentsRepository } = await import('../payments/paymentsRepository.js');
       await paymentsRepository.createOrder({
         razorpay_order_id: `sim_order_${Date.now()}`,
         user_id: userData.user.id,
@@ -52,7 +51,6 @@ const createEnrollment = async (req, res) => {
     // Asynchronous Mock Receipt Dispatch
     (async () => {
         try {
-            const { query } = await import('../../config/db.js');
             const { rows } = await query('SELECT title, price FROM courses WHERE id = $1', [req.body.course_id]);
             const courseTitle = rows.length > 0 ? rows[0].title : 'Course';
             const amount = rows.length > 0 ? rows[0].price : 0;

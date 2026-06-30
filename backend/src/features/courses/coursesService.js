@@ -1,4 +1,7 @@
 import { coursesRepository } from './coursesRepository.js';
+import { enrollmentsService } from '../enrollments/enrollmentsService.js';
+import { query } from '../../config/db.js';
+import crypto from 'crypto';
 
 const listAdminCourses = async userId => {
   const role = await coursesRepository.getUserRole(userId);
@@ -106,7 +109,6 @@ const completeLecture = async (userId, courseId, slug, lectureId, totalLectures,
   if (!enrollment) {
     const price = await coursesRepository.getCoursePrice(courseId);
     if (Number(price) === 0) {
-      const { enrollmentsService } = await import('../enrollments/enrollmentsService.js');
       await enrollmentsService.forceCreateEnrollment(userId, courseId);
       enrollment = await coursesRepository.getEnrollment(userId, courseId);
     }
@@ -130,10 +132,9 @@ const completeLecture = async (userId, courseId, slug, lectureId, totalLectures,
     if (!isCertified && prog[slug].length >= totalLectures) {
       // Check if course provides certificate
       const courseCheckSql = `SELECT certificate_type FROM courses WHERE id = $1 LIMIT 1`;
-      const { rows } = await (await import('../../config/db.js')).query(courseCheckSql, [courseId]);
+      const { rows } = await query(courseCheckSql, [courseId]);
       
       if (rows.length > 0 && rows[0].certificate_type) {
-        const crypto = await import('crypto');
         await coursesRepository.issueCertificate(userId, courseId, crypto.randomUUID().slice(0, 8).toUpperCase());
         certUnlocked = true;
       }

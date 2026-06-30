@@ -7,6 +7,7 @@ create table if not exists users (
   full_name text,
   role text default 'student', -- student, instructor, admin
   activity_heatmap jsonb default '{}'::jsonb, -- stores watch dates for heatmap
+  avatar_url text,
   created_at timestamptz default now()
 );
 
@@ -27,7 +28,13 @@ create table if not exists courses (
   is_published boolean default false,
   average_rating numeric(3,2) default null, -- e.g. 4.50
   total_reviews integer default 0,
-
+  detailed_overview text,
+  video_url text,
+  provide_certificate boolean default false,
+  is_archived boolean default false,
+  is_free boolean default false,
+  
+  updated_at timestamptz default now(),
   created_at timestamptz default now()
 );
 
@@ -114,12 +121,21 @@ create table if not exists wishlist_items (
   unique(user_id, course_id)
 );
 
+create table if not exists course_drafts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  course_id uuid references courses(id) on delete cascade,
+  data jsonb not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 create table if not exists notes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references users(id) on delete cascade,
   course_id uuid references courses(id) on delete cascade,
-  lecture_id text,
-  text text,
+  lecture_id uuid references lectures(id) on delete cascade,
+  text text not null,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

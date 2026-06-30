@@ -1,4 +1,5 @@
 import { paymentsRepository } from './paymentsRepository.js';
+import { enrollmentsService } from '../enrollments/enrollmentsService.js';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { sendEmail, buildEmailHtml } from '../../utils/email.js';
@@ -50,7 +51,6 @@ const verifyWebhook = async (raw, signature) => {
       // If payment is successful, send the receipt email
       if (payment.status === 'captured' || payment.status === 'paid') {
         if (order && order.user_id && order.course_id) {
-            const { enrollmentsService } = await import('../enrollments/enrollmentsService.js');
             await enrollmentsService.forceCreateEnrollment(order.user_id, order.course_id);
             logger.info(`Successfully enrolled User ${order.user_id} in Course ${order.course_id} via Webhook.`);
         }

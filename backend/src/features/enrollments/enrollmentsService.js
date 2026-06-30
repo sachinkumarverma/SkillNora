@@ -1,4 +1,5 @@
 import { enrollmentsRepository } from './enrollmentsRepository.js';
+import { query } from '../../config/db.js';
 
 const createEnrollment = async (userId, courseId) => {
   const price = await enrollmentsRepository.getCoursePrice(courseId);
@@ -12,7 +13,7 @@ const forceCreateEnrollment = async (userId, courseId) => {
 
 const getUserEnrollmentsList = async userId => {
   const enrollments = await enrollmentsRepository.findEnrollmentsByUserId(userId);
-  const { rows } = await (await import('../../config/db.js')).query(`SELECT COUNT(*) FROM certificates WHERE user_id = $1`, [userId]);
+  const { rows } = await query(`SELECT COUNT(*) FROM certificates WHERE user_id = $1`, [userId]);
   return {
     enrolledIds: enrollments.map(e => e.course_id),
     enrollments,
