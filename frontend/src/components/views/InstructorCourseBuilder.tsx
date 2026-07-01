@@ -22,7 +22,8 @@ export default function InstructorCourseBuilder() {
     const [showSuccessModal, setShowSuccessModal] = useState(false)
     const [thumbnailMode, setThumbnailMode] = useState<'upload' | 'unsplash'>('upload')
     const [isInstructorDropdownOpen, setIsInstructorDropdownOpen] = useState(false)
-    
+    const [draggedModuleIndex, setDraggedModuleIndex] = useState<number | null>(null)
+
     // Course Metadata
     const [courseData, setCourseData] = useState<any>({
         title: '',
@@ -678,22 +679,51 @@ export default function InstructorCourseBuilder() {
 
                         <div className="space-y-6">
                             {modules.map((mod, index) => (
-                                <details key={mod.id} open={openModuleIds.has(mod.id)} onToggle={(e: any) => {
-                                    const isOpen = e.currentTarget.open;
-                                    setOpenModuleIds(prev => {
-                                        const next = new Set(prev);
-                                        if (isOpen) next.add(mod.id); else next.delete(mod.id);
-                                        return next;
-                                    });
-                                }} className="group border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50/50 dark:bg-slate-800/20 shadow-sm">
-                                    <summary 
-                                        className="flex items-center justify-between p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden"
-                                        onClick={(e: any) => {
-                                            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-                                                e.preventDefault();
-                                            }
-                                        }}
-                                    >
+                                <div 
+                                    key={mod.id}
+                                    draggable
+                                    onDragStart={(e) => {
+                                        setDraggedModuleIndex(index);
+                                        e.dataTransfer.effectAllowed = "move";
+                                    }}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        e.dataTransfer.dropEffect = "move";
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        if (draggedModuleIndex === null || draggedModuleIndex === index) {
+                                            setDraggedModuleIndex(null);
+                                            return;
+                                        }
+                                        const newModules = [...modules];
+                                        const draggedItem = newModules[draggedModuleIndex];
+                                        newModules.splice(draggedModuleIndex, 1);
+                                        newModules.splice(index, 0, draggedItem);
+                                        setModules(newModules);
+                                        setDraggedModuleIndex(null);
+                                    }}
+                                    onDragEnd={() => {
+                                        setDraggedModuleIndex(null);
+                                    }}
+                                    className={`transition-all ${draggedModuleIndex === index ? 'opacity-50' : 'opacity-100'}`}
+                                >
+                                    <details open={openModuleIds.has(mod.id)} onToggle={(e: any) => {
+                                        const isOpen = e.currentTarget.open;
+                                        setOpenModuleIds(prev => {
+                                            const next = new Set(prev);
+                                            if (isOpen) next.add(mod.id); else next.delete(mod.id);
+                                            return next;
+                                        });
+                                    }} className="group border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50/50 dark:bg-slate-800/20 shadow-sm">
+                                        <summary 
+                                            className="flex items-center justify-between p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors"
+                                            onClick={(e: any) => {
+                                                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                        >
                                         <div className="flex items-center gap-3 w-full pr-4">
                                             <div className="cursor-move text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1">
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>
@@ -832,7 +862,14 @@ export default function InstructorCourseBuilder() {
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <input type="url" value={mod.thumbnailUrl} onChange={(e) => updateModule(mod.id, 'thumbnailUrl', e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 transition-all" />
+                                                    <div className="space-y-3 mt-2">
+                                                        <input type="url" value={mod.thumbnailUrl || ''} onChange={(e) => updateModule(mod.id, 'thumbnailUrl', e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 transition-all" />
+                                                        {mod.thumbnailUrl && (
+                                                            <div className="relative w-full max-w-sm aspect-video rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                                                                <img src={mod.thumbnailUrl} alt="Thumbnail preview" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         ) : (
@@ -1051,7 +1088,8 @@ export default function InstructorCourseBuilder() {
                                             </div>
                                         </div>
                                     </div>
-                                </details>
+                                    </details>
+                                </div>
                             ))}
                         </div>
                     </motion.div>
@@ -1202,7 +1240,14 @@ export default function InstructorCourseBuilder() {
                                 )}
                             </div>
                         ) : (
-                            <input required type="url" value={courseData.thumbnail_url} onChange={(e) => setCourseData({...courseData, thumbnail_url: e.target.value})} placeholder="https://images.unsplash.com/photo-..." className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
+                            <div className="space-y-4">
+                                <input required type="url" value={courseData.thumbnail_url || ''} onChange={(e) => setCourseData({...courseData, thumbnail_url: e.target.value})} placeholder="https://images.unsplash.com/photo-..." className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
+                                {courseData.thumbnail_url && (
+                                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-sm">
+                                        <img src={courseData.thumbnail_url} alt="Thumbnail preview" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </motion.div>
                 </div>

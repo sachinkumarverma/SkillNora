@@ -50,8 +50,8 @@ const updateLectures = async (userId, courseId, lectures) => {
   return await coursesRepository.updateLectures(courseId, lectures);
 };
 
-const listCourses = async () => {
-  return await coursesRepository.getAll();
+const listCourses = async (search = "") => {
+  return await coursesRepository.getAll(search);
 };
 
 const getCourse = async (identifier, userId = null) => {

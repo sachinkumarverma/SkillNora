@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import useUser from '@/lib/useUser'
 import { authService } from '@/services/authService'
 import { cartService } from '@/services/cartService'
@@ -24,6 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const pathname = usePathname()
     const role = useMemo(() => getRole(user), [user])
     const avatarUrl = useMemo(() => getAvatar(user), [user])
+    const searchParams = useSearchParams()
 
     const PATH_LABELS: Record<string, string> = {
         '/dashboard': 'Dashboard',
@@ -68,6 +69,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (pathname === '/admin') return [{ label: 'Overview' }]
         if (pathname === '/instructor') return [{ label: 'Instructor Studio' }]
 
+        // Special logical nesting overrides for Course Management
+        if (pathname === '/instructor/new' || pathname === '/admin/courses/new') {
+            const isEdit = searchParams.get('course_id');
+            const parent = pathname.startsWith('/admin') ? '/admin/courses' : '/instructor/courses';
+            return [
+                { label: 'Course Management', href: parent },
+                { label: isEdit ? 'Edit Course' : 'New Course' }
+            ];
+        }
+
+        if (pathname === '/instructor/drafts' || pathname === '/admin/drafts') {
+            const parent = pathname.startsWith('/admin') ? '/admin/courses' : '/instructor/courses';
+            return [
+                { label: 'Course Management', href: parent },
+                { label: 'Drafts' }
+            ];
+        }
+
         parts.forEach((part, index) => {
             currentPath += `/${part}`
             
@@ -107,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         if (crumbs.length > 0) delete crumbs[crumbs.length - 1].href
         return crumbs
-    }, [pathname])
+    }, [pathname, searchParams])
 
     const title = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].label : 'Dashboard'
 
@@ -163,8 +182,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }).catch(console.error)
     }
 
-    const suggestions = useMemo(() => {
-        return []
+    const [suggestions, setSuggestions] = useState<any[]>([])
+
+    useEffect(() => {
+        if (searchQuery.trim().length > 0) {
+            const delayDebounceFn = setTimeout(() => {
+                apiClient.get(`/api/courses?search=${encodeURIComponent(searchQuery.trim())}`)
+                    .then(res => {
+                        const all = res.data?.courses || res.data?.data || []
+                        setSuggestions(all.slice(0, 5))
+                    })
+                    .catch(console.error)
+            }, 300)
+            return () => clearTimeout(delayDebounceFn)
+        } else {
+            setSuggestions([])
+        }
     }, [searchQuery])
 
     const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -175,9 +208,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
 
     useEffect(() => {
-        setSearchQuery('')
+        if (pathname === '/courses') {
+            const querySearch = searchParams.get('search')
+            if (querySearch && querySearch !== searchQuery) {
+                setSearchQuery(querySearch)
+            } else if (!querySearch && searchParams.toString() === '') {
+                // Do not clear search query automatically if we just navigated to /courses normally
+                // Only clear if another page
+            }
+        } else {
+            setSearchQuery('')
+        }
         setShowSuggestions(false)
-    }, [pathname])
+    }, [pathname, searchParams])
 
     useEffect(() => {
         const stored = localStorage.getItem('theme')
@@ -469,7 +512,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             />
                             {searchQuery && (
                                 <button 
-                                    onClick={() => { setSearchQuery(''); setShowSuggestions(false); }}
+                                    onClick={() => { 
+                                        setSearchQuery(''); 
+                                        setShowSuggestions(false);
+                                        if (pathname === '/courses') {
+                                            router.push('/courses');
+                                        }
+                                    }}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                                 >
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -483,7 +532,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                                 <li key={c.id}>
                                                     <Link href={`/courses/${c.slug}/${c.id}`} onClick={() => setShowSuggestions(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0">
                                                         <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0">
-                                                            <img src={c.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop'} alt="" className="w-full h-full object-cover" />
+                                                            <img src={c.thumbnail_url || c.image || 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop'} alt="" className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="flex flex-col">
                                                             <span className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{c.title}</span>

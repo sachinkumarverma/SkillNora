@@ -99,7 +99,8 @@ const updateLectures = async (req, res) => {
 
 const list = async (req, res) => {
   try {
-    const courses = await coursesService.listCourses();
+    const search = req.query.search || "";
+    const courses = await coursesService.listCourses(search);
     res.json({
       courses,
     });

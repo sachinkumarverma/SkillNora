@@ -190,40 +190,50 @@ export default function InstructorPage() {
                                 const sortedByStudents = [...courses].filter(c => c.is_published).sort((a, b) => (parseInt(b.enrollment_count) || 0) - (parseInt(a.enrollment_count) || 0))
                                 const bestPerformer = sortedByStudents[0]
                                 const worstPerformer = sortedByStudents.length > 1 ? sortedByStudents[sortedByStudents.length - 1] : null
-                                const avgStudentsPerCourse = publishedCount > 0 ? Math.round(totalStudents / publishedCount) : 0
+                                const totalEnrollments = courses.reduce((acc, c) => acc + (parseInt(c.enrollment_count) || 0), 0)
+                                const avgStudentsPerCourse = publishedCount > 0 ? Math.round(totalEnrollments / publishedCount) : 0
                                 const revenuePerStudent = totalStudents > 0 ? Math.round(totalRevenue / totalStudents) : 0
                                 const freeCount = courses.filter(c => !parseFloat(c.price) || parseFloat(c.price) === 0).length
                                 const paidCount = courses.filter(c => parseFloat(c.price) > 0).length
 
                                 return (
                                     <>
-                                        <div className="grid grid-cols-2 gap-3 mb-4">
-                                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                                                <div className="text-xl font-black text-blue-600 dark:text-blue-400">{avgStudentsPerCourse}</div>
-                                                <div className="text-[10px] font-bold text-blue-800 dark:text-blue-300 uppercase">Avg Students/Course</div>
+                                        <div className="grid grid-cols-2 gap-3 mb-5">
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 flex flex-col items-center justify-center gap-1">
+                                                <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{avgStudentsPerCourse}</div>
+                                                <div className="text-[10px] font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider text-center">Avg Students/Course</div>
                                             </div>
-                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-center">
-                                                <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">₹{revenuePerStudent}</div>
-                                                <div className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase">Revenue/Student</div>
+                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 flex flex-col items-center justify-center gap-1">
+                                                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">₹{revenuePerStudent}</div>
+                                                <div className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider text-center">Revenue/Student</div>
                                             </div>
                                         </div>
                                         {bestPerformer && (
-                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
-                                                <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">🏆 Best Performer</div>
+                                            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+                                                <div className="flex items-center gap-1.5 mb-2">
+                                                    <span className="text-sm">🏆</span>
+                                                    <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Best Performer</div>
+                                                </div>
                                                 <div className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{bestPerformer.title}</div>
-                                                <div className="text-xs text-slate-500 mt-0.5">{bestPerformer.enrollment_count || 0} students • ₹{((parseInt(bestPerformer.enrollment_count) || 0) * (parseFloat(bestPerformer.price) || 0))} revenue</div>
+                                                <div className="text-xs font-medium text-slate-500 mt-1.5 flex justify-between items-center w-full">
+                                                    <span>{bestPerformer.enrollment_count || 0} students</span>
+                                                    <span>₹{((parseInt(bestPerformer.enrollment_count) || 0) * (parseFloat(bestPerformer.price) || 0))} revenue</span>
+                                                </div>
                                             </div>
                                         )}
                                         {worstPerformer && (parseInt(worstPerformer.enrollment_count) || 0) < avgStudentsPerCourse && (
-                                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                                                <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">⚠️ Needs Attention</div>
+                                            <div className="bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mt-3">
+                                                <div className="flex items-center gap-1.5 mb-2">
+                                                    <span className="text-sm">⚠️</span>
+                                                    <div className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest">Needs Attention</div>
+                                                </div>
                                                 <div className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{worstPerformer.title}</div>
-                                                <div className="text-xs text-slate-500 mt-0.5">{worstPerformer.enrollment_count || 0} students — below average</div>
+                                                <div className="text-xs font-medium text-slate-500 mt-1.5">{worstPerformer.enrollment_count || 0} students — below average</div>
                                             </div>
                                         )}
-                                        <div className="flex gap-2 mt-2">
-                                            <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded font-semibold">{paidCount} Paid</span>
-                                            <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded font-semibold">{freeCount} Free</span>
+                                        <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                                            <span className="text-[11px] bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-md font-bold uppercase tracking-wider">{paidCount} Paid</span>
+                                            <span className="text-[11px] bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-md font-bold uppercase tracking-wider">{freeCount} Free</span>
                                         </div>
                                     </>
                                 )

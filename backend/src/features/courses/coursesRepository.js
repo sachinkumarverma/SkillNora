@@ -325,7 +325,15 @@ const updateLectures = async (courseId, lectures) => {
   return true;
 };
 
-const getAll = async () => {
+const getAll = async (search = "") => {
+  let whereClause = "WHERE c.is_published = true";
+  const params = [];
+  
+  if (search) {
+      whereClause += " AND c.title ILIKE $1";
+      params.push(`%${search}%`);
+  }
+
   const sql = `
             SELECT 
                 c.id, c.title, c.slug, c.description, c.price, c.discount_price, c.instructor_id, c.is_published, c.created_at, c.thumbnail_url, c.category, c.target_role, c.primary_skill, c.is_free, c.certificate_type, c.provide_certificate,
@@ -336,12 +344,12 @@ const getAll = async () => {
             FROM courses c
             LEFT JOIN users u ON c.instructor_id = u.id
             LEFT JOIN reviews r ON c.id = r.course_id
-            WHERE c.is_published = true
+            ${whereClause}
             GROUP BY c.id, u.full_name
             ORDER BY c.created_at DESC
             LIMIT 50
         `;
-  const { rows } = await query(sql);
+  const { rows } = await query(sql, params);
   return rows;
 };
 

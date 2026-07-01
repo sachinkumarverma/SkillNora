@@ -341,7 +341,7 @@ export default function AdminCourseManagement() {
                     handlePublishCourse={handlePublishCourse}
                     setCourseToDelete={setCourseToDelete}
                     getStatusBadge={getStatusBadge}
-                    editBasePath="/instructor/courses/new"
+                    editBasePath="/instructor/new"
                 />
 
                 {/* Pagination */}
