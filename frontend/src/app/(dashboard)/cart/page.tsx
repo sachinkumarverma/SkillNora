@@ -101,7 +101,52 @@ export default function CartPage() {
     }
 
     if (loading || userLoading) {
-        return <Loader />
+        return (
+            <div className="max-w-[1200px] mx-auto px-6 py-8 animate-pulse">
+                <div className="w-48 h-10 bg-slate-200 dark:bg-slate-800 rounded mb-8"></div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-4">
+                        {[1, 2].map((i) => (
+                            <div key={i} className="flex gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+                                <div className="w-32 h-24 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0"></div>
+                                <div className="flex-1 flex flex-col justify-between py-1">
+                                    <div className="flex justify-between items-start">
+                                        <div className="w-3/4 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-2"></div>
+                                        <div className="w-16 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    </div>
+                                    <div className="flex justify-between items-end mt-4">
+                                        <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                        <div className="w-16 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="lg:col-span-1">
+                        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                            <div className="w-1/2 h-7 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                            <div className="space-y-4 mb-6 border-b border-slate-200 dark:border-slate-800 pb-6">
+                                <div className="flex justify-between">
+                                    <div className="w-1/3 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    <div className="w-16 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                </div>
+                                <div className="flex justify-between">
+                                    <div className="w-1/4 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                    <div className="w-12 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center mb-8">
+                                <div className="w-16 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-24 h-8 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                            <div className="w-full h-14 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                            <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded mt-4"></div>
+                            <div className="w-5/6 h-3 bg-slate-200 dark:bg-slate-800 rounded mt-2 mx-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (

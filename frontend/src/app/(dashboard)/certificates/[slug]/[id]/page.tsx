@@ -160,7 +160,7 @@ export default function CertificateViewPage({ params }: { params: Promise<{ slug
                 </div>
             </div>
 
-            <div className="w-full overflow-x-auto pb-8 flex justify-center print:overflow-visible print:block print:pb-0 print:m-0">
+            <div className="w-full overflow-x-auto pb-8 flex justify-start lg:justify-center print:overflow-visible print:block print:pb-0 print:m-0">
                 <div className="shadow-2xl flex-shrink-0">
                     <div ref={certRef} className="cert-container bg-white p-6 md:p-12 overflow-hidden relative" style={{ width: '1000px', height: '707px' }}>
                         {/* Modern Certificate Inner Border - Gold and Navy */}

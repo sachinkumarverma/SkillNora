@@ -225,7 +225,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                             </div>
                                         </div>
                                     </div>
-                                    <Link href={`/courses/${course.slug}/${course.id}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:underline shrink-0">Watch</Link>
+                                    <Link href={`/courses/${course.slug}/${course.id}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:text-blue-700 shrink-0 flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+                                        Watch
+                                    </Link>
                                 </div>
                             )) : (
                                 <div className="text-center py-10 text-slate-500 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
@@ -237,7 +240,19 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
                     {/* Reviews List */}
                     <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm mt-8">
-                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Student Reviews</h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Student Reviews</h2>
+                            {!isEnrolled && (
+                                <div className="group relative flex items-center justify-center text-slate-400 hover:text-blue-500 cursor-pointer transition-colors">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div className="absolute bottom-full right-0 mb-2 w-max max-w-[200px] p-2 bg-slate-800 text-white text-xs text-center rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                        Enroll in this course to leave a review.
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         
                         {/* Add Review Form */}
                         {isEnrolled && (

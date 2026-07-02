@@ -675,6 +675,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     )}
 
                     {/* Comments Section */}
+                    {(isEnrolled || isStaff || (courseInfo && (!courseInfo.price || Number(courseInfo.price) === 0 || courseInfo.is_free))) && (
                     <div className='mt-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm'>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
                             <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
@@ -901,9 +902,16 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                             })()}
                         </div>
                     </div>
+                    )}
                 </main>
                 <aside>
-                    <div className='p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm'>
+                    <div className='p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm relative overflow-hidden'>
+                        {(!isEnrolled && !isStaff && (!courseInfo || (courseInfo.price && Number(courseInfo.price) > 0 && !courseInfo.is_free))) && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 text-center">
+                                <svg className="w-8 h-8 text-white mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                <p className="text-white font-bold text-sm">Enroll to access resources</p>
+                            </div>
+                        )}
                         <div className="flex items-center gap-2 mb-5 text-slate-900 dark:text-white">
                             <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                             <h3 className='font-bold text-lg'>Resources</h3>

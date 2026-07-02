@@ -70,10 +70,10 @@ export default function PaymentReceiptPage({ params }: { params: Promise<{ id: s
                 className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 shadow-sm max-w-2xl mx-auto overflow-hidden"
             >
 
-                <div className="relative z-10 border-b border-slate-200 dark:border-slate-800 pb-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-4xl font-black text-[#113a5f] dark:text-white mb-2">Invoice Receipt</h1>
-                        <span className={`px-4 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${
+                <div className="relative z-10 border-b border-slate-200 dark:border-slate-800 pb-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-4">
+                    <div className="flex items-center justify-between md:flex-col md:items-start w-full md:w-auto">
+                        <h1 className="text-3xl md:text-4xl font-black text-[#113a5f] dark:text-white mb-0 md:mb-2">Invoice Receipt</h1>
+                        <span className={`px-4 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shrink-0 ${
                             payment.status === 'created' || payment.status === 'paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 
                             payment.status === 'refunded' ? 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' : 
                             'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
@@ -82,7 +82,7 @@ export default function PaymentReceiptPage({ params }: { params: Promise<{ id: s
                             {payment.status.toUpperCase()}
                         </span>
                     </div>
-                    <div className="text-right flex items-center justify-end gap-3 text-3xl font-bold text-[#113a5f] dark:text-white">
+                    <div className="flex items-center justify-center md:justify-end gap-3 text-3xl font-bold text-[#113a5f] dark:text-white w-full md:w-auto mt-2 md:mt-0">
                         <span className="bg-[#113a5f] text-white px-3 py-1 rounded-lg shadow-sm text-2xl flex items-center justify-center">S</span>
                         Skillnora
                     </div>

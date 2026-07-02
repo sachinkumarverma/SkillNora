@@ -10,10 +10,12 @@ export default function useUser() {
     useEffect(() => {
         let active = true
 
-        async function fetchFullProfile(sessionUser: any) {
+        async function fetchFullProfile(sessionUser: any, token: string) {
             if (!sessionUser) return null;
             try {
-                const res = await apiClient.get('/api/users/me');
+                const res = await apiClient.get('/api/users/me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 if (res.data?.user && active) {
                     return { 
                         ...sessionUser, 
@@ -34,8 +36,8 @@ export default function useUser() {
             const { data } = await supabase.auth.getSession()
             if (!active) return
             let sessionUser = data.session?.user ?? null;
-            if (sessionUser) {
-                sessionUser = await fetchFullProfile(sessionUser);
+            if (sessionUser && data.session?.access_token) {
+                sessionUser = await fetchFullProfile(sessionUser, data.session.access_token);
             }
             if (active) {
                 setUser(sessionUser)
@@ -48,8 +50,8 @@ export default function useUser() {
         const { data: listener } = supabase.auth.onAuthStateChange(async (_event: string, session: any) => {
             if (!active) return;
             let sessionUser = session?.user ?? null;
-            if (sessionUser) {
-                sessionUser = await fetchFullProfile(sessionUser);
+            if (sessionUser && session?.access_token) {
+                sessionUser = await fetchFullProfile(sessionUser, session.access_token);
             }
             if (active) {
                 setUser(sessionUser)

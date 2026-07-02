@@ -1,7 +1,8 @@
 "use client"
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Pagination from '@/components/ui/Pagination'
 
 import apiClient from '@/lib/apiClient'
@@ -15,9 +16,14 @@ export default function AdminSupportPage() {
     const [itemsPerPage, setItemsPerPage] = useState(10)
     
     // Modal State
+    const [mounted, setMounted] = useState(false)
     const [resolvingTicketId, setResolvingTicketId] = useState<string | null>(null)
     const [resolveMessage, setResolveMessage] = useState('')
     const [isResolving, setIsResolving] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const fetchTickets = async () => {
         setLoading(true)
@@ -188,49 +194,53 @@ export default function AdminSupportPage() {
         </div>
 
             {/* Resolve Modal */}
-            {resolvingTicketId && (
-                <div className="fixed top-16 left-0 right-0 bottom-0 z-[15] bg-slate-900/60 backdrop-blur-sm">
-                    <div className="flex w-full h-full items-center justify-center p-4 md:pl-64">
-                        <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 -mt-10"
-                    >
-                        <h2 className="text-2xl font-bold mb-2">Resolve Ticket</h2>
-                        <p className="text-slate-500 mb-6 text-sm">Enter your resolution message below. This will be securely emailed directly to the user.</p>
-                        
-                        <textarea
-                            value={resolveMessage}
-                            onChange={(e) => setResolveMessage(e.target.value)}
-                            rows={5}
-                            placeholder="Type your response here..."
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 outline-none focus:border-blue-500 resize-none mb-6 custom-scrollbar"
-                        ></textarea>
-                        
-                        <div className="flex justify-end gap-3">
-                            <button 
-                                onClick={() => { setResolvingTicketId(null); setResolveMessage(''); }}
-                                disabled={isResolving}
-                                className="px-5 py-2.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+            {mounted && typeof window !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    {resolvingTicketId && (
+                        <div className="absolute inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm pointer-events-auto flex items-center justify-center p-4">
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800"
                             >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={submitResolution}
-                                disabled={isResolving || !resolveMessage.trim()}
-                                className="px-5 py-2.5 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {isResolving ? (
-                                    <>
-                                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                        Sending...
-                                    </>
-                                ) : 'Resolve'}
-                            </button>
+                                <h2 className="text-2xl font-bold mb-2">Resolve Ticket</h2>
+                                <p className="text-slate-500 mb-6 text-sm">Enter your resolution message below. This will be securely emailed directly to the user.</p>
+                                
+                                <textarea
+                                    value={resolveMessage}
+                                    onChange={(e) => setResolveMessage(e.target.value)}
+                                    rows={5}
+                                    placeholder="Type your response here..."
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 outline-none focus:border-blue-500 resize-none mb-6 custom-scrollbar"
+                                ></textarea>
+                                
+                                <div className="flex justify-end gap-3">
+                                    <button 
+                                        onClick={() => { setResolvingTicketId(null); setResolveMessage(''); }}
+                                        disabled={isResolving}
+                                        className="px-5 py-2.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={submitResolution}
+                                        disabled={isResolving || !resolveMessage.trim()}
+                                        className="px-5 py-2.5 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {isResolving ? (
+                                            <>
+                                                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                Sending...
+                                            </>
+                                        ) : 'Resolve'}
+                                    </button>
+                                </div>
+                            </motion.div>
                         </div>
-                    </motion.div>
-                    </div>
-                </div>
+                    )}
+                </AnimatePresence>,
+                document.getElementById('modal-root') || document.body
             )}
         </>
     )

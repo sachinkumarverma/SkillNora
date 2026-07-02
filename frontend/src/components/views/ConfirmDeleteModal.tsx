@@ -1,5 +1,7 @@
 "use client"
 import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export default function ConfirmDeleteModal({
     isOpen,
@@ -14,10 +16,13 @@ export default function ConfirmDeleteModal({
     title?: string
     message?: string
 }) {
-    return (
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    const modalContent = (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+                <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 pointer-events-auto">
                     <motion.div 
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -40,5 +45,10 @@ export default function ConfirmDeleteModal({
                 </div>
             )}
         </AnimatePresence>
-    )
+    );
+
+    if (!mounted) return null;
+    
+    const target = document.getElementById('modal-root') || document.body;
+    return createPortal(modalContent, target);
 }

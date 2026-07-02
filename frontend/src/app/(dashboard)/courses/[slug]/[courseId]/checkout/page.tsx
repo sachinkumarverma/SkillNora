@@ -67,7 +67,35 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
         setShowSuccessModal(true)
     };
 
-    if (loading || userLoading) return <Loader />
+    if (loading || userLoading) {
+        return (
+            <div className="max-w-[1200px] mx-auto px-6 py-12 animate-pulse">
+                <div className="w-24 h-5 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col md:flex-row min-h-[400px]">
+                    <div className="p-8 md:w-7/12 flex flex-col justify-center order-2 md:order-1">
+                        <div className="w-48 h-8 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                        <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-xl border border-slate-100 dark:border-slate-800 mb-8 h-28"></div>
+                        <div className="space-y-4 mb-8">
+                            <div className="w-3/4 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            <div className="w-2/3 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                        </div>
+                        <div className="w-full h-14 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                    </div>
+                    <div className="md:w-5/12 bg-slate-50 dark:bg-slate-950 border-b md:border-b-0 md:border-l border-slate-200 dark:border-slate-800 p-8 order-1 md:order-2 flex flex-col">
+                        <div className="w-3/4 h-7 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                        <div className="w-full rounded-xl aspect-video bg-slate-200 dark:bg-slate-800 mb-6"></div>
+                        <div className="mt-auto">
+                            <div className="w-20 h-4 bg-slate-200 dark:bg-slate-800 rounded mb-3"></div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                                <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
 

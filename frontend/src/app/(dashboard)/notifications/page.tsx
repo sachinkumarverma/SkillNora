@@ -127,13 +127,13 @@ export default function NotificationsPage() {
                             <div 
                                 key={notif.id}
                                 onClick={() => handleNotificationClick(notif)}
-                                className={`group flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl border transition-all cursor-pointer shadow-sm hover:shadow-md ${
+                                className={`group flex items-center justify-between gap-3 p-4 rounded-2xl border transition-all cursor-pointer shadow-sm hover:shadow-md ${
                                     !notif.is_read 
                                         ? 'bg-blue-50/60 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 hover:bg-blue-100/50 dark:hover:bg-blue-900/20' 
                                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600'
                                 }`}
                             >
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3 flex-1 min-w-0">
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-sm ${getTypeColor(notif.type)}`}>
                                         <span className="font-bold text-base font-serif">
                                             {notif.user_name ? notif.user_name.charAt(0).toUpperCase() : 'S'}
@@ -164,7 +164,7 @@ export default function NotificationsPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 shrink-0">
                                     {notif.link && (
                                         <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-100 dark:group-hover:text-blue-400 dark:group-hover:bg-blue-900/50 transition-colors">
                                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>

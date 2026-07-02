@@ -1,5 +1,6 @@
 "use client"
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { coursesService } from '@/services/coursesService'
@@ -20,9 +21,14 @@ export default function InstructorCourseBuilder() {
     const editCourseId = searchParams?.get('course_id')
 
     const [showSuccessModal, setShowSuccessModal] = useState(false)
+    const [mounted, setMounted] = useState(false)
     const [thumbnailMode, setThumbnailMode] = useState<'upload' | 'unsplash'>('upload')
     const [isInstructorDropdownOpen, setIsInstructorDropdownOpen] = useState(false)
     const [draggedModuleIndex, setDraggedModuleIndex] = useState<number | null>(null)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Course Metadata
     const [courseData, setCourseData] = useState<any>({
@@ -394,64 +400,67 @@ export default function InstructorCourseBuilder() {
     return (
         <form onSubmit={handlePublish} className="w-full mx-auto p-6 lg:p-8 pb-32">
             
-            <AnimatePresence>
-                {showSuccessModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                        {!editCourseId && <Confetti width={width} height={height} recycle={false} numberOfPieces={800} gravity={0.15} />}
-                        <motion.div 
-                            initial={{ scale: 0.8, opacity: 0, y: 50 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.8, opacity: 0, y: 50 }}
-                            transition={{ type: "spring", bounce: 0.4, duration: 0.6 }}
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-10 max-w-md w-full shadow-2xl text-center relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
-                            
+            {mounted && typeof window !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    {showSuccessModal && (
+                        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 pointer-events-auto">
+                            {!editCourseId && <Confetti width={width} height={height} recycle={false} numberOfPieces={800} gravity={0.15} />}
                             <motion.div 
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ delay: 0.2, type: "spring", bounce: 0.5 }}
-                                className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"
+                                initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.8, opacity: 0, y: 50 }}
+                                transition={{ type: "spring", bounce: 0.4, duration: 0.6 }}
+                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-10 max-w-md w-full shadow-2xl text-center relative overflow-hidden"
                             >
-                                <svg className="w-12 h-12 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                                
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.2, type: "spring", bounce: 0.5 }}
+                                    className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"
+                                >
+                                    <svg className="w-12 h-12 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                </motion.div>
+                                
+                                <motion.h2 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 }}
+                                    className="text-3xl font-black text-slate-900 dark:text-white mb-2"
+                                >
+                                    {editCourseId ? "Course Updated!" : "Congratulations!"}
+                                </motion.h2>
+                                
+                                <motion.p 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="text-slate-500 dark:text-slate-400 font-medium mb-8"
+                                >
+                                    {editCourseId ? (
+                                        <>Your course <strong className="text-slate-900 dark:text-white">"{courseData.title}"</strong> has been successfully updated.</>
+                                    ) : (
+                                        <>Your course <strong className="text-slate-900 dark:text-white">"{courseData.title}"</strong> has been successfully published to the platform! 🚀</>
+                                    )}
+                                </motion.p>
+                                
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                >
+                                    <button type="button" onClick={() => router.push(currentUserRole === 'admin' ? '/admin/courses' : '/instructor')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-blue-500/30 transition-transform active:scale-95">
+                                        Go to Course Management
+                                    </button>
+                                    <p className="text-xs text-slate-400 font-bold mt-4 animate-pulse">Redirecting automatically in a few seconds...</p>
+                                </motion.div>
                             </motion.div>
-                            
-                            <motion.h2 
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3 }}
-                                className="text-3xl font-black text-slate-900 dark:text-white mb-2"
-                            >
-                                {editCourseId ? "Course Updated!" : "Congratulations!"}
-                            </motion.h2>
-                            
-                            <motion.p 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                                className="text-slate-500 dark:text-slate-400 font-medium mb-8"
-                            >
-                                {editCourseId ? (
-                                    <>Your course <strong className="text-slate-900 dark:text-white">"{courseData.title}"</strong> has been successfully updated.</>
-                                ) : (
-                                    <>Your course <strong className="text-slate-900 dark:text-white">"{courseData.title}"</strong> has been successfully published to the platform! 🚀</>
-                                )}
-                            </motion.p>
-                            
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.6 }}
-                            >
-                                <button type="button" onClick={() => router.push(currentUserRole === 'admin' ? '/admin/courses' : '/instructor')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-blue-500/30 transition-transform active:scale-95">
-                                    Go to Course Management
-                                </button>
-                                <p className="text-xs text-slate-400 font-bold mt-4 animate-pulse">Redirecting automatically in a few seconds...</p>
-                            </motion.div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.getElementById('modal-root') || document.body
+            )}
 
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
                 <div>
@@ -489,28 +498,33 @@ export default function InstructorCourseBuilder() {
                     >
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white">Basic Information</h2>
-                            <button 
-                                type="button" 
-                                onClick={generateCourseDetails}
-                                disabled={isGeneratingDetails || !courseData.title}
-                                className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                                    isGeneratingDetails 
-                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800' 
-                                        : 'bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'
-                                }`}
+                            <div 
+                                className="relative inline-block"
+                                title={!courseData.title?.trim() ? "Enter a Course Title first to generate AI details" : ""}
                             >
-                                {isGeneratingDetails ? (
-                                    <>
-                                        <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                        Generating...
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                        AI Generate Details
-                                    </>
-                                )}
-                            </button>
+                                <button 
+                                    type="button" 
+                                    onClick={generateCourseDetails}
+                                    disabled={isGeneratingDetails || !courseData.title?.trim()}
+                                    className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                                        (isGeneratingDetails || !courseData.title?.trim())
+                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500' 
+                                            : 'bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'
+                                    }`}
+                                >
+                                    {isGeneratingDetails ? (
+                                        <>
+                                            <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                            AI Generate Details
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                         <div className="space-y-5">
                             {currentUserRole === 'admin' && (
