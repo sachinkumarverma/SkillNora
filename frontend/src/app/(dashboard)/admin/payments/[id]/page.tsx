@@ -129,7 +129,7 @@ export default function PaymentReceiptPage({ params }: { params: Promise<{ id: s
                                 <tr>
                                     <td className="p-3">1</td>
                                     <td className="p-3 font-semibold">{payment.course_title}</td>
-                                    <td className="p-3">Lifetime Access</td>
+                                    <td className="p-3">1 Year Access</td>
                                     <td className="p-3 text-right font-bold">₹{Math.abs(Number(payment.amount))}</td>
                                 </tr>
                             </tbody>

@@ -67,18 +67,21 @@ export default function AdminCourseManagement() {
             if (data) {
                 const courseList = data.courses || (Array.isArray(data) ? data : []);
                 const filteredList = courseList.filter((c: any) => c.is_published || c.is_archived);
-                const mapped = filteredList.map((c: any) => ({
-                    id: c.id,
-                    title: c.title || 'Untitled Course',
-                    category: c.category || 'Uncategorized',
-                    instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
-                    price: Number(c.price) > 0 ? `₹${c.price}` : <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-2 py-1 rounded">Free</span>,
+                const mapped = filteredList.map((c: any) => {
+                    const effectivePrice = Number(c.discount_price) > 0 ? Number(c.discount_price) : Number(c.price);
+                    return {
+                        id: c.id,
+                        title: c.title || 'Untitled Course',
+                        category: c.category || 'Uncategorized',
+                        instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
+                        price: effectivePrice > 0 ? `₹${effectivePrice}` : <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-2 py-1 rounded">Free</span>,
                     status: c.is_published ? 'Published' : 'Archived',
                     enrollments: Number(c.enrollment_count) || 0,
                     rating: c.average_rating || 0,
-                    thumbnail_url: c.thumbnail_url,
-                    slug: c.slug
-                }))
+                        thumbnail_url: c.thumbnail_url,
+                        slug: c.slug
+                    }
+                })
                 setCourses(mapped)
             }
         } catch (err: any) {

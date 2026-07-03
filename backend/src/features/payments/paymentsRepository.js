@@ -4,15 +4,21 @@ const createOrder = async (data) => {
   const keys = Object.keys(data);
   const values = Object.values(data);
   const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
-  const sql = `INSERT INTO orders (${keys.join(", ")}) VALUES (${placeholders})`;
+  const sql = `INSERT INTO orders (${keys.join(", ")}) VALUES (${placeholders}) ON CONFLICT (razorpay_order_id) DO UPDATE SET status = EXCLUDED.status, receipt = EXCLUDED.receipt, razorpay_payment_id = EXCLUDED.razorpay_payment_id`;
   await query(sql, values);
   return true;
 };
 
-const updateOrder = async (orderId, status) => {
-  const sql = `UPDATE orders SET status = $1 WHERE razorpay_order_id = $2 RETURNING *`;
-  const res = await query(sql, [status, orderId]);
-  return res.rows[0];
+const updateOrder = async (orderId, status, paymentId = null) => {
+  if (paymentId) {
+    const sql = `UPDATE orders SET status = $1, razorpay_payment_id = $2 WHERE razorpay_order_id = $3 RETURNING *`;
+    const res = await query(sql, [status, paymentId, orderId]);
+    return res.rows[0];
+  } else {
+    const sql = `UPDATE orders SET status = $1 WHERE razorpay_order_id = $2 RETURNING *`;
+    const res = await query(sql, [status, orderId]);
+    return res.rows[0];
+  }
 };
 
 const getOrderDetailsWithEmail = async (orderId) => {

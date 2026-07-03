@@ -9,11 +9,13 @@ const WISHLIST_EVENT = 'wishlistUpdated'
 
 export function useWishlist() {
     const [wishlist, setWishlist] = useState<string[]>([])
+    const [loading, setLoading] = useState<boolean>(true)
     const router = useRouter()
     const { user } = useUser()
 
     useEffect(() => {
         const loadWishlist = async () => {
+            setLoading(true)
             if (user) {
                 const data = await wishlistService.getWishlist()
                 setWishlist(data)
@@ -23,6 +25,7 @@ export function useWishlist() {
                     if (stored) setWishlist(JSON.parse(stored))
                 } catch (e) {}
             }
+            setLoading(false)
         }
         
         loadWishlist()
@@ -61,5 +64,5 @@ export function useWishlist() {
 
     const isInWishlist = (courseId: string) => wishlist.includes(courseId)
 
-    return { wishlist, toggleWishlist, isInWishlist }
+    return { wishlist, loading, toggleWishlist, isInWishlist }
 }

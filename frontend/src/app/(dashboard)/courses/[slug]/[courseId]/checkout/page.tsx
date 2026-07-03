@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useUser from '@/lib/useUser'
-import Loader from '@/components/ui/Loader'
+import apiClient from '@/lib/apiClient'
+import toast from 'react-hot-toast';
 import { coursesService } from '@/services/coursesService'
-import { enrollmentsService } from '@/services/enrollmentsService'
 
 export default function CheckoutPage({ params }: { params: Promise<{ slug: string, courseId: string }> }) {
     const { slug, courseId } = React.use(params)
@@ -33,7 +33,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                         instructor_name: data.instructor?.full_name || 'Instructor',
                         instructor_avatar: data.instructor?.avatar_url || data.instructor?.picture || data.instructor?.photoURL || null,
                         image: data.image || data.thumbnail_url || data.image_url,
-                        price: `Rs. ${data.price}`
+                        price: (data.discount_price && Number(data.discount_price) > 0) ? Number(data.discount_price) : (Number(data.price) || 0),
+                        original_price: Number(data.price) || 0
                     })
                 } else {
                     setCourse(null)
@@ -47,24 +48,83 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
     }, [slug, user, userLoading, router])
 
     const handlePayment = async () => {
+        if (!user) return router.push('/auth')
         setProcessing(true)
+
         try {
-            // Simulate payment delay
-            await new Promise(resolve => setTimeout(resolve, 2000))
-
-            // Insert enrollment
-            if (user && course && course.id) {
-                const expiryDate = new Date()
-                expiryDate.setFullYear(expiryDate.getFullYear() + 1)
-
-                await enrollmentsService.createEnrollment(course.id)
+            // Ensure script is loaded
+            if (!window.Razorpay) {
+                await new Promise((resolve) => {
+                    const script = document.createElement('script')
+                    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+                    script.onload = () => resolve(true)
+                    script.onerror = () => resolve(false)
+                    document.body.appendChild(script)
+                })
             }
-        } catch (e) {
-            console.error(e)
-        }
 
-        setProcessing(false)
-        setShowSuccessModal(true)
+            const numericPrice = course.price;
+
+            // Create order on backend
+            const { data } = await apiClient.post('/api/payments/create-order', {
+                amount: numericPrice,
+                currency: "INR",
+                course_id: course.id,
+                user_id: user.id
+            })
+
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: data.order.amount,
+                currency: data.order.currency,
+                name: "Skillnora",
+                description: course.title,
+                order_id: data.order.id,
+                prefill: {
+                    name: user.full_name || 'Learner',
+                    email: user.email,
+                    contact: '+919876543210'
+                },
+                theme: {
+                    color: "#2563eb"
+                },
+                modal: {
+                    ondismiss: function() {
+                        toast.error("Payment cancelled.");
+                        setProcessing(false);
+                    }
+                },
+                handler: async function (response: any) {
+                    try {
+                        setProcessing(true)
+                        await apiClient.post('/api/payments/record-order-and-enroll', {
+                            orderId: response.razorpay_order_id,
+                            paymentId: response.razorpay_payment_id,
+                            signature: response.razorpay_signature,
+                            totalAmount: numericPrice,
+                            enrollments: [{ course_id: course.id, price: numericPrice }]
+                        })
+                        setProcessing(false)
+                        setShowSuccessModal(true)
+                    } catch (err: any) {
+                        setProcessing(false)
+                        toast.error("Payment verification failed! " + err.message);
+                    }
+                }
+            };
+            
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any){
+                toast.error("Payment Failed: " + response.error.description);
+                setProcessing(false);
+            });
+            rzp.open();
+
+        } catch (e: any) {
+            console.error('Checkout error:', e)
+            toast.error('Failed to initiate checkout: ' + e.message);
+            setProcessing(false)
+        }
     };
 
     if (loading || userLoading) {
@@ -114,11 +174,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                     <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-xl border border-slate-100 dark:border-slate-800 mb-8">
                         <div className="flex justify-between items-center mb-4">
                             <span className="text-slate-500 font-medium">Course Price</span>
-                            <span className="font-semibold text-slate-900 dark:text-white text-lg">{course.price || 'Free'}</span>
+                            <div className="flex flex-col items-end">
+                                {course.original_price > course.price && (
+                                    <span className="text-sm line-through text-slate-400 font-medium">Rs. {course.original_price}</span>
+                                )}
+                                <span className="font-semibold text-slate-900 dark:text-white text-lg">{course.price > 0 ? `Rs. ${course.price}` : 'Free'}</span>
+                            </div>
                         </div>
                         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
                             <span className="font-bold text-slate-900 dark:text-white text-lg">Total Amount</span>
-                            <span className="font-black text-blue-600 text-3xl">{course.price || 'Free'}</span>
+                            <span className="font-black text-blue-600 text-3xl">{course.price > 0 ? `Rs. ${course.price}` : 'Free'}</span>
                         </div>
                     </div>
 
@@ -185,7 +250,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                         </div>
                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Payment Successful!</h3>
-                        <p className="text-slate-500 mb-8">Welcome to the course. You now have full 1-year access.</p>
+                        <p className="text-slate-500 mb-4">Welcome to the course. You now have full 1-year access.</p>
+                        
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3 flex items-center gap-3 text-left mb-8">
+                            <div className="bg-blue-100 dark:bg-blue-800 p-2 rounded-lg text-blue-600 dark:text-blue-300">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </div>
+                            <p className="text-xs text-blue-800 dark:text-blue-300 font-medium">Your official PDF invoice receipt has been securely sent to your email.</p>
+                        </div>
                         <button onClick={() => router.push(`/courses/${slug}/${courseId}`)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
                             Start Learning
                         </button>

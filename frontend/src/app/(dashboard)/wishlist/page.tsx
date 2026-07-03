@@ -10,8 +10,8 @@ import CourseCard from '@/components/CourseCard'
 
 export default function WishlistPage() {
     const router = useRouter()
-    const { user } = useUser()
-    const { wishlist, toggleWishlist } = useWishlist()
+    const { user, loading: userLoading } = useUser()
+    const { wishlist, loading: wishlistLoading, toggleWishlist } = useWishlist()
     const [courses, setCourses] = React.useState<any[]>([])
     const [loading, setLoading] = React.useState(true)
 
@@ -37,7 +37,7 @@ export default function WishlistPage() {
         return () => { active = false }
     }, [])
 
-    if (loading || isBuying) {
+    if (loading || isBuying || userLoading || wishlistLoading) {
         return <Loader type="courses" />
     }
 

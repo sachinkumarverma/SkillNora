@@ -11,6 +11,12 @@ type Message = {
     courseRecommend?: any
 }
 
+const formatMessage = (text: string) => {
+    let safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    return safeText;
+}
+
 export default function AskieBot() {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([
@@ -33,16 +39,7 @@ export default function AskieBot() {
         let replyText = "I'm having trouble connecting to my brain right now. Please try again later!"
         let recommendedCourse: any = null
 
-        // 1. Fetch courses from DB to see if we have a match locally
-        const courses = await coursesService.getAll()
-        if (courses && courses.length > 0) {
-            const match = courses.find(c => text.includes(c.title.toLowerCase()) || text.includes((c.category || '').toLowerCase()) || text.includes((c.primary_skill || '').toLowerCase()))
-            if (match) {
-                recommendedCourse = match
-            } else if (text.includes('recommend') || text.includes('course') || text.includes('learn')) {
-                recommendedCourse = courses[0]
-            }
-        }
+        // AI response will be fetched first
 
         // 2. Call the real Generative AI backend
         try {
@@ -58,6 +55,26 @@ export default function AskieBot() {
             if (res.ok) {
                 const data = await res.json()
                 replyText = data.reply
+                
+                // 2. Post-process AI response to find recommended course
+                let courses = await coursesService.getAll()
+                if (courses && !Array.isArray(courses)) {
+                    courses = courses.courses || courses.data || [];
+                }
+                
+                if (courses && courses.length > 0) {
+                    const match = courses.find(c => replyText.includes(c.id) || replyText.toLowerCase().includes(c.title.toLowerCase()))
+                    if (match) {
+                        recommendedCourse = match
+                        // Clean up raw links and leftover labels from the text
+                        replyText = replyText
+                            .replace(/https?:\/\/[^\s]+/g, '')
+                            .replace(/\/courses\/[^\s]+/g, '')
+                            .replace(/\*?\*?Link:?\*?\*?\s*/gi, '')
+                            .replace(/\n\s*\n\s*\n/g, '\n\n')
+                            .trim()
+                    }
+                }
             }
         } catch (e) {
             console.error("AI chat error:", e)
@@ -93,7 +110,7 @@ export default function AskieBot() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute bottom-20 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-xl w-[calc(100vw-3rem)] sm:w-[380px] h-[75vh] sm:h-[600px] flex flex-col overflow-hidden origin-bottom-right"
+                        className="fixed bottom-24 right-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-xl w-[calc(100vw-3rem)] sm:w-[380px] max-h-[calc(100vh-7rem)] h-[600px] flex flex-col overflow-hidden origin-bottom-right"
                     >
                         {/* Header */}
                         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex items-center justify-between shadow-md z-10">
@@ -119,7 +136,7 @@ export default function AskieBot() {
                             {messages.map(msg => (
                                 <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[85%] rounded-lg px-4 py-3 ${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-br-sm shadow-sm' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-sm shadow-sm'}`}>
-                                        <p className="text-sm leading-relaxed">{msg.text}</p>
+                                        <div className="text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }} />
                                         
                                         {/* Render Course Preview inside Askie's message if recommended */}
                                         {msg.courseRecommend && (
@@ -134,9 +151,30 @@ export default function AskieBot() {
                                                 </div>
                                                 <div className="p-3">
                                                     <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mb-1">{msg.courseRecommend.title}</h4>
-                                                    <p className="text-xs text-slate-500 line-clamp-2 mb-3">{msg.courseRecommend.description}</p>
-                                                    <Link href={`/courses/${msg.courseRecommend.slug}`} onClick={() => setIsOpen(false)} className="block text-center w-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 py-2 rounded-lg text-xs font-bold transition-colors">
-                                                        View Course
+                                                    {msg.courseRecommend.instructor_name && (
+                                                        <p className="text-[11px] text-slate-400 mb-1">by {msg.courseRecommend.instructor_name}</p>
+                                                    )}
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        {msg.courseRecommend.category && (
+                                                            <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">{msg.courseRecommend.category}</span>
+                                                        )}
+                                                        {(() => {
+                                                            const price = Number(msg.courseRecommend.price);
+                                                            const discountPrice = msg.courseRecommend.discount_price != null ? Number(msg.courseRecommend.discount_price) : null;
+                                                            const hasDiscount = discountPrice != null && discountPrice < price;
+                                                            if (price === 0 || msg.courseRecommend.is_free) {
+                                                                return <span className="text-xs font-bold text-green-600 dark:text-green-400">Free</span>;
+                                                            }
+                                                            return (
+                                                                <span className="flex items-center gap-1.5">
+                                                                    <span className="text-xs font-bold text-slate-900 dark:text-white">₹{hasDiscount ? discountPrice : price}</span>
+                                                                    {hasDiscount && <span className="text-[10px] text-slate-400 line-through">₹{price}</span>}
+                                                                </span>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                    <Link href={`/courses/${msg.courseRecommend.slug}/${msg.courseRecommend.id}`} onClick={() => setIsOpen(false)} className="block text-center w-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 py-2 rounded-lg text-xs font-bold transition-colors">
+                                                        View Course →
                                                     </Link>
                                                 </div>
                                             </div>

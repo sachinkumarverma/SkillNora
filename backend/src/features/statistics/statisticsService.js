@@ -5,8 +5,17 @@ const getDashboardStats = async (userId, role) => {
 
   if (raw.isAdmin) {
     const totalRevenue = raw.orders.reduce(
-      (sum, order) => sum + Number(order.amount || 0),
-      0,
+      (sum, order) => {
+        const amount = Number(order.amount || 0);
+        if (['paid', 'success', 'captured'].includes(order.status)) {
+          return sum + amount;
+        }
+        if (order.status === 'refunded') {
+          return sum - amount;
+        }
+        return sum;
+      },
+      0
     );
     return {
       isAdmin: true,
@@ -17,6 +26,7 @@ const getDashboardStats = async (userId, role) => {
       activityData: {
         revenue: raw.orders.map((o) => ({
           amount: o.amount,
+          status: o.status,
           created_at: o.created_at,
         })),
         enrollments: raw.enrollments.map((e) => e.created_at),

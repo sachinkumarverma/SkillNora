@@ -3,6 +3,7 @@ import { enrollmentsService } from './enrollmentsService.js';
 import { supabaseServer, query } from '../../config/db.js';
 import { enrollmentsRepository } from './enrollmentsRepository.js';
 import { paymentsRepository } from '../payments/paymentsRepository.js';
+import { paymentsService } from '../payments/paymentsService.js';
 import nodemailer from 'nodemailer';
 import puppeteer from 'puppeteer';
 
@@ -333,8 +334,18 @@ const cancelEnrollment = async (req, res) => {
             return res.status(400).json({ error: 'Cancellation only allowed within 30 days of purchase.' });
         }
         
-        const price = await enrollmentsRepository.getCoursePrice(courseId);
-        const originalPrice = Number(price);
+        const orderRes = await query("SELECT amount, razorpay_payment_id FROM orders WHERE user_id = $1 AND course_id = $2 AND status IN ('paid', 'captured') LIMIT 1", [userData.user.id, courseId]);
+        let actualPaidAmount = 0;
+        let paymentId = null;
+        if (orderRes.rows.length > 0) {
+            actualPaidAmount = Number(orderRes.rows[0].amount);
+            paymentId = orderRes.rows[0].razorpay_payment_id;
+        } else {
+            // Fallback for free courses or old mock data
+            actualPaidAmount = Number(await enrollmentsRepository.getCoursePrice(courseId));
+        }
+        
+        const originalPrice = actualPaidAmount;
         
         let refundAmount = originalPrice;
         let deductAmount = 0;
@@ -347,18 +358,25 @@ const cancelEnrollment = async (req, res) => {
         
         await enrollmentsRepository.deleteEnrollment(userData.user.id, courseId);
         
-        // Mark the order as cancelled in the database
+        // Do not update original order to cancelled so we preserve the paid revenue record.
         try {
-            await query("UPDATE orders SET status = 'cancelled' WHERE user_id = $1 AND course_id = $2 AND status = 'paid'", [userData.user.id, courseId]);
-            
+            if (paymentId && refundAmount > 0) {
+                try {
+                    await paymentsService.initiateRefund(paymentId, refundAmount);
+                    logger.info(`Successfully initiated real Razorpay refund of Rs ${refundAmount} for payment ${paymentId}`);
+                } catch (refundErr) {
+                    logger.error(`Razorpay API refund failed for ${paymentId}:`, refundErr);
+                }
+            }
+
             // Make a new entry in DB for the refunded amount (negative)
             const refundReceipt = `rfnd_${Date.now()}`;
             await query(`
                 INSERT INTO orders (razorpay_order_id, user_id, course_id, amount, currency, status, receipt)
                 VALUES ($1, $2, $3, $4, 'INR', 'refunded', $5)
-            `, [`sim_refund_${Date.now()}`, userData.user.id, courseId, -refundAmount, refundReceipt]);
+            `, [`sim_refund_${Date.now()}`, userData.user.id, courseId, refundAmount, refundReceipt]);
         } catch (e) {
-            console.error("Error updating order status or creating refund entry:", e);
+            console.error("Error creating refund entry:", e);
         }
         
         res.json({ success: true, refundAmount });

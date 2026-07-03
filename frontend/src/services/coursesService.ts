@@ -4,8 +4,22 @@ const getAll = async () => {
     return (await apiClient.get('/api/courses')).data;
 };
 
+const getOneCache = new Map<string, Promise<any>>();
+
 const getOne = async (slugOrId: string) => {
-    return (await apiClient.get(`/api/courses/${slugOrId}`)).data;
+    if (getOneCache.has(slugOrId)) {
+        return getOneCache.get(slugOrId);
+    }
+    const promise = (async () => {
+        try {
+            const res = await apiClient.get(`/api/courses/${slugOrId}`);
+            return res.data;
+        } finally {
+            setTimeout(() => getOneCache.delete(slugOrId), 5000); // Clear cache after 5 seconds to allow fresh fetches on manual refresh
+        }
+    })();
+    getOneCache.set(slugOrId, promise);
+    return promise;
 };
 
 const getAdminAll = async () => {

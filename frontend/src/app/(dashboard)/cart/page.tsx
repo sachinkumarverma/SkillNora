@@ -5,6 +5,7 @@ import useUser from '@/lib/useUser'
 import apiClient from '@/lib/apiClient'
 import { useRouter } from 'next/navigation'
 import { cartService } from '@/services/cartService'
+import toast from 'react-hot-toast'
 
 import Loader from '@/components/ui/Loader'
 
@@ -13,6 +14,7 @@ export default function CartPage() {
     const { user, loading: userLoading } = useUser()
     const router = useRouter()
     const [isCheckingOut, setIsCheckingOut] = useState(false)
+    const [showSuccessModal, setShowSuccessModal] = useState(false)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -56,8 +58,8 @@ export default function CartPage() {
 
     const calculateTotal = () => {
         return cart.reduce((total, item) => {
-            const priceStr = String(item.price).replace(/[^0-9.]/g, '')
-            return total + (Number(priceStr) || 0)
+            const effectivePrice = Number(item.discount_price) > 0 ? Number(item.discount_price) : (Number(item.price) || 0)
+            return total + effectivePrice
         }, 0)
     }
 
@@ -67,35 +69,93 @@ export default function CartPage() {
         setIsCheckingOut(true)
 
         try {
+            // Ensure script is loaded
+            if (!window.Razorpay) {
+                await new Promise((resolve) => {
+                    const script = document.createElement('script')
+                    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+                    script.onload = () => resolve(true)
+                    script.onerror = () => resolve(false)
+                    document.body.appendChild(script)
+                })
+            }
+
             const totalAmount = calculateTotal()
             
-            // Generate dummy order ID for now
-            const orderId = 'order_' + crypto.randomUUID().substring(0, 8)
-            
-            const enrollmentsToInsert = cart.map(item => ({
-                course_id: item.id || item.course_id,
-                price: item.price
-            }))
-            
-            // Send to backend to record order and enroll
-            await apiClient.post('/api/payments/record-order-and-enroll', {
-                orderId,
-                totalAmount,
-                enrollments: enrollmentsToInsert
-            });
+            // Create order on backend
+            const { data } = await apiClient.post('/api/payments/create-order', {
+                amount: totalAmount,
+                currency: "INR",
+                course_id: cart.length === 1 ? (cart[0].id || cart[0].course_id) : null,
+                user_id: user.id
+            })
 
-            // Clear cart
-            if (user) {
-                await cartService.clearCart()
-            }
-            setCart([])
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: data.order.amount,
+                currency: data.order.currency,
+                name: "Skillnora",
+                description: `Purchase ${cart.length} Course(s)`,
+                order_id: data.order.id,
+                prefill: {
+                    name: user.full_name || 'Learner',
+                    email: user.email,
+                    contact: '+919876543210'
+                },
+                theme: {
+                    color: "#2563eb"
+                },
+                modal: {
+                    ondismiss: function() {
+                        toast.error("Payment cancelled.");
+                        setIsCheckingOut(false);
+                    }
+                },
+                handler: async function (response: any) {
+                    try {
+                        setIsCheckingOut(true)
+                        
+                        const enrollmentsToInsert = cart.map(item => {
+                            const effectivePrice = Number(item.discount_price) > 0 ? Number(item.discount_price) : (Number(item.price) || 0)
+                            return {
+                                course_id: item.id || item.course_id,
+                                price: effectivePrice
+                            }
+                        })
+                        
+                        await apiClient.post('/api/payments/record-order-and-enroll', {
+                            orderId: response.razorpay_order_id,
+                            paymentId: response.razorpay_payment_id,
+                            signature: response.razorpay_signature,
+                            totalAmount,
+                            enrollments: enrollmentsToInsert
+                        });
+
+                        // Clear cart
+                        if (user) {
+                            await cartService.clearCart()
+                        }
+                        setCart([])
+                        
+                        setIsCheckingOut(false)
+                        setShowSuccessModal(true)
+                    } catch (err: any) {
+                        setIsCheckingOut(false)
+                        toast.error("Payment verification failed! " + err.message);
+                    }
+                }
+            };
             
-            alert('Payment successful! You are now enrolled in these courses.')
-            router.push('/enrolled')
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any){
+                toast.error("Payment Failed: " + response.error.description);
+                setIsCheckingOut(false);
+            });
+            rzp.open();
+
         } catch (err: any) {
             console.error('Checkout error:', err)
-            alert('Failed to checkout: ' + err.message)
-        } finally {
+            toast.error('Failed to initiate checkout: ' + err.message);
             setIsCheckingOut(false)
         }
     }
@@ -173,7 +233,14 @@ export default function CartPage() {
                                 <div className="flex-1 flex flex-col justify-between py-1">
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:gap-4">
                                         <Link href={`/courses/${item.slug}/${item.id}`} className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-base sm:text-lg line-clamp-2 mb-1 sm:mb-0">{item.title}</Link>
-                                        <div className="font-black text-slate-900 dark:text-white shrink-0 text-base sm:text-lg">{item.price}</div>
+                                        <div className="font-black text-slate-900 dark:text-white shrink-0 text-base sm:text-lg">
+                                            {Number(item.discount_price) > 0 ? (
+                                                <div className="flex flex-col items-end">
+                                                    <span>Rs. {item.discount_price}</span>
+                                                    <span className="text-sm line-through text-slate-400 font-medium">Rs. {item.price}</span>
+                                                </div>
+                                            ) : (Number(item.price) > 0 ? `Rs. ${item.price}` : 'Free')}
+                                        </div>
                                     </div>
                                     <div className="flex justify-between items-end">
                                         <div className="text-sm text-slate-500">1 Year Access</div>

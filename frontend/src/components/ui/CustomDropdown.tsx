@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const CustomDropdown = ({ label, value, options, onChange, required, placeholder }: { label?: string, value: string, options: {value: string, label: string}[], onChange: (val: string) => void, required?: boolean, placeholder?: string }) => {
+const CustomDropdown = ({ label, value, options, onChange, required, placeholder, hidePlaceholderOption }: { label?: string, value: string, options: {value: string, label: string}[], onChange: (val: string) => void, required?: boolean, placeholder?: string, hidePlaceholderOption?: boolean }) => {
     const [isOpen, setIsOpen] = useState(false)
     const selectedLabel = options.find(o => o.value === value)?.label || placeholder || 'Select...'
     return (
@@ -29,7 +29,7 @@ const CustomDropdown = ({ label, value, options, onChange, required, placeholder
                             className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
                         >
                             <div className="max-h-60 overflow-y-auto custom-scrollbar py-2">
-                                {placeholder && (
+                                {placeholder && !hidePlaceholderOption && (
                                     <div 
                                         onClick={() => { onChange(''); setIsOpen(false) }}
                                         className={`px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors ${!value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}

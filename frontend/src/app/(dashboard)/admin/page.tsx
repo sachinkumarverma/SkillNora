@@ -93,7 +93,12 @@ export default function AdminOverviewPage() {
         stats.activityData.revenue.forEach((r: any) => {
             const date = new Date(r.created_at)
             if (date.getFullYear() === new Date().getFullYear()) {
-                revenueByMonth[date.getMonth()] += Number(r.amount)
+                const amt = Number(r.amount)
+                if (['paid', 'success', 'captured'].includes(r.status)) {
+                    revenueByMonth[date.getMonth()] += amt
+                } else if (r.status === 'refunded') {
+                    revenueByMonth[date.getMonth()] -= amt
+                }
             }
         })
     }

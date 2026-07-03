@@ -5,6 +5,7 @@ import { paymentsRepository } from "./paymentsRepository.js";
 import { supabaseServer, query } from "../../config/db.js";
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
+import crypto from "crypto";
 
 const createOrder = async (req, res) => {
   try {
@@ -75,7 +76,17 @@ const recordOrderAndEnroll = async (req, res) => {
       console.error("Error fetching user full name:", e);
     }
 
-    const { orderId, totalAmount, enrollments } = req.body;
+    const { orderId, paymentId, signature, totalAmount, enrollments } = req.body;
+
+    // Verify Razorpay signature securely
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(orderId + "|" + paymentId)
+      .digest("hex");
+      
+    if (expectedSignature !== signature) {
+      return res.status(400).json({ error: "Invalid payment signature. Payment verification failed." });
+    }
 
     for (const item of enrollments) {
       await enrollmentsService.forceCreateEnrollment(
@@ -84,6 +95,7 @@ const recordOrderAndEnroll = async (req, res) => {
       );
       await paymentsRepository.createOrder({
         razorpay_order_id: orderId,
+        razorpay_payment_id: paymentId,
         user_id: userData.user.id,
         course_id: item.course_id,
         amount: item.price,

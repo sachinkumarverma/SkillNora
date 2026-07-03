@@ -59,7 +59,8 @@ export default function AuthPage() {
                             id: data.user.id,
                             email: data.user.email,
                             role: isInstructor ? 'instructor' : 'student',
-                            full_name: fullName
+                            full_name: fullName,
+                            avatar_url: data.user.user_metadata?.avatar_url
                         }).catch(() => { })
                     }
                     toast.success('Account created. Check your email to confirm your account.')

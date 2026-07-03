@@ -28,10 +28,10 @@ const getInstructors = async () => {
   return res.rows;
 };
 
-const syncUser = async (id, email, role, full_name) => {
+const syncUser = async (id, email, role, full_name, avatar_url) => {
   await query(
-    `INSERT INTO users (id, email, role, full_name) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET email = $2, role = EXCLUDED.role, full_name = COALESCE(users.full_name, EXCLUDED.full_name)`,
-    [id, email, role, full_name],
+    `INSERT INTO users (id, email, role, full_name, avatar_url) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET email = $2, role = EXCLUDED.role, full_name = COALESCE(users.full_name, EXCLUDED.full_name), avatar_url = COALESCE(users.avatar_url, EXCLUDED.avatar_url)`,
+    [id, email, role, full_name, avatar_url],
   );
   return true;
 };

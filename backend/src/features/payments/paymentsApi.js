@@ -36,6 +36,8 @@ const apiDefinitions = {
     request: {
       body: {
         orderId: Joi.string().required(),
+        paymentId: Joi.string().required(),
+        signature: Joi.string().required(),
         totalAmount: Joi.number().required(),
         enrollments: Joi.array().required(),
       },

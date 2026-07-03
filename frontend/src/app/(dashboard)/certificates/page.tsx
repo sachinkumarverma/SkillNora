@@ -6,7 +6,7 @@ import { certificatesService } from '@/services/certificatesService'
 import Loader from '@/components/ui/Loader'
 
 export default function CertificatesPage() {
-    const { user } = useUser()
+    const { user, loading: userLoading } = useUser()
     const router = useRouter()
     const [certs, setCerts] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -25,7 +25,7 @@ export default function CertificatesPage() {
         fetchCerts();
     }, [user])
 
-    if (loading && user) {
+    if (loading || userLoading) {
         return <Loader type="courses" />
     }
 

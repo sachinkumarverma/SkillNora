@@ -7,8 +7,8 @@ const insertEnrollment = async (userId, courseId) => {
   if (checkResult.rows.length > 0) return checkResult.rows[0];
 
   const sql = `
-            INSERT INTO enrollments (user_id, course_id)
-            VALUES ($1, $2)
+            INSERT INTO enrollments (user_id, course_id, expires_at)
+            VALUES ($1, $2, NOW() + INTERVAL '1 year')
             RETURNING *
         `;
   const { rows } = await query(sql, [userId, courseId]);

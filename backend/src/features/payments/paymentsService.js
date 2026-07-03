@@ -58,6 +58,7 @@ const verifyWebhook = async (raw, signature) => {
       const order = await paymentsRepository.updateOrder(
         payment.order_id,
         payment.status || "unknown",
+        payment.id
       );
 
       // If payment is successful, send the receipt email
@@ -174,7 +175,7 @@ const verifyWebhook = async (raw, signature) => {
                                     <tr>
                                         <td>1</td>
                                         <td>Course: ${details.course_title}</td>
-                                        <td>Lifetime Access</td>
+                                        <td>1 Year Access</td>
                                         <td>₹${formattedAmount}</td>
                                         <td>₹${formattedAmount}</td>
                                     </tr>
@@ -353,13 +354,29 @@ const verifyWebhook = async (raw, signature) => {
         }
       }
     } catch (e) {
-      console.error("Webhook processing error:", e);
+      logger.error("Failed to process webhook email/PDF:", e);
     }
   }
-  return true;
+};
+
+const initiateRefund = async (paymentId, amount) => {
+  if (!paymentId) return null;
+  const razor = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+  const amt = Math.round(Number(amount) * 100);
+  try {
+    const refund = await razor.payments.refund(paymentId, { amount: amt });
+    return refund;
+  } catch (err) {
+    logger.error("Failed to initiate Razorpay refund", err);
+    throw err;
+  }
 };
 
 export const paymentsService = {
   createRazorpayOrder,
   verifyWebhook,
+  initiateRefund,
 };

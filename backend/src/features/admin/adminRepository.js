@@ -116,7 +116,7 @@ const getInstructors = async () => {
             u.created_at as joined,
             (SELECT COUNT(*) FROM courses WHERE instructor_id = u.id) as courses,
             (SELECT COUNT(DISTINCT e.user_id) FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE c.instructor_id = u.id) as students,
-            (SELECT COALESCE(SUM(amount), 0) FROM orders o JOIN courses c ON o.course_id = c.id WHERE c.instructor_id = u.id AND o.status IN ('created', 'paid', 'cancelled', 'refunded')) as revenue,
+            (SELECT COALESCE(SUM(CASE WHEN o.status IN ('paid', 'success', 'captured') THEN o.amount WHEN o.status = 'refunded' THEN -o.amount ELSE 0 END), 0) FROM orders o JOIN courses c ON o.course_id = c.id WHERE c.instructor_id = u.id AND o.status IN ('paid', 'success', 'captured', 'refunded')) as revenue,
             COALESCE(au.raw_user_meta_data->>'avatar_url', au.raw_user_meta_data->>'picture', au.raw_user_meta_data->>'photoURL') as avatar_url
         FROM users u
         LEFT JOIN auth.users au ON u.id = au.id

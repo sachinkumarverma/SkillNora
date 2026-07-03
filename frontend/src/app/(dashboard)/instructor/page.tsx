@@ -104,7 +104,7 @@ export default function InstructorPage() {
                     </div>
                 </section>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-6">
                     <section className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
                         <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>Enrollments & Revenue</h2>
                         <div className='h-[350px] w-full'>
@@ -193,8 +193,8 @@ export default function InstructorPage() {
                                 const totalEnrollments = courses.reduce((acc, c) => acc + (parseInt(c.enrollment_count) || 0), 0)
                                 const avgStudentsPerCourse = publishedCount > 0 ? Math.round(totalEnrollments / publishedCount) : 0
                                 const revenuePerStudent = totalStudents > 0 ? Math.round(totalRevenue / totalStudents) : 0
-                                const freeCount = courses.filter(c => !parseFloat(c.price) || parseFloat(c.price) === 0).length
-                                const paidCount = courses.filter(c => parseFloat(c.price) > 0).length
+                                const freeCount = courses.filter(c => c.is_published && (!parseFloat(c.price) || parseFloat(c.price) === 0)).length
+                                const paidCount = courses.filter(c => c.is_published && parseFloat(c.price) > 0).length
 
                                 return (
                                     <>

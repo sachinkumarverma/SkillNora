@@ -119,7 +119,8 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
             if (PATH_LABELS[currentPath]) {
                 label = PATH_LABELS[currentPath]
             } else {
-                label = part.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                const cleanPart = part.replace(/-[0-9a-f]{8}$/i, '')
+                label = cleanPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
             }
             crumbs.push({ label, href: currentPath })
         })
@@ -133,10 +134,12 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
     
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [dropdownOpen, setDropdownOpen] = useState(false)
+    const [exploreOpen, setExploreOpen] = useState(false)
     const [notificationsOpen, setNotificationsOpen] = useState(false)
     const [dark, setDark] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const notificationsRef = useRef<HTMLDivElement>(null)
+    const exploreRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
@@ -270,6 +273,9 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
             if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
                 setShowSuggestions(false)
             }
+            if (exploreRef.current && !exploreRef.current.contains(event.target as Node)) {
+                setExploreOpen(false)
+            }
         }
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -314,7 +320,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
             ['/certificates', 'Certificates', 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'], 
             ['/settings', 'Account Details', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
             ['/contact', 'Contact Support', 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'],
-            // ['https://cv-pilot-ai.vercel.app/', 'Create Resume', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z']
+            ['https://cv-pilot-ai.vercel.app/', 'Create Resume', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z']
         ],
         instructor: [
             ['/instructor', 'Instructor Studio', 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'], 
@@ -394,7 +400,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                     <div className="p-4 border-t border-slate-100 dark:border-slate-800/50 relative overflow-hidden">
                         <div className="flex items-center gap-3 relative z-10">
                             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 ring-2 ring-white dark:bg-slate-700 dark:ring-slate-900 overflow-hidden shadow-sm">
-                                {avatarUrl ? <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" /> : <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{initials}</span>}
+                                {avatarUrl ? <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{initials}</span>}
                             </div>
                             {sidebarOpen && (
                                 <div className="min-w-0 overflow-hidden">
@@ -434,65 +440,72 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                     <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         {/* Mega Menu Explore Dropdown (Moved to left of search) */}
                         {role === 'student' && (
-                            <div className="relative group hidden lg:block mr-2">
-                            <button className="flex h-10 items-center gap-1.5 font-bold text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors">
+                            <div 
+                                className="relative hidden lg:block mr-2" 
+                                ref={exploreRef}
+                                onMouseEnter={() => setExploreOpen(true)}
+                                onMouseLeave={() => setExploreOpen(false)}
+                            >
+                            <button onClick={() => setExploreOpen(!exploreOpen)} className={`flex h-10 items-center gap-1.5 font-bold transition-colors ${exploreOpen ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400'}`}>
                                 Explore
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                                <svg className={`h-4 w-4 transition-transform duration-200 ${exploreOpen ? '-rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
                             </button>
-                            <div className="absolute top-full -right-[350px] pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div className={`absolute top-full -right-[350px] pt-2 transition-all duration-200 z-50 ${exploreOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`} onClick={(e) => {
+                                if ((e.target as HTMLElement).closest('a')) setExploreOpen(false)
+                            }}>
                                 <div className="w-[850px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl p-8 grid grid-cols-4 gap-8">
                                     <div>
                                         <h4 className="font-black text-slate-900 dark:text-white mb-4 uppercase text-xs tracking-wider">Explore Roles</h4>
                                         <ul className="space-y-3 text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                                            <li><Link href="/courses?role=data-analyst" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Data Analyst</Link></li>
-                                            <li><Link href="/courses?role=project-manager" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Project Manager</Link></li>
-                                            <li><Link href="/courses?role=cyber-security" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Cyber Security Analyst</Link></li>
-                                            <li><Link href="/courses?role=ui-ux" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">UI / UX Designer</Link></li>
-                                            <li><Link href="/courses?role=machine-learning" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Machine Learning Engineer</Link></li>
-                                            <li><Link href="/courses?role=software-engineer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Software Engineer</Link></li>
-                                            <li><Link href="/courses?role=frontend-developer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Frontend Developer</Link></li>
-                                            <li><Link href="/courses?role=backend-developer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Backend Developer</Link></li>
-                                            <li><Link href="/courses?role=marketing-manager" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Marketing Manager</Link></li>
-                                            <li><Link href="/courses?role=financial-analyst" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Financial Analyst</Link></li>
+                                            <li><Link href="/courses?role=Data Analyst" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Data Analyst</Link></li>
+                                            <li><Link href="/courses?role=Project Manager" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Project Manager</Link></li>
+                                            <li><Link href="/courses?role=Cyber Security Analyst" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Cyber Security Analyst</Link></li>
+                                            <li><Link href="/courses?role=UI / UX Designer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">UI / UX Designer</Link></li>
+                                            <li><Link href="/courses?role=Machine Learning Engineer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Machine Learning Engineer</Link></li>
+                                            <li><Link href="/courses?role=Software Engineer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Software Engineer</Link></li>
+                                            <li><Link href="/courses?role=Frontend Developer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Frontend Developer</Link></li>
+                                            <li><Link href="/courses?role=Backend Developer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Backend Developer</Link></li>
+                                            <li><Link href="/courses?role=Marketing Manager" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Marketing Manager</Link></li>
+                                            <li><Link href="/courses?role=Financial Analyst" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Financial Analyst</Link></li>
                                         </ul>
                                     </div>
                                     <div>
                                         <h4 className="font-black text-slate-900 dark:text-white mb-4 uppercase text-xs tracking-wider">Explore Categories</h4>
                                         <ul className="space-y-3 text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                                            <li><Link href="/courses?category=ai" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Artificial Intelligence</Link></li>
-                                            <li><Link href="/courses?category=business" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Business</Link></li>
-                                            <li><Link href="/courses?category=data-science" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Data Science</Link></li>
-                                            <li><Link href="/courses?category=it" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Information Technology</Link></li>
-                                            <li><Link href="/courses?category=health" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Healthcare</Link></li>
-                                            <li><Link href="/courses?category=web-dev" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Web Development</Link></li>
-                                            <li><Link href="/courses?category=marketing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Digital Marketing</Link></li>
-                                            <li><Link href="/courses?category=cloud" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Cloud Computing</Link></li>
-                                            <li><Link href="/courses?category=design" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Graphic Design</Link></li>
-                                            <li><Link href="/courses?category=finance" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Finance & Accounting</Link></li>
+                                            <li><Link href="/courses?category=Artificial Intelligence" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Artificial Intelligence</Link></li>
+                                            <li><Link href="/courses?category=Business" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Business</Link></li>
+                                            <li><Link href="/courses?category=Data Science" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Data Science</Link></li>
+                                            <li><Link href="/courses?category=Information Technology" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Information Technology</Link></li>
+                                            <li><Link href="/courses?category=Healthcare" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Healthcare</Link></li>
+                                            <li><Link href="/courses?category=Web Development" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Web Development</Link></li>
+                                            <li><Link href="/courses?category=Digital Marketing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Digital Marketing</Link></li>
+                                            <li><Link href="/courses?category=Cloud Computing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Cloud Computing</Link></li>
+                                            <li><Link href="/courses?category=Graphic Design" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Graphic Design</Link></li>
+                                            <li><Link href="/courses?category=Finance & Accounting" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Finance & Accounting</Link></li>
                                         </ul>
                                     </div>
                                     <div>
                                         <h4 className="font-black text-slate-900 dark:text-white mb-4 uppercase text-xs tracking-wider">Earn a Certificate</h4>
                                         <ul className="space-y-3 text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                                            <li><Link href="/certificates" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Professional Certificates</Link></li>
-                                            <li><Link href="/certificates" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Online Degrees</Link></li>
-                                            <li><Link href="/certificates" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Specializations</Link></li>
-                                            <li><Link href="/certificates" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Master's Degrees</Link></li>
+                                            <li><Link href="/courses?certificate_type=Professional Certificates" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Professional Certificates</Link></li>
+                                            <li><Link href="/courses?certificate_type=Online Degrees" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Online Degrees</Link></li>
+                                            <li><Link href="/courses?certificate_type=Specializations" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Specializations</Link></li>
+                                            <li><Link href="/courses?certificate_type=Master's Degrees" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Master's Degrees</Link></li>
                                         </ul>
                                     </div>
                                     <div>
                                         <h4 className="font-black text-slate-900 dark:text-white mb-4 uppercase text-xs tracking-wider">Trending Skills</h4>
                                         <ul className="space-y-3 text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                                            <li><Link href="/courses?skill=python" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Python</Link></li>
-                                            <li><Link href="/courses?skill=machine-learning" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Machine Learning</Link></li>
-                                            <li><Link href="/courses?skill=sql" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">SQL</Link></li>
-                                            <li><Link href="/courses?skill=excel" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Excel</Link></li>
-                                            <li><Link href="/courses?skill=power-bi" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Power BI</Link></li>
-                                            <li><Link href="/courses?skill=react" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">React</Link></li>
-                                            <li><Link href="/courses?skill=javascript" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">JavaScript</Link></li>
-                                            <li><Link href="/courses?skill=java" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Java</Link></li>
-                                            <li><Link href="/courses?skill=cpp" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">C++</Link></li>
-                                            <li><Link href="/courses?skill=go" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Go</Link></li>
+                                            <li><Link href="/courses?skill=Python" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Python</Link></li>
+                                            <li><Link href="/courses?skill=Machine Learning" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Machine Learning</Link></li>
+                                            <li><Link href="/courses?skill=SQL" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">SQL</Link></li>
+                                            <li><Link href="/courses?skill=Excel" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Excel</Link></li>
+                                            <li><Link href="/courses?skill=Power BI" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Power BI</Link></li>
+                                            <li><Link href="/courses?skill=React" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">React</Link></li>
+                                            <li><Link href="/courses?skill=JavaScript" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">JavaScript</Link></li>
+                                            <li><Link href="/courses?skill=Java" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Java</Link></li>
+                                            <li><Link href="/courses?skill=C++" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">C++</Link></li>
+                                            <li><Link href="/courses?skill=Go" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Go</Link></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -586,7 +599,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                             <div className="relative" ref={dropdownRef}>
                                 <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-1 sm:pr-3 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700">
                                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-sm overflow-hidden shrink-0">
-                                        {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : initials}
+                                        {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : initials}
                                     </div>
                                     <span className="hidden sm:block text-xs font-semibold text-slate-700 dark:text-slate-300 capitalize">{user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0]}</span>
                                     <svg className="hidden sm:block h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>

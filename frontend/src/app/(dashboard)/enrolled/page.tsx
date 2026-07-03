@@ -5,6 +5,8 @@ import CourseCard from '@/components/CourseCard'
 import api from '@/lib/api'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
+import ConfirmDeleteModal from '@/components/views/ConfirmDeleteModal'
+import toast from 'react-hot-toast'
 
 export default function EnrolledPage() {
     const router = useRouter()
@@ -12,6 +14,7 @@ export default function EnrolledPage() {
     const [courses, setCourses] = React.useState<any[]>([])
     const [enrolledIds, setEnrolledIds] = React.useState<string[]>([])
     const [loading, setLoading] = React.useState(true)
+    const [confirmModal, setConfirmModal] = React.useState<{ isOpen: boolean; courseId: string }>({ isOpen: false, courseId: '' })
 
     React.useEffect(() => {
         let active = true
@@ -29,20 +32,23 @@ export default function EnrolledPage() {
     }, [])
 
     const handleCancel = async (courseId: string) => {
-        if (!confirm('Are you sure you want to cancel your enrollment? You will only get a partial refund (calculated dynamically) if it is within 30 days.')) return;
-        
         try {
             setLoading(true);
             const res = await apiClient.post('/api/enrollments/cancel', { course_id: courseId });
-            alert(`Enrollment cancelled successfully.\nRefund amount: ₹${res.data.refundAmount?.toFixed(2)}\nA receipt has been sent to your email.`);
+            toast.success(`Enrollment cancelled successfully.\nRefund amount: ₹${res.data.refundAmount?.toFixed(2)}\nA receipt has been sent to your email.`, { duration: 5000 });
             setEnrolledIds(enrolledIds.filter(id => id !== courseId));
         } catch (err: any) {
             console.error(err);
-            alert(`Failed to cancel: ${err.response?.data?.error || err.message}`);
+            toast.error(`Failed to cancel: ${err.response?.data?.error || err.message}`);
         } finally {
             setLoading(false);
+            setConfirmModal({ isOpen: false, courseId: '' });
         }
     };
+
+    const triggerCancel = (courseId: string) => {
+        setConfirmModal({ isOpen: true, courseId });
+    }
 
     if (loading) return <Loader type="courses" />
 
@@ -80,12 +86,19 @@ export default function EnrolledPage() {
                                 course={course}
                                 isEnrolled={true}
                                 variant="enrolled"
-                                onCancel={(e) => { e.stopPropagation(); handleCancel(course.id); }}
+                                onCancel={(e) => { e.stopPropagation(); triggerCancel(course.id); }}
                             />
                         ))}
                     </div>
                 )}
             </section>
+            <ConfirmDeleteModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, courseId: '' })}
+                onConfirm={() => handleCancel(confirmModal.courseId)}
+                title="Cancel Enrollment?"
+                message="Are you sure you want to cancel your enrollment? You will only get a partial refund (calculated dynamically) if it is within 30 days."
+            />
         </div>
     )
 }

@@ -58,6 +58,7 @@ export default function AdminCourseManagement() {
     const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
+    const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
     const fetchCourses = async () => {
         setLoading(true)
@@ -66,18 +67,21 @@ export default function AdminCourseManagement() {
             if (data) {
                 const courseList = data.courses || (Array.isArray(data) ? data : []);
                 const filteredList = courseList.filter((c: any) => c.is_published || c.is_archived);
-                const mapped = filteredList.map((c: any) => ({
-                    id: c.id,
-                    title: c.title || 'Untitled Course',
-                    category: c.category || 'Uncategorized',
-                    instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
-                    price: Number(c.price) > 0 ? `₹${c.price}` : <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-2 py-1 rounded">Free</span>,
+                const mapped = filteredList.map((c: any) => {
+                    const effectivePrice = Number(c.discount_price) > 0 ? Number(c.discount_price) : Number(c.price);
+                    return {
+                        id: c.id,
+                        title: c.title || 'Untitled Course',
+                        category: c.category || 'Uncategorized',
+                        instructor: c.instructor?.full_name || c.instructor?.email || 'No Instructor',
+                        price: effectivePrice > 0 ? `₹${effectivePrice}` : <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-400 px-2 py-1 rounded">Free</span>,
                     status: c.is_published ? 'Published' : 'Archived',
                     enrollments: Number(c.enrollment_count) || 0,
                     rating: c.average_rating || 0,
-                    thumbnail_url: c.thumbnail_url,
-                    slug: c.slug
-                }))
+                        thumbnail_url: c.thumbnail_url,
+                        slug: c.slug
+                    }
+                })
                 setCourses(mapped)
             }
         } catch (err: any) {
@@ -107,9 +111,9 @@ export default function AdminCourseManagement() {
             await apiClient.post('/api/courses/delete-with-refund', { ids: [courseToDelete] });
             setCourses(courses.filter(c => c.id !== courseToDelete))
             setCourseToDelete(null)
-            alert('Course deleted successfully. Active students have been partially refunded based on their remaining subscription time.')
+            toast.success('Course deleted successfully. Active students have been partially refunded based on their remaining subscription time.', { duration: 5000 })
         } catch (error: any) {
-            alert('Failed to delete course: ' + error.message)
+            toast.error('Failed to delete course: ' + error.message)
         } finally {
             setLoading(false)
         }
@@ -146,8 +150,9 @@ export default function AdminCourseManagement() {
             await coursesService.bulkPublish(selectedCourses, true);
             setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Published' } : c))
             setSelectedCourses([])
+            toast.success(`Successfully published ${selectedCourses.length} courses.`)
         } catch (error: any) {
-            alert('Failed to publish courses: ' + error.message)
+            toast.error('Failed to publish courses: ' + error.message)
         }
         setLoading(false)
     }
@@ -160,23 +165,33 @@ export default function AdminCourseManagement() {
             setCourses(courses.map(c => selectedCourses.includes(c.id) ? { ...c, status: 'Archived' } : c))
             toast.success(`Successfully archived ${selectedCourses.length} courses.`)
         } catch (error: any) {
-            alert('Failed to archive courses: ' + error.message)
+            toast.error('Failed to archive courses: ' + error.message)
         }
         setLoading(false)
     }
 
-    const handleBulkDelete = async () => {
+    const triggerBulkDelete = () => {
         if (!selectedCourses.length) return
-        if (!confirm(`Are you sure you want to delete ${selectedCourses.length} selected courses? This action cannot be undone and will trigger partial refunds.`)) return
-        
+        setConfirmModal({
+            isOpen: true,
+            title: `Delete ${selectedCourses.length} Selected Courses?`,
+            message: `Are you sure you want to delete ${selectedCourses.length} selected courses? This action cannot be undone and will trigger partial refunds to active students.`,
+            onConfirm: () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                executeBulkDelete()
+            }
+        })
+    }
+
+    const executeBulkDelete = async () => {
         setLoading(true)
         try {
             await apiClient.post('/api/courses/delete-with-refund', { ids: selectedCourses });
             setCourses(courses.filter(c => !selectedCourses.includes(c.id)))
+            toast.success(`Successfully deleted ${selectedCourses.length} courses and issued partial refunds.`, { duration: 5000 })
             setSelectedCourses([])
-            alert(`Successfully deleted ${selectedCourses.length} courses and issued partial refunds.`)
         } catch (error: any) {
-            alert('Failed to bulk delete courses: ' + error.message)
+            toast.error('Failed to bulk delete courses: ' + error.message)
         } finally {
             setLoading(false)
         }
@@ -222,6 +237,14 @@ export default function AdminCourseManagement() {
                 onConfirm={confirmDeleteCourse}
                 title="Delete Course?"
                 message="Are you completely sure you want to permanently delete this course? This action cannot be undone and all enrollments will be lost."
+            />
+
+            <ConfirmDeleteModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
             />
 
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -325,7 +348,7 @@ export default function AdminCourseManagement() {
                             <div className="h-4 w-px bg-blue-200 dark:bg-blue-800 mx-2"></div>
                             <button onClick={handleBulkPublish} className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Publish</button>
                             <button onClick={handleBulkArchive} className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors ml-2">Archive</button>
-                            <button onClick={handleBulkDelete} className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors ml-2">Delete</button>
+                            <button onClick={triggerBulkDelete} className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors ml-2">Delete</button>
                         </div>
                     )}
                 </div>

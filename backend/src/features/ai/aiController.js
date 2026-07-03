@@ -1,5 +1,6 @@
 import { logger } from "../../utils/logger.js";
 import { aiService } from "./aiService.js";
+import { query } from "../../config/db.js";
 
 const getSummary = async (req, res) => {
   try {
@@ -32,7 +33,27 @@ const getChat = async (req, res) => {
         reply:
           "I'm currently running in offline mock mode because the API key is not set.",
       });
-    const data = await aiService.chat(req.body.messages || [], key);
+    // Fetch published courses for AI context
+    let courseContext = "No courses available.";
+    try {
+      const { rows } = await query(`
+        SELECT id, title, slug, price, discount_price, category
+        FROM courses 
+        WHERE is_published = true
+        LIMIT 20
+      `);
+      if (rows.length > 0) {
+        courseContext = rows.map(c => {
+          const hasDiscount = c.discount_price != null && Number(c.discount_price) < Number(c.price);
+          const displayPrice = hasDiscount ? `₹${c.discount_price} (original ₹${c.price})` : (Number(c.price) > 0 ? `₹${c.price}` : 'Free');
+          return `- ${c.title} (Category: ${c.category || 'General'}, Price: ${displayPrice}). Link: /courses/${c.slug}/${c.id || ''}`;
+        }).join('\n');
+      }
+    } catch (e) {
+      logger.error("Error fetching courses for AI context", e);
+    }
+
+    const data = await aiService.chat(req.body.messages || [], key, courseContext);
     res.json({
       reply: data.choices[0].message.content,
     });

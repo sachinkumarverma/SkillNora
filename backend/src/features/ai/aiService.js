@@ -30,7 +30,7 @@ const summarize = async (text, key) => {
   return await r.json();
 };
 
-const chat = async (messages, key) => {
+const chat = async (messages, key, courseContext = "") => {
   const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -43,7 +43,7 @@ const chat = async (messages, key) => {
         {
           role: "system",
           content:
-            "You are Askie, Skillnora's intelligent AI learning assistant. Be very friendly, concise, and helpful.",
+            `You are Askie, Skillnora's intelligent AI learning assistant. Be very friendly, concise, and helpful. You MUST ONLY recommend courses from the Skillnora platform. Do NOT recommend external courses or platforms.\n\nHere are the current courses available on Skillnora:\n${courseContext}`,
         },
         ...messages,
       ],

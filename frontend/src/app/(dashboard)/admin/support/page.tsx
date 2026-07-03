@@ -46,7 +46,7 @@ export default function AdminSupportPage() {
         setIsResolving(true);
         try {
             await apiClient.post(`/api/support/admin/${resolvingTicketId}/resolve`, { adminMessage: resolveMessage })
-            setTickets(tickets.map(t => t.id === resolvingTicketId ? { ...t, status: 'Closed' } : t))
+            setTickets(prev => prev.map(t => String(t.id) === String(resolvingTicketId) ? { ...t, status: 'Closed', closed_date: new Date().toISOString() } : t))
             setResolvingTicketId(null);
             setResolveMessage('');
             toast.success("Ticket resolved and email sent!")
@@ -56,6 +56,21 @@ export default function AdminSupportPage() {
         } finally {
             setIsResolving(false);
         }
+    }
+
+    const formatDateTime = (dateVal: string | null) => {
+        if (!dateVal) return '-';
+        // If it comes from backend SQL TO_CHAR, it won't have a 'T' (e.g. "02 Jul 2026, 01:23 PM")
+        if (!dateVal.includes('T') && !dateVal.includes('-')) return dateVal; 
+        
+        const d = new Date(dateVal);
+        if (isNaN(d.getTime())) return dateVal;
+        
+        const day = d.getDate().toString().padStart(2, '0')
+        const month = d.toLocaleString('en-US', { month: 'short' })
+        const year = d.getFullYear()
+        const time = d.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+        return `${day} ${month} ${year}, ${time}`
     }
 
     const filtered = tickets.filter(t => t.subject?.toLowerCase().includes(search.toLowerCase()) || t.user?.toLowerCase().includes(search.toLowerCase()))
@@ -167,7 +182,7 @@ export default function AdminSupportPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         {t.status === 'Closed' ? (
-                                            <div className="text-slate-500 font-medium">{t.closed_date || '-'}</div>
+                                            <div className="text-slate-500 font-medium">{formatDateTime(t.closed_date)}</div>
                                         ) : (
                                             <div className="text-slate-400 italic">-</div>
                                         )}

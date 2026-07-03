@@ -15,6 +15,7 @@ const Confetti = dynamic(() => import('react-confetti'), { ssr: false })
 import Link from 'next/link'
 import apiClient from '@/lib/apiClient'
 import toast from 'react-hot-toast'
+import ConfirmDeleteModal from '@/components/views/ConfirmDeleteModal'
 
 const formatNoteContent = (html: string) => {
     if (!html) return '';
@@ -67,6 +68,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     const [replyImageFile, setReplyImageFile] = useState<File | null>(null)
     const [replyingTo, setReplyingTo] = useState<any | null>(null)
     const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null)
+    const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; commentId: string }>({ isOpen: false, commentId: '' })
 
     const COMMON_EMOJIS = ['😀','😂','🥰','😎','🤔','🙌','👍','❤️','🔥','🎉','😢','👏'];
 
@@ -170,14 +172,20 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
     }
 
     const handleDeleteComment = async (commentId: string) => {
-        if (!confirm("Are you sure you want to delete this comment?")) return
         try {
             await commentsService.deleteComment(commentId)
             setComments(comments.filter(c => c.id !== commentId))
+            toast.success("Comment deleted successfully.")
         } catch (err) {
             console.error("Failed to delete comment", err)
-            alert("Failed to delete comment.")
+            toast.error("Failed to delete comment.")
+        } finally {
+            setConfirmModal({ isOpen: false, commentId: '' })
         }
+    }
+
+    const triggerDeleteComment = (commentId: string) => {
+        setConfirmModal({ isOpen: true, commentId })
     }
 
     const handleReact = async (commentId: string, emoji: string) => {
@@ -752,7 +760,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                     <span className="text-xs text-slate-400 font-medium">{new Date(comment.created_at).toLocaleDateString()} {new Date(comment.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                                 </div>
                                                 {user?.id === comment.user_id && (
-                                                    <button onClick={() => handleDeleteComment(comment.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete Comment">
+                                                    <button onClick={() => triggerDeleteComment(comment.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete Comment">
                                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                     </button>
                                                 )}
@@ -856,7 +864,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                                         <span className="text-xs text-slate-400 font-medium">{new Date(reply.created_at).toLocaleDateString()} {new Date(reply.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                                                     </div>
                                                                     {user?.id === reply.user_id && (
-                                                                        <button onClick={() => handleDeleteComment(reply.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete Reply">
+                                                                        <button onClick={() => triggerDeleteComment(reply.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete Reply">
                                                                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                                         </button>
                                                                     )}
@@ -1048,6 +1056,13 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                     </div>
                 </div>
             )}
+            <ConfirmDeleteModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, commentId: '' })}
+                onConfirm={() => handleDeleteComment(confirmModal.commentId)}
+                title="Delete Comment?"
+                message="Are you sure you want to permanently delete this comment? This action cannot be undone."
+            />
         </div>
     )
 }

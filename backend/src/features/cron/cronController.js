@@ -52,7 +52,7 @@ const sendDailyRecommendations = async (req, res) => {
                 <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
                     <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 18px;">${course.title}</h3>
                     <p style="margin: 0 0 15px 0; color: #64748b; font-weight: bold;">${Number(course.price) > 0 ? "₹" + course.price : "Free Course"}</p>
-                    <a href="${process.env.FRONTEND_URL || "https://skillnora.vercel.app"}/courses/${course.slug}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">View Course</a>
+                    <a href="${process.env.FRONTEND_URL || "https://skillnora.vercel.app"}/courses/${course.slug}/${course.id}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">View Course</a>
                 </div>
             `,
         )

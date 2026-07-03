@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import apiClient from '@/lib/apiClient'
 import Loader from '@/components/ui/Loader'
 import Pagination from '@/components/ui/Pagination'
+import CustomDropdown from '@/components/ui/CustomDropdown'
 
 export default function InstructorPaymentsPage() {
     const [payments, setPayments] = useState<any[]>([])
@@ -11,6 +12,7 @@ export default function InstructorPaymentsPage() {
     const [loading, setLoading] = useState(true)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
+    const [statusFilter, setStatusFilter] = useState('All')
 
     const fetchPayments = async () => {
         setLoading(true)
@@ -28,7 +30,10 @@ export default function InstructorPaymentsPage() {
         fetchPayments()
     }, [])
 
-    const filtered = payments.filter(p => p.transaction_id?.toLowerCase().includes(search.toLowerCase()) || p.user_name?.toLowerCase().includes(search.toLowerCase()))
+    const filtered = payments.filter(p => 
+        (statusFilter === 'All' || p.status?.toLowerCase() === statusFilter.toLowerCase()) &&
+        (p.transaction_id?.toLowerCase().includes(search.toLowerCase()) || p.user_name?.toLowerCase().includes(search.toLowerCase()))
+    )
 
     const exportToCSV = () => {
         if (!payments.length) return;
@@ -101,24 +106,40 @@ export default function InstructorPaymentsPage() {
                 transition={{ delay: 0.2 }}
                 className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
             >
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 flex items-center justify-between gap-4">
-                    <div className="relative w-full max-w-md">
-                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        <input 
-                            type="text" 
-                            placeholder="Search by Transaction ID or Student..." 
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-full py-2 pl-10 pr-10 text-sm font-medium outline-none transition-all"
-                        />
-                        {search && (
-                            <button
-                                onClick={() => setSearch('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                            >
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        )}
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-1 flex-wrap gap-3 items-center min-w-[300px]">
+                        <div className="relative w-full max-w-sm">
+                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            <input 
+                                type="text" 
+                                placeholder="Search by Transaction ID or Student..." 
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-full py-2 pl-10 pr-10 text-sm font-medium outline-none transition-all"
+                            />
+                            {search && (
+                                <button
+                                    onClick={() => setSearch('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                >
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            )}
+                        </div>
+                        <div className="w-[180px]">
+                            <CustomDropdown 
+                                value={statusFilter}
+                                onChange={setStatusFilter}
+                                options={[
+                                    { value: 'All', label: 'All Statuses' },
+                                    { value: 'paid', label: 'Paid' },
+                                    { value: 'refunded', label: 'Refunded' },
+                                    { value: 'cancelled', label: 'Cancelled' },
+                                    { value: 'created', label: 'Created' },
+                                    { value: 'failed', label: 'Failed' }
+                                ]}
+                            />
+                        </div>
                     </div>
                     <button 
                         onClick={fetchPayments}

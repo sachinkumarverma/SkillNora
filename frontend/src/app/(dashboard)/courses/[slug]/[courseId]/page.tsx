@@ -17,7 +17,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     const [imageError, setImageError] = useState(false)
     const [isEnrolled, setIsEnrolled] = useState(false)
     const [inCart, setInCart] = useState(false)
-    const { user } = useUser()
+    const { user, loading: userLoading } = useUser()
     const router = useRouter()
     
     const role = user?.user_metadata?.role || user?.app_metadata?.role || (user?.email === 'sachinverma1489@gmail.com' ? 'admin' : 'student');
@@ -140,7 +140,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         }
     };
 
-    if (loading) return <Loader type="course-detail" />
+    if (loading || userLoading) return <Loader type="course-detail" />
 
     if (!course) return (
         <div className="flex h-[60vh] flex-col items-center justify-center text-center">
@@ -242,7 +242,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                     <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm mt-8">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Student Reviews</h2>
-                            {!isEnrolled && (
+                            {!isEnrolled && !(!course.price || Number(course.price) === 0 || course.is_free) && (
                                 <div className="group relative flex items-center justify-center text-slate-400 hover:text-blue-500 cursor-pointer transition-colors">
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -255,7 +255,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                         </div>
                         
                         {/* Add Review Form */}
-                        {isEnrolled && (
+                        {user && (isEnrolled || (!course.price || Number(course.price) === 0 || course.is_free)) && (
                             <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-slate-200 dark:border-slate-800">
                                 <h3 className="font-bold text-slate-900 dark:text-white mb-4">
                                     {course?.reviews?.find((r: any) => r.user_id === user?.id) && !isEditingReview ? "Your Review" : "Write a Review"}
@@ -395,7 +395,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                     {(!course.price || Number(course.price) === 0 || course.is_free) ? 'Start Course (Free)' : 'Enroll Now'}
                                 </button>
                             )}
-                            {!isStaff && <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "Partial refund available within 30 days" : ((!course.price || Number(course.price) === 0 || course.is_free) ? "Free Lifetime Access" : "30-Day Money-Back Guarantee")}</p>}
+                            {!isStaff && (
+                                (!isEnrolled && (!course.price || Number(course.price) === 0 || course.is_free)) ? (
+                                    <div className="mb-6"></div>
+                                ) : (
+                                    <p className="text-center text-xs text-slate-500 mb-6">{isEnrolled ? "Partial refund available within 30 days" : "30-Day Money-Back Guarantee"}</p>
+                                )
+                            )}
                             
                             <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800 text-sm">
                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">

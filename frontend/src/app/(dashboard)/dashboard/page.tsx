@@ -268,7 +268,7 @@ export default function DashboardPage() {
                                                 {gapCategories.map(cat => {
                                                     const countInCat = courses.filter(c => c.category === cat).length
                                                     return (
-                                                        <span key={cat} className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer transition-colors" onClick={() => router.push('/courses')}>
+                                                        <span key={cat} className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer transition-colors" onClick={() => router.push(`/courses?category=${encodeURIComponent(cat)}`)}>
                                                             {cat} <span className="text-xs text-slate-400">({countInCat})</span>
                                                         </span>
                                                     )
@@ -438,7 +438,7 @@ export default function DashboardPage() {
 
                     <CourseCarousel
                         title="Trending AI Courses"
-                        courses={displayCourses.filter(c => c.category === 'Data Science' || c.category === 'Software Engineering')}
+                        courses={displayCourses.filter(c => c.category === 'Artificial Intelligence')}
                         enrolledIds={enrolledIds}
                     />
 

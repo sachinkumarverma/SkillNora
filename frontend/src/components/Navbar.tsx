@@ -80,7 +80,7 @@ export default function Navbar() {
                                 aria-label='Open account menu'
                             >
                                 {avatarUrl ? (
-                                    <img src={avatarUrl} alt='User avatar' className='h-full w-full object-cover' />
+                                    <img src={avatarUrl} alt='User avatar' className='h-full w-full object-cover' referrerPolicy='no-referrer' />
                                 ) : (
                                     <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 via-cyan-500 to-violet-600 text-sm font-bold text-white'>
                                         {initials}
@@ -92,7 +92,7 @@ export default function Navbar() {
                                 <div className='absolute right-0 mt-3 w-80 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-950/15 dark:border-slate-700 dark:bg-slate-950'>
                                     <div className='flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900'>
                                         <div className='flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white text-sm font-bold text-white'>
-                                            {avatarUrl ? <img src={avatarUrl} alt='User avatar' className='h-full w-full object-cover' /> : <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 via-cyan-500 to-violet-600'>{initials}</div>}
+                                            {avatarUrl ? <img src={avatarUrl} alt='User avatar' className='h-full w-full object-cover' referrerPolicy='no-referrer' /> : <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 via-cyan-500 to-violet-600'>{initials}</div>}
                                         </div>
                                         <div className='min-w-0'>
                                             <div className='truncate text-sm font-semibold text-slate-950 dark:text-white'>{user.email}</div>
