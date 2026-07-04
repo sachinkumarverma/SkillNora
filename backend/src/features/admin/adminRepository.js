@@ -226,13 +226,14 @@ const getAuditLogs = async () => {
         UNION ALL
         (
             SELECT 'Course Published' as action,
-                   'system' as user_email,
-                   'Published course "' || title || '"' as details,
-                   created_at,
+                   COALESCE(u.email, 'system') as user_email,
+                   'Published course "' || c.title || '"' as details,
+                   c.created_at,
                    'success' as type
-            FROM courses
-            WHERE is_published = true
-            ORDER BY created_at DESC LIMIT 15
+            FROM courses c
+            LEFT JOIN users u ON c.instructor_id = u.id
+            WHERE c.is_published = true
+            ORDER BY c.created_at DESC LIMIT 15
         )
         UNION ALL
         (
@@ -279,28 +280,13 @@ const getAuditLogs = async () => {
     `;
   const { rows } = await query(sql);
 
-  // timeAgo helper
-  const timeAgo = (date) => {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + " years ago";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + " months ago";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + " days ago";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + " hours ago";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + " mins ago";
-    return Math.floor(seconds) + " seconds ago";
-  };
 
   return rows.map((r, i) => ({
     id: i + 1,
     action: r.action,
     user: r.user_email,
     details: r.details,
-    time: timeAgo(new Date(r.created_at)),
+    time: new Date(r.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
     type: r.type,
   }));
 };

@@ -143,6 +143,7 @@ export default function SettingsPage() {
 
     const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null
     const initials = (user.email || 'SN').slice(0, 2).toUpperCase()
+    const userRole = user?.email === 'sachinverma1489@gmail.com' ? 'Admin' : (user?.user_metadata?.role || user?.app_metadata?.role || 'Student')
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
@@ -201,7 +202,7 @@ export default function SettingsPage() {
                                         <h3 className="font-bold text-slate-900 dark:text-white text-lg">{fullName || 'Add your name'}</h3>
                                         <p className="text-slate-500 text-sm font-medium">{user.email}</p>
                                         <div className="mt-2 text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 inline-block px-2 py-1 rounded-md uppercase tracking-wider">
-                                            {user.user_metadata?.role || 'Student'}
+                                            {userRole}
                                         </div>
                                     </div>
                                 </div>

@@ -250,9 +250,12 @@ export default function AdminOverviewPage() {
                     transition={{ delay: 0.35 }}
                     className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm"
                 >
-                    <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-indigo-50/50 dark:bg-indigo-900/10">
-                        <h2 className="text-lg font-black text-slate-900 dark:text-white">All Courses</h2>
-                        <p className="text-sm text-slate-500 mt-1">Courses currently on the platform.</p>
+                    <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-indigo-50/50 dark:bg-indigo-900/10 flex justify-between items-center">
+                        <div>
+                            <h2 className="text-lg font-black text-slate-900 dark:text-white">Recent Courses</h2>
+                            <p className="text-sm text-slate-500 mt-1">Recently added courses on the platform.</p>
+                        </div>
+                        <Link href="/admin/courses" className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors">View All</Link>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm whitespace-nowrap">

@@ -155,9 +155,6 @@ export default function NotificationsPage() {
                                             {notif.message}
                                         </p>
                                         <div className="flex items-center gap-3 mt-1.5">
-                                            {notif.user_name && (
-                                                <span className="text-xs font-semibold text-slate-500">From: {notif.user_name}</span>
-                                            )}
                                             <span className="text-[11px] font-medium text-slate-400">
                                                 {new Date(notif.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                             </span>
