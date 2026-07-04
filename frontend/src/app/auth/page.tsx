@@ -4,9 +4,10 @@ import { useRouter } from 'next/navigation'
 import apiClient from '@/lib/apiClient'
 import toast from 'react-hot-toast'
 import { authService } from '@/services/authService'
+import supabase from '@/lib/supabaseClient'
 import Loader from '@/components/ui/Loader'
 
-type Mode = 'signin' | 'signup' | 'magic' | 'reset'
+type Mode = 'signin' | 'signup' | 'magic' | 'reset' | 'mfa'
 
 function GoogleIcon() {
     return (
@@ -27,6 +28,8 @@ export default function AuthPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [isInstructor, setIsInstructor] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [mfaCode, setMfaCode] = useState('')
+    const [mfaFactorId, setMfaFactorId] = useState('')
     const router = useRouter()
 
     async function handleSubmit(e: React.FormEvent) {
@@ -66,7 +69,7 @@ export default function AuthPage() {
                     toast.success('Account created. Check your email to confirm your account.')
                 }
             } else if (mode === 'signin') {
-                const { error } = await authService.signInWithPassword(email, password)
+                const { data, error } = await authService.signInWithPassword(email, password)
                 if (error) {
                     if (error.message.toLowerCase().includes("invalid login credentials")) {
                         toast.error('Invalid email or password.')
@@ -74,9 +77,42 @@ export default function AuthPage() {
                         toast.error(error.message)
                     }
                 } else {
+                    // Check if MFA is required
+                    const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+                    if (!aalError && aalData?.nextLevel === 'aal2' && aalData?.currentLevel === 'aal1') {
+                        // User needs to perform MFA
+                        const { data: factors } = await supabase.auth.mfa.listFactors()
+                        const totpFactor = factors?.totp?.[0] || factors?.all?.find(f => f.factor_type === 'totp' && f.status === 'verified')
+                        if (totpFactor) {
+                            setMfaFactorId(totpFactor.id)
+                            setMode('mfa')
+                            return
+                        }
+                    }
                     isSuccessRedirect = true;
                     router.push('/dashboard')
                 }
+            } else if (mode === 'mfa') {
+                if (mfaCode.length !== 6) {
+                    toast.error('Please enter a 6-digit code.')
+                    return
+                }
+                const challenge = await supabase.auth.mfa.challenge({ factorId: mfaFactorId })
+                if (challenge.error) {
+                    toast.error(challenge.error.message || 'Failed to challenge MFA.')
+                    return
+                }
+                const verify = await supabase.auth.mfa.verify({
+                    factorId: mfaFactorId,
+                    challengeId: challenge.data.id,
+                    code: mfaCode
+                })
+                if (verify.error) {
+                    toast.error(verify.error.message || 'Invalid verification code.')
+                    return
+                }
+                isSuccessRedirect = true;
+                router.push('/dashboard')
             } else if (mode === 'magic') {
                 const { error } = await authService.signInWithOtp(email)
                 if (error) {
@@ -110,14 +146,16 @@ export default function AuthPage() {
         }
     }
 
-    const heading = mode === 'signup' ? 'Create your Skillnora account' : mode === 'magic' ? 'Sign in with a magic link' : mode === 'reset' ? 'Reset your password' : 'Sign in to Skillnora'
+    const heading = mode === 'signup' ? 'Create your Skillnora account' : mode === 'magic' ? 'Sign in with a magic link' : mode === 'reset' ? 'Reset your password' : mode === 'mfa' ? 'Two-Factor Authentication' : 'Sign in to Skillnora'
     const description = mode === 'signup'
         ? 'Create a new account with email and password, or use Google to continue faster.'
         : mode === 'magic'
             ? 'We will email you a secure login link. No password required for this mode.'
             : mode === 'reset'
                 ? 'Enter your email and we will send a password reset link.'
-                : 'Use your email and password, or continue with Google.'
+                : mode === 'mfa'
+                    ? 'Enter the 6-digit code from your authenticator app.'
+                    : 'Use your email and password, or continue with Google.'
 
     return (
         <main className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -199,10 +237,12 @@ export default function AuthPage() {
                                 </div>
                             )}
 
-                            <div>
-                                <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Email</label>
-                                <input value={email} onChange={(e) => setEmail(e.target.value)} className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='you@domain.com' />
-                            </div>
+                            {mode !== 'mfa' && (
+                                <div>
+                                    <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Email</label>
+                                    <input value={email} onChange={(e) => setEmail(e.target.value)} className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900' placeholder='you@domain.com' />
+                                </div>
+                            )}
 
                             {(mode === 'signin' || mode === 'signup') && (
                                 <div>
@@ -235,6 +275,19 @@ export default function AuthPage() {
                                 </div>
                             )}
 
+                            {mode === 'mfa' && (
+                                <div>
+                                    <label className='mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200'>Authentication Code</label>
+                                    <input
+                                        value={mfaCode}
+                                        onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                                        maxLength={6}
+                                        className='w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 tracking-[0.5em] text-center text-xl font-bold'
+                                        placeholder='000000'
+                                    />
+                                </div>
+                            )}
+
                             {mode === 'signup' && (
                                 <label className="flex items-center gap-3 cursor-pointer group pt-2" onClick={() => setIsInstructor(!isInstructor)}>
                                     <div className={`relative flex items-center justify-center w-5 h-5 rounded border-2 transition-colors ${isInstructor ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 dark:border-slate-600 bg-transparent'}`}>
@@ -246,7 +299,7 @@ export default function AuthPage() {
                         </div>
 
                         <button disabled={loading} className='btn btn-primary w-full py-3 transform transition hover:scale-[1.02] active:scale-95'>
-                            {mode === 'signup' ? 'Create account' : mode === 'magic' ? 'Send magic link' : mode === 'reset' ? 'Send reset email' : 'Sign in'}
+                            {mode === 'signup' ? 'Create account' : mode === 'magic' ? 'Send magic link' : mode === 'reset' ? 'Send reset email' : mode === 'mfa' ? 'Verify Code' : 'Sign in'}
                         </button>
                     </form>
 

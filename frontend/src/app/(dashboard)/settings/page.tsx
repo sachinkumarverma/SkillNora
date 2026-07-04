@@ -21,6 +21,13 @@ export default function SettingsPage() {
     const [theme, setTheme] = useState('system')
     const [emailNotifs, setEmailNotifs] = useState(user?.user_metadata?.email_notifications !== false)
     const [pushNotifs, setPushNotifs] = useState(false)
+    
+    // MFA States
+    const [mfaStatus, setMfaStatus] = useState<'loading' | 'unenrolled' | 'enrolling' | 'enrolled'>('loading')
+    const [mfaFactorId, setMfaFactorId] = useState('')
+    const [qrCode, setQrCode] = useState('')
+    const [verifyCode, setVerifyCode] = useState('')
+    const [verifyError, setVerifyError] = useState('')
 
     useEffect(() => {
         if (user) {
@@ -43,6 +50,85 @@ export default function SettingsPage() {
             const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
             document.documentElement.classList.toggle('dark', systemDark)
             localStorage.removeItem('theme')
+        }
+    }
+
+    useEffect(() => {
+        async function fetchMfa() {
+            if (!user) return
+            try {
+                const { data, error } = await supabase.auth.mfa.listFactors()
+                if (error) throw error
+                const totpFactor = data?.totp?.[0] || data?.all?.find((f: any) => f.factor_type === 'totp' && f.status === 'verified')
+                if (totpFactor && totpFactor.status === 'verified') {
+                    setMfaStatus('enrolled')
+                    setMfaFactorId(totpFactor.id)
+                } else {
+                    setMfaStatus('unenrolled')
+                }
+            } catch (err) {
+                console.error('Failed to fetch MFA status', err)
+                setMfaStatus('unenrolled')
+            }
+        }
+        fetchMfa()
+    }, [user])
+
+    const startMfaEnrollment = async () => {
+        setMfaStatus('loading')
+        try {
+            const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
+            if (error) throw error
+            setMfaFactorId(data.id)
+            setQrCode(data.totp.qr_code)
+            setMfaStatus('enrolling')
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to start MFA enrollment')
+            setMfaStatus('unenrolled')
+        }
+    }
+
+    const verifyMfaEnrollment = async () => {
+        setVerifyError('')
+        if (!verifyCode || verifyCode.length !== 6) {
+            setVerifyError('Please enter a 6-digit code.')
+            return
+        }
+        setIsSaving(true)
+        try {
+            const challenge = await supabase.auth.mfa.challenge({ factorId: mfaFactorId })
+            if (challenge.error) throw challenge.error
+
+            const verify = await supabase.auth.mfa.verify({
+                factorId: mfaFactorId,
+                challengeId: challenge.data.id,
+                code: verifyCode
+            })
+            if (verify.error) throw verify.error
+
+            toast.success('Two-Factor Authentication enabled!')
+            setMfaStatus('enrolled')
+            setVerifyCode('')
+        } catch (err: any) {
+            setVerifyError(err.message || 'Invalid code.')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const unenrollMfa = async () => {
+        if (!confirm('Are you sure you want to disable Two-Factor Authentication?')) return
+        setIsSaving(true)
+        try {
+            const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId })
+            if (error) throw error
+            toast.success('Two-Factor Authentication disabled.')
+            setMfaStatus('unenrolled')
+            setMfaFactorId('')
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to disable MFA')
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -266,9 +352,48 @@ export default function SettingsPage() {
                                 <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800">
                                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Two-Factor Authentication</h3>
                                     <p className="text-sm text-slate-500 font-medium mb-4">Add an extra layer of security to your account.</p>
-                                    <button className="px-5 py-2.5 rounded-xl font-bold border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-                                        Enable 2FA
-                                    </button>
+                                    
+                                    {mfaStatus === 'loading' ? (
+                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-500"><svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Checking status...</div>
+                                    ) : mfaStatus === 'unenrolled' ? (
+                                        <button onClick={startMfaEnrollment} disabled={isSaving} className="px-5 py-2.5 rounded-xl font-bold border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 transition-colors disabled:opacity-50">
+                                            Enable 2FA
+                                        </button>
+                                    ) : mfaStatus === 'enrolling' ? (
+                                        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 max-w-lg">
+                                            <h4 className="font-bold text-slate-900 dark:text-white mb-2">Setup Google Authenticator</h4>
+                                            <p className="text-sm text-slate-500 mb-4">1. Scan this QR code with your authenticator app.</p>
+                                            <div className="bg-white p-4 rounded-lg inline-block mb-4 border shadow-sm" dangerouslySetInnerHTML={{ __html: qrCode }} />
+                                            <p className="text-sm text-slate-500 mb-4">2. Enter the 6-digit code from the app.</p>
+                                            <div className="flex items-start gap-4">
+                                                <div className="flex-1">
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="000000" 
+                                                        maxLength={6}
+                                                        value={verifyCode}
+                                                        onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ''))}
+                                                        className="w-full px-4 py-3 text-center tracking-widest text-lg rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
+                                                    />
+                                                    {verifyError && <p className="text-red-500 text-xs mt-2 font-medium">{verifyError}</p>}
+                                                </div>
+                                                <button onClick={verifyMfaEnrollment} disabled={isSaving || verifyCode.length !== 6} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-50 shadow-blue-500/30">
+                                                    Verify
+                                                </button>
+                                            </div>
+                                            <button onClick={() => setMfaStatus('unenrolled')} className="mt-6 text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">Cancel</button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-4">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                2FA Enabled
+                                            </span>
+                                            <button onClick={unenrollMfa} disabled={isSaving} className="text-sm font-bold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors disabled:opacity-50">
+                                                Disable 2FA
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
