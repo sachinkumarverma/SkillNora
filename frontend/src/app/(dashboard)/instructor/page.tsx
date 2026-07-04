@@ -47,7 +47,7 @@ export default function InstructorPage() {
     const draftCount = courses.filter(c => !c.is_published).length
     const totalCourses = courses.length
     const totalStudents = totalUniqueStudents
-    const totalRevenue = courses.reduce((acc, c) => acc + ((parseInt(c.enrollment_count) || 0) * (parseFloat(c.price) || 0)), 0)
+    const totalRevenue = courses.reduce((acc, c) => acc + (parseFloat(c.actual_revenue) || 0), 0)
     
     // Calculate Averages
     const validRatings = courses.filter(c => c.average_rating && parseFloat(c.average_rating) > 0)
@@ -79,8 +79,11 @@ export default function InstructorPage() {
     const chartData = courses.map(c => ({
         name: c.title,
         students: parseInt(c.enrollment_count) || 0,
-        revenue: (parseInt(c.enrollment_count) || 0) * (parseFloat(c.price) || 0)
-    })).slice(0, 8) // Limit to top 8 for readability
+        revenue: parseFloat(c.actual_revenue) || 0
+    })).sort((a, b) => {
+        if (b.revenue !== a.revenue) return b.revenue - a.revenue;
+        return b.students - a.students;
+    }).slice(0, 8) // Limit to top 8 performers
 
     return (
         <>
@@ -132,34 +135,45 @@ export default function InstructorPage() {
                     </section>
                     
                     <section className='rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
-                        <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>Revenue Distribution</h2>
+                        <h2 className='text-sm font-bold uppercase tracking-wide text-slate-950 dark:text-white mb-6'>
+                            {totalRevenue > 0 ? 'Revenue Distribution' : 'Student Distribution'}
+                        </h2>
                         <div className='h-[350px] w-full'>
-                            {chartData.filter(d => d.revenue > 0).length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={chartData.filter(d => d.revenue > 0)}
-                                            cx="50%"
-                                            cy="45%"
-                                            innerRadius={90}
-                                            outerRadius={130}
-                                            paddingAngle={5}
-                                            dataKey="revenue"
-                                        >
-                                            {chartData.filter(d => d.revenue > 0).map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip 
-                                            formatter={(value: number) => [`₹${value}`, 'Revenue']}
-                                            contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc' }}
-                                        />
-                                        <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '12px', color: '#64748b' }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="flex h-full items-center justify-center text-slate-500">No revenue data generated yet.</div>
-                            )}
+                            {(() => {
+                                const isRevenue = totalRevenue > 0;
+                                const pieData = isRevenue 
+                                    ? chartData.filter(d => d.revenue > 0) 
+                                    : chartData.filter(d => d.students > 0);
+                                const dataKey = isRevenue ? "revenue" : "students";
+
+                                if (pieData.length > 0) {
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={pieData}
+                                                    cx="50%"
+                                                    cy="45%"
+                                                    innerRadius={90}
+                                                    outerRadius={130}
+                                                    paddingAngle={5}
+                                                    dataKey={dataKey}
+                                                >
+                                                    {pieData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip 
+                                                    formatter={(value: number) => [isRevenue ? `₹${value}` : `${value} Students`, isRevenue ? 'Revenue' : 'Students']}
+                                                    contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc' }}
+                                                />
+                                                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '12px', color: '#64748b' }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    );
+                                }
+                                return <div className="flex h-full items-center justify-center text-slate-500">No data generated yet.</div>;
+                            })()}
                         </div>
                     </section>
                 </div>
@@ -217,7 +231,7 @@ export default function InstructorPage() {
                                                 <div className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{bestPerformer.title}</div>
                                                 <div className="text-xs font-medium text-slate-500 mt-1.5 flex justify-between items-center w-full">
                                                     <span>{bestPerformer.enrollment_count || 0} students</span>
-                                                    <span>₹{((parseInt(bestPerformer.enrollment_count) || 0) * (parseFloat(bestPerformer.price) || 0))} revenue</span>
+                                                    <span>₹{parseFloat(bestPerformer.actual_revenue) || 0} revenue</span>
                                                 </div>
                                             </div>
                                         )}

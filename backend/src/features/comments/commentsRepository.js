@@ -2,9 +2,11 @@ import { query } from "../../config/db.js";
 
 const getCommentsByLecture = async (slug, lectureId) => {
   const sql = `
-            SELECT * FROM lecture_comments
-            WHERE course_slug = $1 AND lecture_id = $2
-            ORDER BY created_at ASC
+            SELECT lc.*, u.avatar_url 
+            FROM lecture_comments lc
+            LEFT JOIN users u ON lc.user_id = u.id
+            WHERE lc.course_slug = $1 AND lc.lecture_id = $2
+            ORDER BY lc.created_at ASC
         `;
   const { rows } = await query(sql, [slug, String(lectureId)]);
   return rows;

@@ -147,6 +147,12 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                 user_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
                 role: user?.user_metadata?.role || 'student'
             })
+            // Inject avatar for immediate UI update
+            if (added && added.comment) {
+                added.comment.avatar_url = user?.user_metadata?.avatar_url;
+            } else if (added) {
+                added.avatar_url = user?.user_metadata?.avatar_url;
+            }
             if (added && added.comment) {
                 setComments([...comments, added.comment])
             } else if (added) {
@@ -749,9 +755,13 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
 
                                 return rootComments.map((comment: any) => (
                                     <div key={comment.id} className="flex gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
-                                            {comment.user_name?.charAt(0) || 'U'}
-                                        </div>
+                                        {comment.avatar_url ? (
+                                            <img src={comment.avatar_url} alt={comment.user_name} className="w-10 h-10 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200 dark:border-slate-700" />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
+                                                {comment.user_name?.charAt(0) || 'U'}
+                                            </div>
+                                        )}
                                         <div className="flex-1 w-full min-w-0">
                                             <div className="flex items-center justify-between gap-2 mb-1 w-full">
                                                 <div className="flex items-center gap-2">
@@ -853,9 +863,13 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                                                 <div className="mt-4 space-y-4 border-l-2 border-slate-100 dark:border-slate-800 pl-4">
                                                     {getReplies(comment.id).map(reply => (
                                                         <div key={reply.id} className="flex gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs uppercase">
-                                                                {reply.user_name?.charAt(0) || 'U'}
-                                                            </div>
+                                                            {reply.avatar_url ? (
+                                                                <img src={reply.avatar_url} alt={reply.user_name} className="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-sm border border-slate-200 dark:border-slate-700" />
+                                                            ) : (
+                                                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs uppercase">
+                                                                    {reply.user_name?.charAt(0) || 'U'}
+                                                                </div>
+                                                            )}
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center justify-between gap-2 mb-1 w-full">
                                                                     <div className="flex items-center gap-2">

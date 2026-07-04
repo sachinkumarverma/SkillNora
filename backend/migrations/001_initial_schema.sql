@@ -78,7 +78,7 @@ create table if not exists orders (
   course_id uuid references courses(id),
   amount numeric,
   currency text default 'INR',
-  status text default 'created', -- created, paid, failed
+  status text default 'created', -- created | paid | success | captured | failed | refunded
   receipt text,
   created_at timestamptz default now()
 );

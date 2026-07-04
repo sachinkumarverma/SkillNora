@@ -16,6 +16,7 @@ const getNotes = async (userId) => {
   return rows.map((row) => {
     return {
       ...row,
+      courseId: row.course_id,
       lectureId: row.lecture_id,
       updatedAt: row.updated_at || row.created_at,
     };

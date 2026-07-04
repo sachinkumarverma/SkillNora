@@ -12,7 +12,11 @@ const getAllAdmin = async (instructorId = null) => {
       c.*, 
       u.full_name as instructor_name, 
       u.email as instructor_email,
-      (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enrollment_count
+      (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enrollment_count,
+      (
+        COALESCE((SELECT SUM(amount) FROM orders o WHERE o.course_id = c.id AND o.status IN ('paid', 'success', 'captured')), 0) -
+        COALESCE((SELECT SUM(amount) FROM orders o WHERE o.course_id = c.id AND o.status = 'refunded'), 0)
+      ) as actual_revenue
     FROM courses c 
     LEFT JOIN users u ON c.instructor_id = u.id 
     ${whereClause}
@@ -39,7 +43,9 @@ const getUniqueStudentsCount = async (instructorId = null) => {
     SELECT COUNT(DISTINCT e.user_id) as count
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
-    ${whereClause}
+    JOIN users u ON e.user_id = u.id
+    WHERE u.role = 'student'
+    ${instructorId ? "AND c.instructor_id = $1" : ""}
   `;
   const { rows } = await query(sql, params);
   return parseInt(rows[0].count) || 0;
