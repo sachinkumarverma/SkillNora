@@ -3,7 +3,7 @@ import { paymentsService } from "./paymentsService.js";
 import { enrollmentsService } from "../enrollments/enrollmentsService.js";
 import { paymentsRepository } from "./paymentsRepository.js";
 import { supabaseServer, query } from "../../config/db.js";
-import nodemailer from "nodemailer";
+import { sendEmail } from "../../utils/email.js";
 import puppeteer from "puppeteer";
 import crypto from "crypto";
 
@@ -110,15 +110,6 @@ const recordOrderAndEnroll = async (req, res) => {
     // Run PDF and Email generation asynchronously so it doesn't block the frontend
     (async () => {
       try {
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
-          port: process.env.SMTP_PORT || 587,
-          secure: false,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
-        });
 
         const htmlReceipt = `
                     <!DOCTYPE html>
@@ -311,14 +302,11 @@ const recordOrderAndEnroll = async (req, res) => {
                     </div>
                 `;
 
-        const info = await transporter.sendMail({
-          from:
-            process.env.SMTP_FROM ||
-            '"Skillnora Billing" <sachinv1410@gmail.com>',
+        const info = await sendEmail({
+          fromName: "Skillnora Billing",
           to: userData.user.email,
           subject:
             "🎉 Congratulations on your Skillnora enrollment! (Receipt Attached)",
-          text: `Thank you for your purchase. Total amount: ₹${totalAmount}. Please find your PDF receipt attached.`,
           html: beautifulEmail,
           attachments: pdfBuffer
             ? [
@@ -330,7 +318,7 @@ const recordOrderAndEnroll = async (req, res) => {
               ]
             : undefined,
         });
-        logger.info("Receipt email sent! Message ID: %s", info.messageId);
+        logger.info("Receipt email sent! Message ID: %s", info.messageId || info.error);
       } catch (emailErr) {
         logger.error("Failed to generate PDF or send email:", emailErr);
       }

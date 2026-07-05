@@ -59,12 +59,12 @@ export const buildEmailHtml = (
 </html>
 `;
 
-export const sendEmail = async ({ to, subject, html, bcc, attachments }) => {
+export const sendEmail = async ({ to, subject, html, bcc, attachments, fromName }) => {
   try {
     // Use Brevo REST API if the API key is provided (bypasses SMTP port blocking in production)
     if (process.env.BREVO_API_KEY) {
       const payload = {
-        sender: { name: "Skillnora", email: "sachinv1410@gmail.com" },
+        sender: { name: fromName || "Skillnora", email: "sachinv1410@gmail.com" },
         to: [{ email: to }],
         subject: subject,
         htmlContent: html,
@@ -74,6 +74,23 @@ export const sendEmail = async ({ to, subject, html, bcc, attachments }) => {
         payload.bcc = Array.isArray(bcc)
           ? bcc.map((email) => ({ email }))
           : [{ email: bcc }];
+      }
+
+      if (attachments && Array.isArray(attachments)) {
+        payload.attachment = attachments.map((att) => {
+          let base64Content = "";
+          if (Buffer.isBuffer(att.content)) {
+            base64Content = att.content.toString("base64");
+          } else if (typeof att.content === "string") {
+            base64Content = Buffer.from(att.content).toString("base64");
+          } else {
+            base64Content = att.content;
+          }
+          return {
+            name: att.filename || att.name,
+            content: base64Content,
+          };
+        });
       }
 
       const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -98,7 +115,7 @@ export const sendEmail = async ({ to, subject, html, bcc, attachments }) => {
 
     // Fallback to standard SMTP (Nodemailer) for local dev or if no API key is set
     const mailOptions = {
-      from: '"Skillnora Billing" <sachinv1410@gmail.com>',
+      from: fromName ? `"${fromName}" <sachinv1410@gmail.com>` : '"Skillnora Billing" <sachinv1410@gmail.com>',
       to,
       subject,
       html,

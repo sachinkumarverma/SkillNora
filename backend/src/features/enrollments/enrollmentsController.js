@@ -4,7 +4,7 @@ import { supabaseServer, query } from '../../config/db.js';
 import { enrollmentsRepository } from './enrollmentsRepository.js';
 import { paymentsRepository } from '../payments/paymentsRepository.js';
 import { paymentsService } from '../payments/paymentsService.js';
-import nodemailer from 'nodemailer';
+import { sendEmail } from '../../utils/email.js';
 import puppeteer from 'puppeteer';
 
 const createEnrollment = async (req, res) => {
@@ -224,15 +224,7 @@ const createEnrollment = async (req, res) => {
                 logger.error('Failed to generate mock PDF in enrollmentsController:', pdfErr);
             }
             
-            const transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
-                port: process.env.SMTP_PORT || 587,
-                secure: false, 
-                auth: { 
-                    user: process.env.SMTP_USER, 
-                    pass: process.env.SMTP_PASS 
-                },
-            });
+
             
             const beautifulEmail = `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
@@ -251,8 +243,8 @@ const createEnrollment = async (req, res) => {
                 </div>
             `;
             
-            const info = await transporter.sendMail({
-                from: process.env.SMTP_FROM || '"Skillnora Billing" <sachinv1410@gmail.com>',
+            const info = await sendEmail({
+                fromName: "Skillnora Billing",
                 to: userData.user.email,
                 subject: "🎉 Congratulations on your Skillnora enrollment! (Receipt Attached)",
                 html: beautifulEmail,
@@ -262,7 +254,7 @@ const createEnrollment = async (req, res) => {
                     contentType: 'application/pdf'
                 }] : undefined
             });
-            logger.info("Mock Purchase receipt email sent! Message ID: %s", info.messageId);
+            logger.info("Mock Purchase receipt email sent! Message ID: %s", info.messageId || info.error);
         } catch (e) {
             logger.error('Failed to generate mock purchase PDF/email:', e);
         }
@@ -389,15 +381,7 @@ const cancelEnrollment = async (req, res) => {
         // Run PDF and Email generation asynchronously so it doesn't block the frontend
         (async () => {
             try {
-                const transporter = nodemailer.createTransport({
-                    host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
-                    port: process.env.SMTP_PORT || 587,
-                    secure: false, 
-                    auth: { 
-                        user: process.env.SMTP_USER, 
-                        pass: process.env.SMTP_PASS 
-                    },
-                });
+
                 
                 const htmlReceipt = `
                     <!DOCTYPE html>
@@ -572,11 +556,10 @@ const cancelEnrollment = async (req, res) => {
                     </div>
                 `;
 
-                const info = await transporter.sendMail({
-                    from: process.env.SMTP_FROM || '"Skillnora Billing" <sachinv1410@gmail.com>',
+                const info = await sendEmail({
+                    fromName: "Skillnora Billing",
                     to: userData.user.email,
                     subject: "Your Skillnora Course Cancellation & Refund (Receipt Attached)",
-                    text: `You have successfully cancelled the course. Refund amount: ₹${refundAmount.toFixed(2)}. Please find your PDF receipt attached.`,
                     html: beautifulEmail,
                     attachments: pdfBuffer ? [
                         {
@@ -586,7 +569,7 @@ const cancelEnrollment = async (req, res) => {
                         }
                     ] : undefined
                 });
-                logger.info("Cancellation email sent! Message ID: %s", info.messageId);
+                logger.info("Cancellation email sent! Message ID: %s", info.messageId || info.error);
             } catch(emailErr) {
                 logger.error("Failed to generate PDF or send email:", emailErr);
             }
