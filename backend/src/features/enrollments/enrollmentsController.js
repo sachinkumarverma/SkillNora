@@ -208,21 +208,16 @@ const createEnrollment = async (req, res) => {
                     </html>
             `;
             
-            let pdfBuffer = null;
-            try {
-                const browser = await puppeteer.launch({ 
-                    headless: true,
-                    timeout: 15000, 
-                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote', '--single-process'] 
-                });
-                const page = await browser.newPage();
-                await page.setContent(htmlReceipt, { waitUntil: 'domcontentloaded' });
-                pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
-                await browser.close();
-                logger.info(`PDF generated successfully for Mock Purchase Order ID: ${orderId}. Preparing email...`);
-            } catch (pdfErr) {
-                logger.error('Failed to generate mock PDF in enrollmentsController:', pdfErr);
-            }
+            const browser = await puppeteer.launch({ 
+                headless: true,
+                timeout: 15000, 
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote', '--single-process'] 
+            });
+            const page = await browser.newPage();
+            await page.setContent(htmlReceipt, { waitUntil: 'domcontentloaded' });
+            const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
+            await browser.close();
+            logger.info(`PDF generated successfully for Mock Purchase Order ID: ${orderId}. Preparing email...`);
             
             const transporter = nodemailer.createTransport({
                 host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
@@ -256,11 +251,11 @@ const createEnrollment = async (req, res) => {
                 to: userData.user.email,
                 subject: "🎉 Congratulations on your Skillnora enrollment! (Receipt Attached)",
                 html: beautifulEmail,
-                attachments: pdfBuffer ? [{
+                attachments: [{
                     filename: `Receipt_${orderId}.pdf`,
                     content: pdfBuffer,
                     contentType: 'application/pdf'
-                }] : undefined
+                }]
             });
             logger.info("Mock Purchase receipt email sent! Message ID: %s", info.messageId);
         } catch (e) {
@@ -541,21 +536,16 @@ const cancelEnrollment = async (req, res) => {
 
                 // Generate PDF
                 logger.info(`Starting PDF generation for Cancellation Course ID: ${courseId}...`);
-                let pdfBuffer = null;
-                try {
-                    const browser = await puppeteer.launch({ 
-                        headless: true, 
-                        timeout: 15000,
-                        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote', '--single-process'] 
-                    });
-                    const page = await browser.newPage();
-                    await page.setContent(htmlReceipt, { waitUntil: 'domcontentloaded' });
-                    pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
-                    await browser.close();
-                    logger.info(`PDF generated successfully for Cancellation Course ID: ${courseId}. Preparing to send email...`);
-                } catch (pdfErr) {
-                    logger.error('Failed to generate cancellation PDF in enrollmentsController:', pdfErr);
-                }
+                const browser = await puppeteer.launch({ 
+                    headless: true, 
+                    timeout: 15000,
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote', '--single-process'] 
+                });
+                const page = await browser.newPage();
+                await page.setContent(htmlReceipt, { waitUntil: 'domcontentloaded' });
+                const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
+                await browser.close();
+                logger.info(`PDF generated successfully for Cancellation Course ID: ${courseId}. Preparing to send email...`);
 
                 const beautifulEmail = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
@@ -578,13 +568,13 @@ const cancelEnrollment = async (req, res) => {
                     subject: "Your Skillnora Course Cancellation & Refund (Receipt Attached)",
                     text: `You have successfully cancelled the course. Refund amount: ₹${refundAmount.toFixed(2)}. Please find your PDF receipt attached.`,
                     html: beautifulEmail,
-                    attachments: pdfBuffer ? [
+                    attachments: [
                         {
                             filename: `Cancellation_${courseId}.pdf`,
                             content: pdfBuffer,
                             contentType: 'application/pdf'
                         }
-                    ] : undefined
+                    ]
                 });
                 logger.info("Cancellation email sent! Message ID: %s", info.messageId);
             } catch(emailErr) {
