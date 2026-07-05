@@ -56,9 +56,11 @@ const apiDefinitions = {
     handler: { controller: usersController, method: "sendPromotionalEmail" },
     request: {
       body: {
-        users: Joi.array().items(Joi.string()).required(),
-        subject: Joi.string().required(),
-        body: Joi.string().required(),
+        targetGroup: Joi.string().required(),
+        template: Joi.string().required(),
+        cssGradient: Joi.string().required(),
+        title: Joi.string().required(),
+        description: Joi.string().required(),
       },
     },
     response: Joi.object(),
