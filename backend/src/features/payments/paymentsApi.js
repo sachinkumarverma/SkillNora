@@ -44,6 +44,14 @@ const apiDefinitions = {
     },
     response: Joi.object(),
   },
+
+  testPdf: {
+    path: "/test-pdf",
+    verb: "GET",
+    handler: { controller: paymentsController, method: "testPdf" },
+    request: {},
+    response: Joi.object(),
+  },
 };
 
 export const paymentsApi = buildApiRouter(apiDefinitions);
