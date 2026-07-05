@@ -329,44 +329,8 @@ const recordOrderAndEnroll = async (req, res) => {
   }
 };
 
-const testPdf = async (req, res) => {
-  try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      timeout: 15000,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--no-zygote",
-        "--single-process",
-      ],
-    });
-    const page = await browser.newPage();
-    await page.setContent("<h1>Hello World</h1>", { waitUntil: "domcontentloaded" });
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-    });
-    await browser.close();
-    res.json({
-      success: true,
-      message: "Puppeteer launched and PDF generated successfully!",
-      size: pdfBuffer.length,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-      stack: err.stack,
-    });
-  }
-};
-
 export const paymentsController = {
   createOrder,
   webhook,
   recordOrderAndEnroll,
-  testPdf,
 };
