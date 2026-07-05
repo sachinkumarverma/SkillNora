@@ -79,8 +79,8 @@ export const sendEmail = async ({ to, subject, html, bcc, attachments, fromName 
       if (attachments && Array.isArray(attachments)) {
         payload.attachment = attachments.map((att) => {
           let base64Content = "";
-          if (Buffer.isBuffer(att.content)) {
-            base64Content = att.content.toString("base64");
+          if (Buffer.isBuffer(att.content) || att.content instanceof Uint8Array) {
+            base64Content = Buffer.from(att.content).toString("base64");
           } else if (typeof att.content === "string") {
             base64Content = Buffer.from(att.content).toString("base64");
           } else {
