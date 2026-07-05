@@ -148,6 +148,9 @@ See [`backend/migrations/001_initial_schema.sql`](./backend/migrations/001_initi
 - 📊 **Analytics dashboards** — Revenue charts, student enrollment trends, course health
 - 💬 **Q&A discussions** — Threaded comments with emoji reactions and image uploads on lectures
 - 📝 **Notes** — Per-lecture notes with direct "Go to Video" deep-link navigation
+- 📝 **Test Series Engine** — Full-featured exam simulator with live timers, anti-cheat mechanisms (tab focus tracking, disable copy/paste), section switching, and a dynamic question palette.
+  - *Mobile-First Design*: Test taking experience is highly optimized for mobile devices with swipeable/hideable palettes, proper `100dvh` viewport constraints, auto-stacking layouts for options and controls, and zero horizontal clipping.
+  - *Auto-Submit*: Smart timers that lock the test and seamlessly auto-save/submit answers the exact second the clock expires, redirecting users directly to their analysis.
 - 🏆 **Certificates** — Auto-issued on course completion with a unique verification code
 - 🔔 **Notifications** — Real-time in-app feed for replies, new comments, and support tickets
 - 🤖 **AI features** — Groq-powered lecture summaries and an AI chat assistant

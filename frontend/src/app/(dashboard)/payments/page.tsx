@@ -33,7 +33,7 @@ export default function PaymentsPage() {
 
     return (
         <>
-            <div className="p-6 md:p-8 max-w-3xl mx-auto">
+            <div className="w-full mx-auto p-6 md:p-8">
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Payments (Dev Mode)</h2>
                     <form className="flex flex-col sm:flex-row gap-4 items-end" onSubmit={createOrder}>

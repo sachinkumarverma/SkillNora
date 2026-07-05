@@ -102,7 +102,7 @@ export default function AskieBot() {
     }
 
     return (
-        <div className="fixed bottom-6 right-6 z-[100] w-16 h-16">
+        <div id="askie-bot-container" className="fixed bottom-6 right-6 z-[100] w-16 h-16">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div 

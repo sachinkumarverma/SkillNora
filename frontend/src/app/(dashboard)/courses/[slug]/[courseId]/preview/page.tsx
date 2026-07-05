@@ -41,14 +41,14 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
     const totalAttachments = course.lectures?.reduce((acc: number, l: any) => acc + (Array.isArray(l.attachments) ? l.attachments.length : 0), 0) || 0;
 
     return (
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8 md:py-12">
+        <div className="w-full mx-auto px-4 md:px-8 py-6 md:py-12">
 
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
                 {course.image && (
                     <div className="w-full relative min-h-[400px] md:min-h-[500px] flex flex-col justify-end">
                         <img src={course.image} alt={course.title} className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-                        <div className="relative z-10 p-8 md:p-12 w-full">
+                        <div className="relative z-10 p-5 md:p-12 w-full">
                             {course.provide_certificate && (
                                 <span className="w-max mb-4 bg-amber-500 text-slate-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
@@ -65,7 +65,7 @@ export default function PreviewPage({ params }: { params: Promise<{ slug: string
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="md:col-span-2 space-y-8">
                     {course.detailed_overview && (
-                        <section className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <section className="bg-white dark:bg-slate-900 rounded-lg p-5 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
                             <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Why to Choose this Course</h2>
                             <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
                                 {course.detailed_overview}

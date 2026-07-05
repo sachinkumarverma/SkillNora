@@ -22,6 +22,7 @@ const apiDefinitions = {
     request: {
       body: {
         messages: Joi.array().optional(),
+        options: Joi.object().optional(),
       },
     },
     response: Joi.object(),

@@ -122,7 +122,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
                         .uploadToSignedUrl(fileName, data.token, fileToPost)
                         
                     if (uploadError) {
-                        alert('Upload failed: ' + uploadError.message)
+                        toast.error('Upload failed: ' + uploadError.message)
                         throw new Error('Failed to upload image: ' + uploadError.message)
                     }
                     uploadedImageUrl = data.publicUrl
@@ -170,7 +170,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
         } catch (err: any) {
             console.error("Failed to post comment", err)
             const backendError = err.response?.data?.error || err.response?.data?.message
-            alert("Failed to post comment. " + (backendError || err.message || 'Please try again.'))
+            toast.error("Failed to post comment. " + (backendError || err.message || 'Please try again.'))
         } finally {
             if (isReply) setIsPostingReply(false);
             else setIsPostingComment(false);
@@ -341,7 +341,7 @@ export default function LecturePage({ params }: { params: Promise<{ slug: string
             setTimeout(() => setNoteSaved(false), 3000)
             setTimeout(() => setIsSavingNote(false), 200)
         } else {
-            alert('Please sign in to save notes')
+            toast.error('Please sign in to save notes')
         }
     }
     

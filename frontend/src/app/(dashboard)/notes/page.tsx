@@ -100,7 +100,7 @@ export default function NotesPage() {
     }
 
     return (
-        <div className="w-full mx-auto p-4 md:p-8 lg:p-12 relative">
+        <div className="w-full mx-auto p-6 md:p-8 relative">
            <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
                     <h1 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">My Notes</h1>

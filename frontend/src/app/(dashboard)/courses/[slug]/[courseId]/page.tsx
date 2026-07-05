@@ -98,7 +98,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     }, [slug, courseId, user])
 
     const submitReview = async () => {
-        if (!rating) return alert('Please select a rating')
+        if (!rating) return toast.error('Please select a rating')
         setSubmittingReview(true)
         try {
             const myReview = course?.reviews?.find((r: any) => r.user_id === user?.id)
@@ -119,7 +119,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
             setIsEditingReview(false)
         } catch (e) {
             console.error('Failed to submit review', e)
-            alert('Failed to submit review')
+            toast.error('Failed to submit review')
         }
         setSubmittingReview(false)
     }
@@ -151,11 +151,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     )
 
     return (
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8">
+        <div className="w-full mx-auto px-4 md:px-8 py-6 md:py-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
                     {/* Course Header */}
-                    <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-5 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                         {course.image && !imageError && (
                             <div className="absolute inset-0 opacity-10 blur-xl pointer-events-none">
                                 <img src={course.image} alt="bg" className="w-full h-full object-cover" />
@@ -200,12 +200,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                     </div>
 
                     {/* Lectures List */}
-                    <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-5 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
                         <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Course Content</h2>
                         <div className="space-y-3">
                             {course.lectures?.length ? course.lectures.map((l: any, index: number) => (
-                                <div key={l.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/50 flex items-center justify-between group hover:border-blue-200 dark:hover:border-blue-900 transition-colors">
-                                    <div className="flex items-center gap-4">
+                                <div key={l.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-blue-200 dark:hover:border-blue-900 transition-colors">
+                                    <div className="flex items-start gap-4">
                                         <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 flex items-center justify-center font-bold text-sm">
                                             {index + 1}
                                         </div>
@@ -225,7 +225,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                                             </div>
                                         </div>
                                     </div>
-                                    <Link href={`/courses/${course.slug}/${course.id}/lecture/${l.id}`} className="text-blue-600 font-bold text-sm hover:text-blue-700 shrink-0 flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
+                                    <Link href={`/courses/${course.slug}/${course.id}/lecture/${l.id}`} className="w-full sm:w-auto justify-center text-blue-600 font-bold text-sm hover:text-blue-700 shrink-0 flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
                                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
                                         Watch
                                     </Link>
@@ -239,7 +239,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                     </div>
 
                     {/* Reviews List */}
-                    <div className="bg-white dark:bg-slate-900 rounded-lg p-8 border border-slate-200 dark:border-slate-800 shadow-sm mt-8">
+                    <div className="bg-white dark:bg-slate-900 rounded-lg p-5 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm mt-8">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Student Reviews</h2>
                             {!isEnrolled && !(!course.price || Number(course.price) === 0 || course.is_free) && (

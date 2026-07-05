@@ -43,6 +43,16 @@ const getStats = async (userId, role) => {
   const sqlNotes = `SELECT id, updated_at as created_at FROM notes WHERE user_id = $1`;
   const { rows: notes } = await query(sqlNotes, [userId]);
 
+  const sqlTestAttempts = `
+    SELECT a.id, a.score, a.created_at, t.id as test_id, t.title as test_title, t.total_marks, ts.id as series_id, ts.title as series_title
+    FROM test_attempts a
+    JOIN tests t ON a.test_id = t.id
+    JOIN test_series ts ON t.series_id = ts.id
+    WHERE a.user_id = $1 AND a.status = 'completed'
+    ORDER BY a.created_at DESC
+  `;
+  const { rows: testAttempts } = await query(sqlTestAttempts, [userId]);
+
   const activityData = {
     enrollments: enrolls.map((e) => e.created_at),
     certificates: certs.map((c) => c.created_at),
@@ -119,6 +129,7 @@ const getStats = async (userId, role) => {
     wishlist: wishlist || [],
     notes: notes || [],
     quizScores,
+    testAttempts: testAttempts || [],
     activityData,
   };
 };

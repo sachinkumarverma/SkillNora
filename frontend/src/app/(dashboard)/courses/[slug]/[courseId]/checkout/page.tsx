@@ -129,7 +129,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
 
     if (loading || userLoading) {
         return (
-            <div className="max-w-[1200px] mx-auto px-6 py-12 animate-pulse">
+            <div className="w-full mx-auto px-6 py-12 animate-pulse">
                 <div className="w-24 h-5 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col md:flex-row min-h-[400px]">
                     <div className="p-8 md:w-7/12 flex flex-col justify-center order-2 md:order-1">
@@ -160,7 +160,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
     if (!course) return <div className="text-center py-20 text-xl font-bold">Course not found.</div>
 
     return (
-        <div className="max-w-[1200px] mx-auto px-6 py-12">
+        <div className="w-full mx-auto px-6 py-12">
             <button onClick={() => router.back()} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Go Back

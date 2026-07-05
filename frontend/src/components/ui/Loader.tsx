@@ -1,4 +1,4 @@
-export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' | 'management-table' | 'course-builder' | 'draft-courses' | 'certificate' | 'course-preview' | 'receipt' | 'settings' | 'admin-profile' | 'notifications' }) {
+export default function Loader({ fullScreen = false, type = 'default' }: { fullScreen?: boolean, type?: 'default' | 'dashboard' | 'instructor-dashboard' | 'courses' | 'table' | 'table-row' | 'course-detail' | 'lecture' | 'management-table' | 'course-builder' | 'draft-courses' | 'certificate' | 'course-preview' | 'receipt' | 'settings' | 'admin-profile' | 'notifications' | 'live-test' }) {
     
     const Shimmer = () => (
         <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
@@ -23,7 +23,7 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
 
     if (type === 'courses') {
         return (
-            <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
+            <div className="w-full mx-auto p-6 md:p-8">
                 <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8 relative overflow-hidden">
                     <Shimmer />
                     <div className="w-full max-w-xl space-y-3">
@@ -152,7 +152,7 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
 
     if (type === 'receipt') {
         return (
-            <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 pb-20">
+            <div className="w-full mx-auto p-6 lg:p-8 space-y-8 pb-20">
                 <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 shadow-sm max-w-2xl mx-auto overflow-hidden">
                     <Shimmer />
                     <div className="relative z-10 border-b border-slate-200 dark:border-slate-800 pb-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -254,7 +254,7 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
 
     if (type === 'settings') {
         return (
-            <div className="p-6 md:p-8 max-w-[1400px] mx-auto animate-pulse">
+            <div className="w-full mx-auto p-6 md:p-8 animate-pulse">
                 <div className="mb-8 space-y-3">
                     <div className="w-64 h-8 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
                     <div className="w-96 h-4 bg-slate-200 dark:bg-slate-800 rounded relative overflow-hidden"><Shimmer /></div>
@@ -398,7 +398,7 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
 
     if (type === 'course-detail') {
         return (
-            <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8">
+            <div className="w-full mx-auto px-6 md:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-8">
                         {/* Header Card Skeleton */}
@@ -495,7 +495,7 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
 
     if (type === 'course-preview') {
         return (
-            <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-8 md:py-12 animate-pulse">
+            <div className="w-full mx-auto px-6 md:px-8 py-8 md:py-12 animate-pulse">
                 
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8 relative">
                     <Shimmer />
@@ -740,6 +740,74 @@ export default function Loader({ fullScreen = false, type = 'default' }: { fullS
                                 <div className="hidden md:block w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0"></div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'live-test') {
+        return (
+            <div className="flex-1 w-full flex flex-col h-full bg-white dark:bg-slate-950 animate-pulse relative overflow-hidden">
+                <Shimmer />
+                {/* Header */}
+                <div className="h-14 bg-slate-900 flex items-center justify-between px-4 shrink-0">
+                    <div className="w-64 h-5 bg-slate-800 rounded"></div>
+                    <div className="flex items-center gap-6">
+                        <div className="w-32 h-8 bg-slate-800 rounded-full"></div>
+                        <div className="w-32 h-6 bg-slate-800 rounded"></div>
+                    </div>
+                </div>
+                {/* Main Area */}
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Left Side */}
+                    <div className="flex-1 flex flex-col overflow-hidden relative">
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-800 shrink-0 flex justify-between items-center bg-white dark:bg-slate-950">
+                            <div className="w-32 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            <div className="w-24 h-8 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                        </div>
+                        <div className="flex-1 p-6 space-y-8">
+                            <div className="space-y-3 max-w-4xl">
+                                <div className="w-full h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-5/6 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div className="w-3/4 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            </div>
+                            <div className="space-y-3 max-w-4xl mt-12">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className="w-full h-14 bg-slate-100 dark:bg-slate-900 rounded-xl border-2 border-slate-200 dark:border-slate-800"></div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0 flex justify-between bg-slate-50 dark:bg-slate-900">
+                            <div className="flex gap-3">
+                                <div className="w-48 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                                <div className="w-36 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                            </div>
+                            <div className="w-32 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                        </div>
+                    </div>
+                    {/* Right Side */}
+                    <div className="w-80 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                            <div className="w-32 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                        </div>
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+                            <div className="w-full h-24 bg-slate-100 dark:bg-slate-900 rounded"></div>
+                        </div>
+                        <div className="p-3 border-b border-slate-200 dark:border-slate-800">
+                            <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                        </div>
+                        <div className="flex-1 p-4">
+                            <div className="grid grid-cols-6 gap-2">
+                                {[...Array(30)].map((_, i) => (
+                                    <div key={i} className="w-full aspect-square bg-slate-100 dark:bg-slate-900 rounded-md"></div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+                            <div className="w-full h-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                        </div>
                     </div>
                 </div>
             </div>

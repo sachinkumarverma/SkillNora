@@ -107,7 +107,7 @@ function CoursesContent() {
     if (loadingCourses) return <Loader type="courses" />
 
     return (
-        <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
+        <div className="w-full mx-auto p-6 md:p-8">
             <section>
                 <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight shrink-0">All Courses</h1>

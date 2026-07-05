@@ -232,7 +232,7 @@ export default function SettingsPage() {
     const userRole = user?.email === 'sachinverma1489@gmail.com' ? 'Admin' : (user?.user_metadata?.role || user?.app_metadata?.role || 'Student')
 
     return (
-        <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
+        <div className="w-full mx-auto p-6 lg:p-8">
             <div className="mb-8">
                 <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Account Settings</h1>
                 <p className="text-slate-500 mt-1 text-sm font-medium">Manage your profile, security, and app preferences.</p>

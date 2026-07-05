@@ -80,7 +80,7 @@ export default function DashboardPage() {
 
     return (
         <div className="bg-white dark:bg-slate-950 min-h-screen pb-16">
-            <div className="max-w-[1400px] mx-auto px-6 md:px-8 space-y-16 pt-8">
+            <div className="w-full mx-auto px-6 md:px-8 space-y-16 pt-8">
 
                 {/* Coursera-style Hero Banners Carousel */}
                 <HeroCarousel />

@@ -86,7 +86,7 @@ export default function StatisticsPage() {
     }
 
     // Calculate Activity Breakdown percentages
-    const totalActivity = (stats?.totalEnrolled || 0) + (stats?.completedCourses || 0) + (stats?.totalWishlisted || 0) + (stats?.totalNotes || 0);
+    const totalActivity = (stats?.totalEnrolled || 0) + (stats?.completedCourses || 0) + (stats?.totalWishlisted || 0) + (stats?.totalNotes || 0) + (stats?.totalTests || 0);
     const getPercent = (val: number) => totalActivity > 0 ? Math.round((val / totalActivity) * 100) : 0;
 
     const breakdown = [
@@ -94,6 +94,7 @@ export default function StatisticsPage() {
         { title: 'Completed', val: stats?.completedCourses || 0, percent: getPercent(stats?.completedCourses || 0), color: '#10b981', bg: 'bg-emerald-600' },
         { title: 'Wishlist', val: stats?.totalWishlisted || 0, percent: getPercent(stats?.totalWishlisted || 0), color: '#f59e0b', bg: 'bg-amber-600' },
         { title: 'Notes', val: stats?.totalNotes || 0, percent: getPercent(stats?.totalNotes || 0), color: '#8b5cf6', bg: 'bg-purple-600' },
+        { title: 'Tests', val: stats?.totalTests || 0, percent: getPercent(stats?.totalTests || 0), color: '#ef4444', bg: 'bg-red-500' },
     ];
 
     let currentPercent = 0;
@@ -105,57 +106,69 @@ export default function StatisticsPage() {
     const pieBackground = totalActivity > 0 ? `conic-gradient(${gradientStops.join(', ')})` : 'conic-gradient(#e2e8f0 0% 100%)';
 
     return (
-        <div className="p-6 md:p-10 max-w-[1400px] mx-auto min-h-screen">
+        <div className="w-full mx-auto p-6 md:p-10 min-h-screen">
             <h1 className="text-3xl font-bold font-serif text-slate-900 dark:text-white mb-2">My Profile Statistics</h1>
             <p className="text-slate-500 mb-10">A deep dive into your learning journey and progress.</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl shadow-lg shadow-blue-500/20 text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <div className="text-4xl font-black mb-1">{stats?.totalEnrolled || 0}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-blue-100">Courses Enrolled</div>
                     </div>
-                    <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{stats?.totalEnrolled || 0}</div>
-                    <div className="text-sm font-semibold text-slate-500">Courses Enrolled</div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl shadow-lg shadow-purple-500/20 text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        </div>
+                        <div className="text-4xl font-black mb-1">{stats?.completedCourses || 0}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-purple-100">Courses Completed</div>
                     </div>
-                    <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{stats?.completedCourses || 0}</div>
-                    <div className="text-sm font-semibold text-slate-500">Courses Completed</div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                <div className="bg-gradient-to-br from-rose-500 to-rose-600 p-6 rounded-2xl shadow-lg shadow-rose-500/20 text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                        </div>
+                        <div className="text-4xl font-black mb-1">{stats?.totalWishlisted || 0}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-rose-100">Courses Wishlisted</div>
                     </div>
-                    <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{stats?.totalWishlisted || 0}</div>
-                    <div className="text-sm font-semibold text-slate-500">Courses Wishlisted</div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-2xl shadow-lg shadow-amber-500/20 text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        </div>
+                        <div className="text-4xl font-black mb-1">{streak}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-amber-100">Day Active Streak</div>
                     </div>
-                    <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{streak}</div>
-                    <div className="text-sm font-semibold text-slate-500">Day Active Streak</div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 p-6 rounded-2xl shadow-lg shadow-cyan-500/20 text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </div>
+                        <div className="text-4xl font-black mb-1">{stats?.totalNotes || 0}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-cyan-100">Notes Taken</div>
                     </div>
-                    <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{stats?.totalNotes || 0}</div>
-                    <div className="text-sm font-semibold text-slate-500">Notes Taken</div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-teal-50 dark:bg-teal-900/20 text-teal-600 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-2xl shadow-lg shadow-red-500/20 text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                        </div>
+                        <div className="text-4xl font-black mb-1">{stats?.totalTests || 0}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-red-100">Tests Attempted</div>
                     </div>
-                    <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{stats?.createdCourses || 0}</div>
-                    <div className="text-sm font-semibold text-slate-500">Courses Published</div>
                 </div>
                 {/* Quiz Overview Cards */}
                 {stats?.quizScores && stats.quizScores.length > 0 && (() => {
@@ -165,19 +178,23 @@ export default function StatisticsPage() {
                     
                     return (
                         <>
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-full flex items-center justify-center mb-4">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002-2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                            <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl shadow-lg shadow-indigo-500/20 text-white relative overflow-hidden group">
+                                <div className="relative z-10">
+                                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002-2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                    </div>
+                                    <div className="text-4xl font-black mb-1">{avgScore}%</div>
+                                    <div className="text-xs font-bold uppercase tracking-wider text-indigo-100">Avg Quiz Score</div>
                                 </div>
-                                <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{avgScore}%</div>
-                                <div className="text-sm font-semibold text-slate-500">Average Quiz Score</div>
                             </div>
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-full flex items-center justify-center mb-4">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-2xl shadow-lg shadow-emerald-500/20 text-white relative overflow-hidden group">
+                                <div className="relative z-10">
+                                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                                    </div>
+                                    <div className="text-4xl font-black mb-1">{passedModules} / {stats.quizScores.length}</div>
+                                    <div className="text-xs font-bold uppercase tracking-wider text-emerald-100">Modules Mastered</div>
                                 </div>
-                                <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{passedModules} / {stats.quizScores.length}</div>
-                                <div className="text-sm font-semibold text-slate-500">Modules Mastered (≥ 75%)</div>
                             </div>
                         </>
                     )
@@ -219,7 +236,11 @@ export default function StatisticsPage() {
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dx={-10} />
-                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#f1f5f9' }}
+                                        labelStyle={{ color: '#94a3b8' }}
+                                        itemStyle={{ color: '#38bdf8' }}
+                                    />
                                     <Area type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -343,6 +364,57 @@ export default function StatisticsPage() {
                                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* Test Series Performance Section */}
+                {stats?.testAttempts && stats.testAttempts.length > 0 && (
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-lg shadow-sm">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 font-serif">Test Series Performance</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-slate-200 dark:border-slate-800 text-sm text-slate-500">
+                                        <th className="py-3 px-4 font-semibold">Test Series</th>
+                                        <th className="py-3 px-4 font-semibold">Test Name</th>
+                                        <th className="py-3 px-4 font-semibold">Date Attempted</th>
+                                        <th className="py-3 px-4 font-semibold">Score</th>
+                                        <th className="py-3 px-4 font-semibold text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {stats.testAttempts.map((attemptObj: any, index: number) => {
+                                        const percentage = attemptObj.total_marks > 0 ? (attemptObj.score / attemptObj.total_marks) * 100 : 0;
+                                        const needsImprovement = percentage < 75;
+                                        return (
+                                            <tr key={index} className="border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                                                <td className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{attemptObj.series_title || 'N/A'}</td>
+                                                <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{attemptObj.test_title}</td>
+                                                <td className="py-4 px-4 text-sm text-slate-500 font-medium">
+                                                    {attemptObj.created_at ? new Date(attemptObj.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
+                                                </td>
+                                                <td className="py-4 px-4">
+                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${needsImprovement ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
+                                                        {attemptObj.score} / {attemptObj.total_marks}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-4 text-right">
+                                                    <a 
+                                                        href={`/test-series/${attemptObj.series_id}/test/${attemptObj.test_id}/analysis`}
+                                                        title="View Analysis"
+                                                        className="inline-flex items-center justify-center w-8 h-8 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full transition-colors"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                                         </svg>
                                                     </a>
                                                 </td>

@@ -26,11 +26,25 @@ export default function CertificatesPage() {
     }, [user])
 
     if (loading || userLoading) {
-        return <Loader type="courses" />
+        return (
+            <div className="w-full mx-auto px-6 py-12">
+                <h1 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-8">My Certificates</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center overflow-hidden animate-pulse">
+                            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 mb-4"></div>
+                            <div className="w-3/4 h-6 bg-slate-200 dark:bg-slate-800 rounded mb-3"></div>
+                            <div className="w-1/2 h-4 bg-slate-200 dark:bg-slate-800 rounded mb-6"></div>
+                            <div className="w-full h-10 bg-slate-200 dark:bg-slate-800 rounded-xl mt-auto"></div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
     }
 
     return (
-        <div className="max-w-[1400px] mx-auto px-6 py-12">
+        <div className="w-full mx-auto px-6 py-12">
             <h1 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-8">My Certificates</h1>
             
             {certs.length === 0 ? (

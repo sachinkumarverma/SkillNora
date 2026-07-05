@@ -41,12 +41,15 @@ const getDashboardStats = async (userId, role) => {
     createdCourses: raw.courses.length,
     totalWishlisted: raw.wishlist.length,
     totalNotes: raw.notes.length,
+    totalTests: raw.testAttempts?.length || 0,
     quizScores: raw.quizScores,
+    testAttempts: raw.testAttempts,
     activityData: {
       enrollments: raw.enrollments.map((e) => e.created_at),
       certificates: raw.certificates.map((c) => c.created_at),
       wishlist: raw.wishlist.map((w) => w.created_at),
       notes: raw.notes.map((n) => n.created_at),
+      tests: raw.testAttempts?.map((a) => a.created_at) || [],
     },
   };
 };

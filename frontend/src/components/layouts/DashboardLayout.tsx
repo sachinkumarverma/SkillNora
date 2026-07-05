@@ -25,12 +25,22 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
     const role = useMemo(() => getRole(user), [user])
     const avatarUrl = useMemo(() => getAvatar(user), [user])
     const searchParams = useSearchParams()
+    const [dynamicNames, setDynamicNames] = useState<Record<string, string>>({})
+
+    useEffect(() => {
+        const handleUpdate = (e: any) => {
+            setDynamicNames(prev => ({ ...prev, [e.detail.id]: e.detail.name }))
+        }
+        window.addEventListener('setBreadcrumbName', handleUpdate as any)
+        return () => window.removeEventListener('setBreadcrumbName', handleUpdate as any)
+    }, [])
 
     const PATH_LABELS: Record<string, string> = {
         '/dashboard': 'Dashboard',
         '/courses': 'Courses',
         '/enrolled': 'Enrolled',
         '/coding': 'Code Playground',
+        '/test-series': 'Test Series',
         '/notes': 'Notes',
         '/statistics': 'Statistics',
         '/wishlist': 'Wishlist',
@@ -41,6 +51,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
         '/instructor': 'Instructor Studio',
         '/instructor/courses': 'Course Management',
         '/instructor/ai': 'AI Studio',
+        '/instructor/test-series': 'Test Series',
         '/instructor/drafts': 'Draft Courses',
         '/instructor/new': 'Course Builder',
         '/instructor/payments': 'Payments & Enrollments',
@@ -50,6 +61,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
         '/admin/instructors': 'Instructor Management',
         '/admin/students': 'Student Management',
         '/admin/payments': 'Payments & Enrollments',
+        '/admin/test-series': 'Test Series',
         '/admin/tickets': 'Support Tickets',
         '/admin/ai': 'AI Studio',
         '/admin/settings': 'System Settings',
@@ -95,28 +107,55 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                 return
             }
 
+            // Skip the literal 'test' part in student test series routes
+            if (part === 'test' && !currentPath.includes('/admin') && !currentPath.includes('/instructor') && currentPath.includes('/test-series/')) {
+                return
+            }
+
             // Handle UUIDs, numeric IDs, and 8-character hex strings (like cert IDs)
             if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part) || /^\d+$/.test(part) || /^[0-9a-f]{8}$/i.test(part)) {
-                // For student paths, ignore UUIDs as per original behavior
+                // For student paths, ignore UUIDs as per original behavior, unless we have a dynamic name for it
                 if (!currentPath.includes('/admin') && !currentPath.includes('/instructor')) {
+                    // To achieve "Test Series / Series Name / Instructions" we skip the testId UUID completely
+                    if (currentPath.includes('/test-series/') && currentPath.includes('/test/')) {
+                        return
+                    }
+
+                    if (dynamicNames[part]) {
+                        crumbs.push({ label: dynamicNames[part], href: currentPath })
+                        return
+                    }
+                    
+                    if (currentPath.includes('/test-series/')) {
+                        crumbs.push({ label: 'Test Series Details', href: currentPath })
+                        return
+                    }
                     if (crumbs.length > 0 && crumbs[crumbs.length - 1].href) {
                         crumbs[crumbs.length - 1].href += `/${part}`
                     }
                     return
                 }
+
+                if (currentPath.includes('/test-series/') && currentPath.includes('/manage/')) {
+                    // Do not push the ID as a separate breadcrumb
+                    return;
+                }
                 
-                let label = 'Details'
+                let label = dynamicNames[part] || 'Details'
                 if (currentPath.includes('/payments/')) label = 'View Receipt'
                 else if (currentPath.includes('/instructors/') || currentPath.includes('/students/')) label = 'View Profile'
                 else if (currentPath.includes('/courses/edit/')) label = 'Edit Course'
                 else if (currentPath.includes('/courses/')) label = 'Course Details'
+                else if (currentPath.includes('/test-series/')) label = 'Test Series Details'
                 else if (currentPath.includes('/drafts/')) label = 'Draft Details'
                 crumbs.push({ label, href: currentPath })
                 return
             }
 
             let label = part
-            if (PATH_LABELS[currentPath]) {
+            if (part === 'live') {
+                label = 'Test'
+            } else if (PATH_LABELS[currentPath]) {
                 label = PATH_LABELS[currentPath]
             } else {
                 const cleanPart = part.replace(/-[0-9a-f]{8}$/i, '')
@@ -234,12 +273,16 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
 
     useEffect(() => {
         if (!loading && !user) {
-            const protectedPaths = ['/cart', '/wishlist', '/certificates', '/settings', '/admin', '/instructor', '/enrolled', '/notes', '/statistics', '/coding']
-            const isProtected = protectedPaths.some(p => pathname.startsWith(p))
-            const isPublicCertificate = pathname.match(/^\/certificates\/[^/]+$/)
+            const protectedPaths = ['/cart', '/wishlist', '/certificates', '/settings', '/admin', '/instructor', '/enrolled', '/notes', '/statistics', '/coding', '/test-series']
+            const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
+            const isPublicCertificate = pathname.match(/^\/certificates\/[^/]+\/[^/]+$/)
             
             if (isProtected && !isPublicCertificate) {
-                router.replace('/auth')
+                if (pathname === '/test-series' || pathname.startsWith('/test-series/')) {
+                    router.replace('/')
+                } else {
+                    router.replace('/auth')
+                }
             }
         } else if (!loading && user) {
             if (pathname === '/dashboard') {
@@ -313,6 +356,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
             ['/dashboard', 'Dashboard', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'], 
             ['/courses', 'Courses', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'], 
             ['/enrolled', 'Enrolled', 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+            ['/test-series', 'Test Series', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'],
             ['/coding', 'Coding', 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'],
             ['/notes', 'Notes', 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
             ['/statistics', 'Statistics', 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z'],
@@ -326,6 +370,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
             ['/instructor', 'Instructor Studio', 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'], 
             ['/instructor/courses', 'Course Management', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
             ['/instructor/ai', 'AI Studio', 'M13 10V3L4 14h7v7l9-11h-7z'],
+            ['/instructor/test-series', 'Test Series', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'],
             ['/instructor/payments', 'Payments & Enrollments', 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'],
             ['/notifications', 'Notifications', 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'],
             ['/settings', 'Account Details', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
@@ -334,6 +379,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
         admin: [
             ['/admin', 'Overview', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'], 
             ['/admin/courses', 'Course Management', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'], 
+            ['/admin/test-series', 'Test Series', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'],
             ['/admin/instructors', 'Instructor Management', 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'], 
             ['/admin/students', 'Student Management', 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],  
             ['/admin/payments', 'Payments & Enrollments', 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'], 
@@ -351,11 +397,11 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
 
     let sidebarItems = sidebarItemsByRole[role as keyof typeof sidebarItemsByRole] || sidebarItemsByRole.student
     if (!user) {
-        sidebarItems = sidebarItems.filter(item => !['/wishlist', '/certificates', '/settings', '/enrolled', '/notes', '/statistics', '/coding'].includes(item[0])) as any
+        sidebarItems = sidebarItems.filter(item => !['/wishlist', '/certificates', '/settings', '/enrolled', '/notes', '/statistics', '/coding', '/test-series'].includes(item[0])) as any
     }
 
     return (
-        <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans fixed inset-0 z-50">
+        <div className="flex h-[100dvh] bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans fixed inset-0 z-50">
             {/* Sidebar Overlay for Mobile */}
             {sidebarOpen && (
                 <div 
@@ -372,7 +418,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                     </Link>
                 </div>
 
-                <nav className="flex-1 space-y-1 overflow-y-auto p-3 mt-4 custom-scrollbar">
+                <nav className="flex-1 space-y-1 overflow-y-auto p-3 custom-scrollbar">
                     {sidebarItems.map(([path, label, iconPath]) => {
                         const isActive = pathname === path || (path !== '/' && path !== '/dashboard' && path !== '/admin' && path !== '/instructor' && pathname.startsWith(path + '/'))
                         const isExternal = path.startsWith('http')
@@ -420,13 +466,17 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
                     
-                    <div className="hidden lg:flex items-center text-sm font-semibold truncate">
+                    <div className="hidden lg:flex flex-1 min-w-0 items-center text-sm font-semibold pr-4">
                             {breadcrumbs.length > 0 ? (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
                                     {breadcrumbs.map((bc, idx) => (
                                         <React.Fragment key={idx}>
-                                            {bc.href ? <Link href={bc.href} className="text-slate-400 hover:text-blue-600 transition-colors truncate">{bc.label}</Link> : <span className="text-slate-900 dark:text-white truncate">{bc.label}</span>}
-                                            {idx < breadcrumbs.length - 1 && <span className="text-slate-300 dark:text-slate-600">/</span>}
+                                            {bc.href ? (
+                                                <Link href={bc.href} title={bc.label} className="text-slate-400 hover:text-blue-600 transition-colors truncate max-w-[150px] xl:max-w-[250px]">{bc.label}</Link>
+                                            ) : (
+                                                <span title={bc.label} className="text-slate-900 dark:text-white truncate max-w-[200px] xl:max-w-[400px]">{bc.label}</span>
+                                            )}
+                                            {idx < breadcrumbs.length - 1 && <span className="text-slate-300 dark:text-slate-600 shrink-0">/</span>}
                                         </React.Fragment>
                                     ))}
                                 </div>
@@ -522,7 +572,7 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                                 onFocus={() => setShowSuggestions(true)}
                                 onKeyDown={handleSearch}
                                 placeholder="Search courses..." 
-                                className="h-10 w-32 sm:w-48 lg:w-80 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-white dark:focus:bg-slate-900"
+                                className="h-10 w-32 sm:w-48 lg:w-56 xl:w-64 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-white dark:focus:bg-slate-900"
                             />
                             {searchQuery && (
                                 <button 
@@ -587,13 +637,15 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                         )}
                         
 
-                        <button onClick={toggleTheme} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
-                            {dark ? (
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                            ) : (
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                            )}
-                        </button>
+                        {!user && (
+                            <button onClick={toggleTheme} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
+                                {dark ? (
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                ) : (
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                                )}
+                            </button>
+                        )}
 
                         {user ? (
                             <div className="relative" ref={dropdownRef}>
@@ -615,6 +667,17 @@ export function DashboardLayoutContent({ children }: { children: React.ReactNode
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                                             Profile Settings
                                         </Link>
+                                        <button onClick={toggleTheme} className="flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700/50">
+                                            <div className="flex items-center gap-3">
+                                                {dark ? (
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                                ) : (
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                                                )}
+                                                Theme
+                                            </div>
+                                            <span className="text-xs text-slate-500">{dark ? 'Light' : 'Dark'}</span>
+                                        </button>
                                         <button onClick={signOut} className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                                             Sign Out

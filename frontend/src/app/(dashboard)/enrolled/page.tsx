@@ -55,7 +55,7 @@ export default function EnrolledPage() {
     const enrolledCourses = courses.filter(c => enrolledIds.includes(c.id))
 
     return (
-        <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
+        <div className="w-full mx-auto p-6 md:p-8">
             <section>
                 <div className="mb-6 flex items-center justify-between">
                     <h1 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">My Enrolled Courses</h1>

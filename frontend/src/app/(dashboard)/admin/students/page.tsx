@@ -111,7 +111,10 @@ export default function AdminStudentManagement() {
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold uppercase overflow-hidden shrink-0">
                                                 {student.avatar_url ? (
-                                                    <img src={student.avatar_url} alt={student.name} className="w-full h-full object-cover" />
+                                                    <>
+                                                        <img src={student.avatar_url} referrerPolicy="no-referrer" alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.classList.remove('hidden'); }} />
+                                                        <span className="hidden">{student.name?.charAt(0) || 'S'}</span>
+                                                    </>
                                                 ) : (
                                                     student.name?.charAt(0) || 'S'
                                                 )}

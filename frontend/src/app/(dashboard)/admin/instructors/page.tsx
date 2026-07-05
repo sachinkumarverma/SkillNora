@@ -109,8 +109,15 @@ export default function AdminInstructorManagement() {
                                 <tr key={instructor.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold uppercase">
-                                                {instructor.name?.charAt(0) || 'I'}
+                                            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold uppercase overflow-hidden shrink-0">
+                                                {instructor.avatar_url ? (
+                                                    <>
+                                                        <img src={instructor.avatar_url} referrerPolicy="no-referrer" alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.classList.remove('hidden'); }} />
+                                                        <span className="hidden">{instructor.name?.charAt(0) || 'I'}</span>
+                                                    </>
+                                                ) : (
+                                                    instructor.name?.charAt(0) || 'I'
+                                                )}
                                             </div>
                                             <div>
                                                 <div className="font-bold text-slate-900 dark:text-white">{instructor.name}</div>

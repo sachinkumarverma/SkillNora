@@ -66,14 +66,14 @@ export default function InstructorPage() {
     }
 
     const stats = [
-        { label: 'Total Courses', value: totalCourses.toString() },
-        { label: 'Published Courses', value: publishedCount.toString() },
-        { label: 'Drafts in Progress', value: draftCount.toString() },
-        { label: 'Total Students', value: formatNumber(totalStudents) },
-        { label: 'Total Revenue', value: '₹' + formatNumber(totalRevenue) },
-        { label: 'Avg. Course Rating', value: avgRating !== 'N/A' ? `${avgRating} ★` : avgRating },
-        { label: 'Avg. Course Price', value: avgPrice },
-        { label: 'Avg. Completion Rate', value: courses.length > 0 ? '68%' : 'N/A' }, // Mock metric for analytics
+        { label: 'Total Courses', value: totalCourses.toString(), color: 'from-blue-500 to-blue-600 shadow-blue-500/20' },
+        { label: 'Published Courses', value: publishedCount.toString(), color: 'from-emerald-500 to-emerald-600 shadow-emerald-500/20' },
+        { label: 'Drafts in Progress', value: draftCount.toString(), color: 'from-amber-500 to-amber-600 shadow-amber-500/20' },
+        { label: 'Total Students', value: formatNumber(totalStudents), color: 'from-violet-500 to-violet-600 shadow-violet-500/20' },
+        { label: 'Total Revenue', value: '₹' + formatNumber(totalRevenue), color: 'from-rose-500 to-rose-600 shadow-rose-500/20' },
+        { label: 'Avg. Course Rating', value: avgRating !== 'N/A' ? `${avgRating} ★` : avgRating, color: 'from-purple-500 to-purple-600 shadow-purple-500/20' },
+        { label: 'Avg. Course Price', value: avgPrice, color: 'from-cyan-500 to-cyan-600 shadow-cyan-500/20' },
+        { label: 'Avg. Completion Rate', value: courses.length > 0 ? '68%' : 'N/A', color: 'from-indigo-500 to-indigo-600 shadow-indigo-500/20' },
     ]
 
     const chartData = courses.map(c => ({
@@ -99,9 +99,11 @@ export default function InstructorPage() {
 
                     <div className='mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
                         {stats.map((stat) => (
-                            <div key={stat.label} className='rounded-lg bg-slate-50 p-4 border border-slate-100 dark:border-slate-800 dark:bg-slate-950'>
-                                <div className='text-xs font-bold uppercase tracking-widest text-slate-500'>{stat.label}</div>
-                                <div className='mt-2 text-2xl font-black text-slate-950 dark:text-white'>{stat.value}</div>
+                            <div key={stat.label} className={`p-5 rounded-2xl shadow-lg bg-gradient-to-br text-white relative overflow-hidden group ${stat.color}`}>
+                                <div className="relative z-10">
+                                    <div className="text-3xl font-black mb-1">{stat.value}</div>
+                                    <div className="text-[10px] font-bold uppercase tracking-wider opacity-90">{stat.label}</div>
+                                </div>
                             </div>
                         ))}
                     </div>

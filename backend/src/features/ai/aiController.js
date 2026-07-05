@@ -53,7 +53,7 @@ const getChat = async (req, res) => {
       logger.error("Error fetching courses for AI context", e);
     }
 
-    const data = await aiService.chat(req.body.messages || [], key, courseContext);
+    const data = await aiService.chat(req.body.messages || [], key, courseContext, req.body.options || {});
     res.json({
       reply: data.choices[0].message.content,
     });

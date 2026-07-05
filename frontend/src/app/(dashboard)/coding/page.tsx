@@ -12,7 +12,7 @@ export default function CodingPlayground() {
     }
     
     return (
-        <div className="flex flex-col h-[calc(100vh-4rem)] p-6 md:p-8 max-w-[1400px] mx-auto w-full">
+        <div className="flex flex-col h-[calc(100vh-4rem)] p-6 md:p-8 w-full mx-auto">
            <div className="flex items-center justify-between mb-4">
                 <h1 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">Code Playground</h1>
                 <div className="flex gap-4">
