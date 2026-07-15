@@ -25,7 +25,7 @@ const resetPasswordForEmail = async (email: string) => {
 };
 
 const signInWithOAuth = async (provider: any) => {
-    return await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: `${window.location.origin}/dashboard` } });
+    return await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: `${window.location.origin}/auth/callback` } });
 };
 
 const onAuthStateChange = (callback: any) => {

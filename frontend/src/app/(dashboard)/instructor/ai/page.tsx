@@ -142,9 +142,16 @@ export default function InstructorAIPage() {
                                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Generated Output</h3>
                                 <button className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">Copy to clipboard</button>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-6 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                                {output}
-                            </div>
+                            <div 
+                                className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-6 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed"
+                                dangerouslySetInnerHTML={{ 
+                                    __html: output
+                                        .replace(/</g, '&lt;')
+                                        .replace(/>/g, '&gt;')
+                                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                        .replace(/\*(.*?)\*/g, '<em>$1</em>') 
+                                }}
+                            />
                         </div>
                     )}
                 </div>
