@@ -37,11 +37,16 @@ const chat = async (messages, key, courseContext = "", options = {}) => {
       `You are Askie, Skillnora's intelligent AI learning assistant. Be very friendly, concise, and helpful. You MUST ONLY recommend courses from the Skillnora platform. Do NOT recommend external courses or platforms.\n\nHere are the current courses available on Skillnora:\n${courseContext}`,
   };
 
+  // If a system message is passed in the messages array, use it as the override
+  const passedSystemMessage = messages.find((m) => m.role === "system");
+  
   if (options.systemPromptOverride) {
     systemMessage = { role: "system", content: options.systemPromptOverride };
+  } else if (passedSystemMessage) {
+    systemMessage = { role: "system", content: passedSystemMessage.content };
   }
 
-  // Filter out any system messages from the input if we are overriding or injecting our own
+  // Filter out any system messages from the input since we will prepend our final systemMessage
   const filteredMessages = messages.filter(m => m.role !== 'system');
 
   const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
