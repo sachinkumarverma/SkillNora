@@ -18,7 +18,7 @@ export default function AuthCallback() {
                 await apiClient.post('/api/users/sync', {
                     id: session.user.id,
                     email: session.user.email,
-                    role: 'student',
+                    role: session.user.user_metadata?.role || undefined,
                     full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
                     avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || ''
                 })

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Loader from '@/components/ui/Loader'
 import { useParams, useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import ConfirmActionModal from '@/components/views/ConfirmActionModal'
 
 export default function InstructorTestQuestions() {
     const { id, testId } = useParams()
@@ -13,6 +14,8 @@ export default function InstructorTestQuestions() {
     const [loading, setLoading] = useState(true)
     const [isCreating, setIsCreating] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
+    const [questionToDelete, setQuestionToDelete] = useState<string | null>(null)
+    const [isDeletingQuestion, setIsDeletingQuestion] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     
     // Question Form State
@@ -97,14 +100,23 @@ export default function InstructorTestQuestions() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
-    const handleDelete = async (qId: string) => {
-        if (!confirm("Are you sure you want to delete this Question?")) return
+    const handleDelete = (qId: string) => {
+        setQuestionToDelete(qId)
+    }
+
+    const executeDeleteQuestion = async () => {
+        if (!questionToDelete) return
+        setIsDeletingQuestion(true)
         try {
-            await apiClient.delete(`/api/instructor/test-series/tests/${testId}/questions/${qId}`)
+            await apiClient.delete(`/api/instructor/test-series/tests/${testId}/questions/${questionToDelete}`)
             fetchTest()
+            toast.success("Question deleted successfully")
         } catch (error) {
             console.error("Error deleting", error)
-            toast.error("Failed to delete")
+            toast.error("Failed to delete question")
+        } finally {
+            setIsDeletingQuestion(false)
+            setQuestionToDelete(null)
         }
     }
 
@@ -283,6 +295,19 @@ export default function InstructorTestQuestions() {
                     </div>
                 ))}
             </div>
+
+            <ConfirmActionModal
+                isOpen={!!questionToDelete}
+                onClose={() => !isDeletingQuestion && setQuestionToDelete(null)}
+                onConfirm={executeDeleteQuestion}
+                title="Delete Question"
+                message="Are you sure you want to delete this question? This action cannot be undone."
+                confirmText="Delete Question"
+                confirmStyle="bg-red-600 hover:bg-red-700 shadow-red-500/30"
+                icon={<svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                iconBg="bg-red-100 dark:bg-red-900/30"
+                isLoading={isDeletingQuestion}
+            />
         </div>
     )
 }

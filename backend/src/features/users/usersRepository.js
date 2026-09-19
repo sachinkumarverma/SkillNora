@@ -12,10 +12,12 @@ const getUserByToken = async (token) => {
   );
   if (res.rows.length > 0) {
     const row = res.rows[0];
-    user.role = row.role;
+    user.role = (row.role || user.user_metadata?.role || user.role || 'student').toLowerCase();
     if (!user.user_metadata) user.user_metadata = {};
     if (row.full_name) user.user_metadata.full_name = row.full_name;
     if (row.avatar_url) user.user_metadata.avatar_url = row.avatar_url;
+  } else {
+    user.role = (user.user_metadata?.role || user.role || 'student').toLowerCase();
   }
   return user;
 };
@@ -30,7 +32,7 @@ const getInstructors = async () => {
 
 const syncUser = async (id, email, role, full_name, avatar_url) => {
   await query(
-    `INSERT INTO users (id, email, role, full_name, avatar_url) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET email = $2, role = EXCLUDED.role, full_name = COALESCE(users.full_name, EXCLUDED.full_name), avatar_url = COALESCE(users.avatar_url, EXCLUDED.avatar_url)`,
+    `INSERT INTO users (id, email, role, full_name, avatar_url) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET email = $2, role = COALESCE(NULLIF(users.role, ''), EXCLUDED.role), full_name = COALESCE(users.full_name, EXCLUDED.full_name), avatar_url = COALESCE(users.avatar_url, EXCLUDED.avatar_url)`,
     [id, email, role, full_name, avatar_url],
   );
   return true;

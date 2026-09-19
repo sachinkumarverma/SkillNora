@@ -2,29 +2,42 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import apiClient from '@/lib/apiClient'
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
 
 export default function InstructorAIPage() {
     const [activeTab, setActiveTab] = useState('Course Description')
-    const [prompt, setPrompt] = useState('')
+    const [prompts, setPrompts] = useState<Record<string, string>>({})
+    const [outputs, setOutputs] = useState<Record<string, string>>({})
     const [isGenerating, setIsGenerating] = useState(false)
-    const [output, setOutput] = useState('')
+    const [copied, setCopied] = useState(false)
+
+    const prompt = prompts[activeTab] || ''
+    const output = outputs[activeTab] || ''
 
     const tabs = ['Course Description', 'Quiz Generator', 'Lesson Summary', 'Thumbnail Prompt']
 
+    const handleCopy = () => {
+        if (!output) return
+        navigator.clipboard.writeText(output)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
+
     const handleGenerate = async () => {
+        const currentTab = activeTab
         setIsGenerating(true)
-        setOutput('')
+        setOutputs(prev => ({ ...prev, [currentTab]: '' }))
         
         try {
             let systemPrompt = "You are a helpful AI assistant for the Skillnora platform."
             
-            if (activeTab === 'Course Description') {
-                systemPrompt = "You are an expert course creator. The user will give you a topic or brief, and you will generate a compelling, professional, and detailed course description, including 'What you'll learn' bullet points."
-            } else if (activeTab === 'Quiz Generator') {
+            if (currentTab === 'Course Description') {
+                systemPrompt = "You are an expert course creator. The user will give you a topic or brief, and you will generate ONLY a compelling, professional, and detailed course description (with an overview and 'What you'll learn' bullet points). DO NOT include 'Course Title' or 'Course Tagline' in your response. Output ONLY the course description directly."
+            } else if (currentTab === 'Quiz Generator') {
                 systemPrompt = "You are an expert instructional designer. The user will provide a topic or lesson text, and you will generate a 5-question multiple-choice quiz with 4 options per question. Mark the correct answer clearly."
-            } else if (activeTab === 'Thumbnail Prompt') {
+            } else if (currentTab === 'Thumbnail Prompt') {
                 systemPrompt = "You are an expert AI image prompt engineer. The user will provide a course topic, and you will generate 3 highly detailed, creative Midjourney prompts for a course thumbnail. Keep the prompts rich in visual descriptors (lighting, style, colors, --ar 16:9)."
-            } else if (activeTab === 'Lesson Summary') {
+            } else if (currentTab === 'Lesson Summary') {
                 systemPrompt = "You are an AI teaching assistant. The user will paste the transcript or notes of a lesson, and you will generate a concise, easy-to-read summary with key takeaways."
             }
             
@@ -36,12 +49,12 @@ export default function InstructorAIPage() {
             });
             
             if (res.data?.reply) {
-                setOutput(res.data.reply)
+                setOutputs(prev => ({ ...prev, [currentTab]: res.data.reply }))
             } else {
-                setOutput('Failed to generate content. Please try again.')
+                setOutputs(prev => ({ ...prev, [currentTab]: 'Failed to generate content. Please try again.' }))
             }
         } catch (err: any) {
-            setOutput('Error generating content: ' + err.message)
+            setOutputs(prev => ({ ...prev, [currentTab]: 'Error generating content: ' + err.message }))
         } finally {
             setIsGenerating(false)
         }
@@ -102,7 +115,7 @@ export default function InstructorAIPage() {
                             </label>
                             <textarea 
                                 value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
+                                onChange={(e) => setPrompts(prev => ({ ...prev, [activeTab]: e.target.value }))}
                                 placeholder={`E.g. "Create a 5-question multiple choice quiz about React Hooks..."`}
                                 className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-4 text-sm font-medium outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all min-h-[120px] resize-y"
                             />
@@ -140,17 +153,24 @@ export default function InstructorAIPage() {
                         <div className="mt-8 animate-in slide-in-from-bottom-4 fade-in duration-500">
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Generated Output</h3>
+                                <button
+                                    onClick={handleCopy}
+                                    className="flex items-center gap-1.5 p-1 rounded-lg text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer text-xs font-semibold"
+                                    title="Copy whole description"
+                                >
+                                    {copied ? (
+                                        <>
+                                            <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                                            <span className="text-emerald-500 font-medium">Copied!</span>
+                                        </>
+                                    ) : (
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                    )}
+                                </button>
                             </div>
-                            <div 
-                                className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-6 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed"
-                                dangerouslySetInnerHTML={{ 
-                                    __html: output
-                                        .replace(/</g, '&lt;')
-                                        .replace(/>/g, '&gt;')
-                                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                        .replace(/\*(.*?)\*/g, '<em>$1</em>') 
-                                }}
-                            />
+                            <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+                                <MarkdownRenderer content={output} />
+                            </div>
                         </div>
                     )}
                 </div>

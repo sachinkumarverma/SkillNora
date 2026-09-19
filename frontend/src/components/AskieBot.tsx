@@ -12,9 +12,44 @@ type Message = {
 }
 
 const formatMessage = (text: string) => {
-    let safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    return safeText;
+    if (!text) return '';
+
+    let formatted = text;
+
+    // 1. Clean up leftover orphan angle brackets and URLs
+    formatted = formatted
+        .replace(/<https?:\/\/[^>]+>/g, '')
+        .replace(/&lt;https?:\/\/[^&]+&gt;/g, '')
+        .replace(/&lt;\s*$/g, '')
+        .replace(/<\s*$/g, '');
+
+    // 2. Escape raw HTML tags (except ones we generate)
+    formatted = formatted.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // 3. Convert markdown headers ### Header
+    formatted = formatted.replace(/^###?\s+(.+)$/gm, '<strong class="block text-base font-bold my-1 text-slate-900 dark:text-white">$1</strong>');
+    formatted = formatted.replace(/^#\s+(.+)$/gm, '<strong class="block text-lg font-bold my-1 text-slate-900 dark:text-white">$1</strong>');
+
+    // 4. Convert double asterisks **text** -> <strong>text</strong>
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900 dark:text-white">$1</strong>');
+
+    // 5. Convert single asterisks *text* -> <strong>text</strong> (handles *Category:*, *Price:*, etc.)
+    formatted = formatted.replace(/(^|[^\*])\*([^\*\n]+)\*([^\*]|$)/g, '$1<strong class="font-semibold text-slate-900 dark:text-white">$2</strong>$3');
+
+    // 6. Convert bullet points (- item or * item) -> • item
+    formatted = formatted.replace(/^[\*\-]\s+(.+)$/gm, '<span class="inline-block mr-1.5 text-blue-500 font-bold">•</span>$1');
+
+    // 7. Convert markdown links [text](url)
+    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-500 underline hover:text-blue-600 font-medium">$1</a>');
+
+    // 8. Convert newlines to HTML breaks
+    formatted = formatted.replace(/\n\n+/g, '<div class="h-2"></div>');
+    formatted = formatted.replace(/\n/g, '<br/>');
+
+    // 9. Final cleanup for trailing orphan &lt; or <
+    formatted = formatted.replace(/(<br\/>|\s)*&lt;\s*$/g, '');
+
+    return formatted;
 }
 
 export default function AskieBot() {
@@ -136,7 +171,7 @@ export default function AskieBot() {
                             {messages.map(msg => (
                                 <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[85%] rounded-lg px-4 py-3 ${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-br-sm shadow-sm' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-sm shadow-sm'}`}>
-                                        <div className="text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }} />
+                                        <div className="text-sm leading-relaxed whitespace-normal" dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }} />
                                         
                                         {/* Render Course Preview inside Askie's message if recommended */}
                                         {msg.courseRecommend && (

@@ -57,7 +57,7 @@ export default function CreateTestPage() {
                     systemPromptOverride: 'You are an instructional designer. Return a JSON object with a "questions" key containing exactly 30 multiple-choice questions. You MUST generate all 30 questions. Include a "question_number" from 1 to 30 in each object to keep track. Each object must have: "question_number" (integer), "question" (string), "options" (array of exactly 4 strings), and "correctIndex" (integer 0-3). Return ONLY valid JSON.',
                     maxTokens: 8000,
                     useJsonFormat: true,
-                    model: 'llama-3.3-70b-versatile'
+                    useLargeModel: true
                 }
             });
             let reply = res.data?.reply || '';

@@ -1,8 +1,32 @@
 "use client"
-import { useRef } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 
 export default function HeroCarousel() {
     const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const [canScrollLeft, setCanScrollLeft] = useState(false)
+    const [canScrollRight, setCanScrollRight] = useState(true)
+
+    const checkScroll = useCallback(() => {
+        if (scrollContainerRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
+            setCanScrollLeft(scrollLeft > 2)
+            setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 2)
+        }
+    }, [])
+
+    useEffect(() => {
+        const el = scrollContainerRef.current
+        if (!el) return
+
+        checkScroll()
+        el.addEventListener('scroll', checkScroll, { passive: true })
+        window.addEventListener('resize', checkScroll)
+
+        return () => {
+            el.removeEventListener('scroll', checkScroll)
+            window.removeEventListener('resize', checkScroll)
+        }
+    }, [checkScroll])
 
     const scrollLeft = () => {
         if (scrollContainerRef.current) {
@@ -107,20 +131,30 @@ export default function HeroCarousel() {
             {/* Navigation Arrows */}
             <button 
                 onClick={scrollLeft}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-xl opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-slate-50 dark:hover:bg-slate-700 z-20"
+                disabled={!canScrollLeft}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-md transition-all duration-200 z-20 ${
+                    canScrollLeft 
+                        ? 'opacity-0 group-hover/carousel:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer hover:scale-105' 
+                        : 'opacity-0 pointer-events-none cursor-not-allowed hidden'
+                }`}
                 aria-label="Scroll left"
             >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                 </svg>
             </button>
             <button 
                 onClick={scrollRight}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-xl opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-slate-50 dark:hover:bg-slate-700 z-20"
+                disabled={!canScrollRight}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-md transition-all duration-200 z-20 ${
+                    canScrollRight 
+                        ? 'opacity-0 group-hover/carousel:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer hover:scale-105' 
+                        : 'opacity-0 pointer-events-none cursor-not-allowed hidden'
+                }`}
                 aria-label="Scroll right"
             >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
             </button>
 

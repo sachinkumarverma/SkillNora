@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import { AI_MODELS } from "../../config/aiConfig.js";
 import { testSeriesRepository } from "./testSeriesRepository.js";
 
 const getPublicSeries = async (category, userId = null) => {
@@ -126,7 +127,7 @@ All questions must be strictly MCQ with exactly 4 options. The correct_option_in
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
+      model: AI_MODELS.DEFAULT,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.3,
     }),

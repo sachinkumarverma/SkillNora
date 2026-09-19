@@ -1,8 +1,9 @@
 import fetch from "node-fetch";
+import { AI_MODELS } from "../../config/aiConfig.js";
 
 const summarize = async (text, key) => {
   const body = {
-    model: "llama-3.1-8b-instant",
+    model: AI_MODELS.DEFAULT,
     messages: [
       {
         role: "system",
@@ -56,7 +57,7 @@ const chat = async (messages, key, courseContext = "", options = {}) => {
       Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
-      model: options.model || "llama-3.1-8b-instant",
+      model: options.useLargeModel || options.modelType === "large" ? AI_MODELS.LARGE : (options.model || AI_MODELS.DEFAULT),
       messages: [systemMessage, ...filteredMessages],
       response_format: options.useJsonFormat ? { type: "json_object" } : undefined,
       max_tokens: options.maxTokens || undefined,

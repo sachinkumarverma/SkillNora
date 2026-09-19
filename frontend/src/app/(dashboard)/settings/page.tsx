@@ -6,6 +6,7 @@ import apiClient from '@/lib/apiClient'
 import supabase from '@/lib/supabaseClient'
 import toast from 'react-hot-toast'
 import Loader from '@/components/ui/Loader'
+import ConfirmActionModal from '@/components/views/ConfirmActionModal'
 
 export default function SettingsPage() {
     const { user, loading } = useUser()
@@ -23,11 +24,12 @@ export default function SettingsPage() {
     const [pushNotifs, setPushNotifs] = useState(false)
     
     // MFA States
-    const [mfaStatus, setMfaStatus] = useState<'loading' | 'unenrolled' | 'enrolling' | 'enrolled'>('loading')
+    const [mfaStatus, setMfaStatus] = useState<'unenrolled' | 'enrolling' | 'enrolled'>('unenrolled')
     const [mfaFactorId, setMfaFactorId] = useState('')
     const [qrCode, setQrCode] = useState('')
     const [verifyCode, setVerifyCode] = useState('')
     const [verifyError, setVerifyError] = useState('')
+    const [showDisableMfaModal, setShowDisableMfaModal] = useState(false)
 
     useEffect(() => {
         if (user) {
@@ -116,8 +118,7 @@ export default function SettingsPage() {
         }
     }
 
-    const unenrollMfa = async () => {
-        if (!confirm('Are you sure you want to disable Two-Factor Authentication?')) return
+    const executeUnenrollMfa = async () => {
         setIsSaving(true)
         try {
             const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId })
@@ -125,6 +126,7 @@ export default function SettingsPage() {
             toast.success('Two-Factor Authentication disabled.')
             setMfaStatus('unenrolled')
             setMfaFactorId('')
+            setShowDisableMfaModal(false)
         } catch (err: any) {
             toast.error(err.message || 'Failed to disable MFA')
         } finally {
@@ -389,7 +391,7 @@ export default function SettingsPage() {
                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                                 2FA Enabled
                                             </span>
-                                            <button onClick={unenrollMfa} disabled={isSaving} className="text-sm font-bold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors disabled:opacity-50">
+                                            <button onClick={() => setShowDisableMfaModal(true)} disabled={isSaving} className="text-sm font-bold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors disabled:opacity-50">
                                                 Disable 2FA
                                             </button>
                                         </div>
@@ -474,6 +476,16 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
+            <ConfirmActionModal
+                isOpen={showDisableMfaModal}
+                onClose={() => !isSaving && setShowDisableMfaModal(false)}
+                onConfirm={executeUnenrollMfa}
+                title="Disable 2FA"
+                message="Are you sure you want to disable Two-Factor Authentication? Your account will be less secure."
+                confirmText="Disable 2FA"
+                confirmStyle="bg-red-600 hover:bg-red-700 shadow-red-500/30"
+                isLoading={isSaving}
+            />
         </div>
     )
 }
